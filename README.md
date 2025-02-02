@@ -1,2 +1,2 @@
 # FinScore
-Índice score para cálculo de riscos de clientes e análise de crédito para uma Fintech brasileira.
+Construção de um índice para quantificação de riscos e classificação de clientes para uma Fintech brasileira.
