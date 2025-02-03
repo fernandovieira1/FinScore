@@ -1,0 +1,3 @@
+- Tabela com índices, valores e resultado ( )
+- Convergir versão local e google         ( )
+- Prompt IA Relatório                     ( )
