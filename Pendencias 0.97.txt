@@ -1,3 +1,4 @@
 - Tabela com índices, valores e resultado ( )
-- Convergir versão local e google         ( )
 - Prompt IA Relatório                     ( )
+- Convergir versão local e google         ( )
+# https://colab.research.google.com/drive/1-CIYnug2IBa7TmRdOljjoFADcXNbBAFI#scrollTo=azL1WNYNW5Y_
