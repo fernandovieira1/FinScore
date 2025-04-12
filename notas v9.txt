@@ -1,0 +1,4 @@
+- Alterações feitas com base nas sugestões da Essentual Partners (e-mail/doc: sugestoes essential partners.pdf).
+- FINSCORE_v9: alterações de estrutura até "Racional por trás da mudança da ordem/nomes dos títulos".
+- FINSCORE_v9.1: correções do prompt para word e preparação para langchain.
+- FINSCORE_v9.2: substituição do prompt word por variável langchain e correcao de erros nas variáveis finscore_ajustado e serasa. 
