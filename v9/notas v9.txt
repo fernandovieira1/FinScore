@@ -1,0 +1,40 @@
+**Alterações feitas com base nas sugestões da Essentual Partners (e-mail/doc: sugestoes essential partners.pdf).**
+=========================================================================================================================
+- FINSCORE_v9.0: alterações de estrutura até "Racional por trás da mudança da ordem/nomes dos títulos". 
+    + Baseado em 'FINSCORE_v8.ipynb'.
+
+- FINSCORE_v9.1: correções do prompt para word e preparação para langchain. Baseado em 'FINSCORE_v9.0.ipynb'.
+    + Baseado em 'FINSCORE_v9.0.ipynb'.
+
+- FINSCORE_v9.2: substituição do prompt word por variável preparado para langchain e correcao de erros nas variáveis finscore_ajustado 
+e serasa. 
+    + Baseado em 'FINSCORE_v9.1.ipynb'.
+
+- FINSCORE_v9.3: construção langchain
+    +
+---- {Chave OpenAI ----
+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
+---- Fernando    } ----
+
+    + Renumeração dos tópicos (1 passou a ser 0: LANÇAMENTO DOS DADOS, e sem numeração passou a ser 1: CONFIGURAÇÃO DO AMBIENTE) 
+    + Baseado em 'FINSCORE_v9.2.ipynb'.
+
+- FINSCORE_v9.4: rollback do prompt baseado em 'FINSCORE_v8.ipynb' e 'FINSCORE_v9.3.ipynb'. Os resultados gerados pelo langchain 
+em 'FINSCORE_v9.3.ipynb' são bem ruins.
+    + Inclusão de EBITDA e Margem EBITDA.
+    + Planilha Google na conta USP.
+    + Alterações no prompt copiar e colar (preparação prompt langchain).
+    + Inclusão das contas Caixa e Depreciação.
+    + Foi sugerido Endividamento, mas já consta 'Contas a Pagar' e 'Passivo Circulante' (ver com Essential Partners se é necessário).
+        * Inserido índices em 'ALAVANCAGEM E ENDIVIDAMENTO'
+    + Inserido 'p_Imobilizado'
+    + Reformatação de planilha: prefixos 'p_' para contas patrimoniais e 'r_' para as de resultado. EBIT e EBITDA incluídos 
+    como índices calculados automaticamente (retirei EBIT do lançamento na planilha).
+    + Dicionário com top 3 índices por componente no tópico 2.6
+    + Confirmar com Essential pesos
+    + 1.3 Função Índices Contábeis passou a ser 1.3 Função Índices e Contas Contábeis porque incorporou o cálculo de novas 
+    contas contábeis também.
+    + Inserido índice CCL (sugestão Essential Partners)
+    + Mudado as faixas de ajustes do Finscore Ajustado para aperfeiçoar a correspondência lógica entre os intervalos.
+    + Ordem das contas na planilha ajustadas, conforme sugestão da Essential Partners.
+    + Tópico 4 (versão FINSCORE_v9.3 e antecessoras) removido, substituindo para LangChain/OpenAI - seção 4. PREPARAÇÃO IA
