@@ -1,5 +1,10 @@
-**Alterações feitas com base nas sugestões da Essentual Partners (e-mail/doc: sugestoes essential partners.pdf).**
-=========================================================================================================================
+======================
+NOTAS FINSCORE_v9
+======================
+///
+**Alterações feitas a partir das sugestões da Essentual Partners (e-mail/doc: sugestoes essential partners.pdf).**
+///
+
 - FINSCORE_v9.0: alterações de estrutura até "Racional por trás da mudança da ordem/nomes dos títulos". 
     + Baseado em 'FINSCORE_v8.ipynb'.
 
@@ -37,4 +42,7 @@ em 'FINSCORE_v9.3.ipynb' são bem ruins.
     + Inserido índice CCL (sugestão Essential Partners)
     + Mudado as faixas de ajustes do Finscore Ajustado para aperfeiçoar a correspondência lógica entre os intervalos.
     + Ordem das contas na planilha ajustadas, conforme sugestão da Essential Partners.
-    + Tópico 4 (versão FINSCORE_v9.3 e antecessoras) removido, substituindo para LangChain/OpenAI - seção 4. PREPARAÇÃO IA
+    + Tópico 4 (versão FINSCORE_v9.3 e antecessoras) removido, substituindo para LangChain/OpenAI - seção 4. PREPARAÇÃO IA.
+
+- FINSCORE_v9.5: implementação da IA.
+    + Revisão de FINSCORE_v9.4 validada (arquivo: 'NOTAS ate Até FINSCORE_v9.4.docx').
