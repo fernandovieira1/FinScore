@@ -47,4 +47,10 @@ em 'FINSCORE_v9.3.ipynb' são bem ruins.
 - FINSCORE_v9.5: implementação da IA.
     + Revisão de FINSCORE_v9.4 validada (arquivo: 'NOTAS ate Até FINSCORE_v9.4.docx').
     + Vários testes com prompts diferentes foram feitos, mudando texto e modelos (GPT 4 e 3.5), mas nada funcionou. O parecer 
-    + Criação da exportação Word (A FAZER)
+    + Falta: exportação Word.
+
+- FINSCORE_v9.6: exportação Word.
+    + Criação da exportação Word - sem tabelas e gráficos.
+
+- FINSCORE_v9.7: Word com tabelas e gráficos.
+    + Criação da exportação Word - com tabelas e gráficos.
