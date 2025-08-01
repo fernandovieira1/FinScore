@@ -1,0 +1,13 @@
+# Ignora o ambiente virtual
+finscore-env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos temporários
+*.log
+*.tmp
+
+# VSCode config (opcional)
+.vscode/

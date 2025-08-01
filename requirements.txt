@@ -1,0 +1,14 @@
+pandas
+numpy
+scikit-learn
+openpyxl
+matplotlib
+seaborn
+streamlit
+gspread
+gspread-dataframe
+python-dotenv
+docx
+langchain
+openai
+plotly>=5.20.0
