@@ -23,3 +23,6 @@ FASE 2 - PARECER
 FASE 3 - APLICATIVO
 [ ](i) Autenticação, cadastro e permissões (FastAPI)
 [ ](ii) Hospedagem (Railway, Render, VPS ou Docker)
+
+========================================================
+https://turbologo.com/pt/app/generate?company_name=FINSCORE&slogan=
