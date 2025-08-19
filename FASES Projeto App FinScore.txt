@@ -10,13 +10,16 @@ Considerando que as etapas são essas:
 Podemos dividir o projeto assim?
 
 FASE 1 - DADOS E DASHBOARD
-i) Construir a tela do Cadastro e upload dos dados contábeis (passo 2)
-ii) Construir o Dashboard de visualização (Streamlit ou React + Charts) (passo 5), aproveitando ou no máximo adptando meu script python já pronto (passo 3: Execução do FinScore (script modular Python))
+[x](ii) Desenhar mockup
+[x](ii) Construir a tela do Cadastro e upload dos dados contábeis
+    * FALTA: testar link google
+[x](iii) Construir o Dashboard de visualização 
+[ ](iv) Revisar e testar
 
 FASE 2 - PARECER
-i) Geração do parecer (OpenAI API) (passo 4)
-ii) Exportação para Word/PDF (passo 6)
+[ ](i) Geração do parecer (OpenAI API)
+[ ](ii) Exportação para Word/PDF
 
 FASE 3 - APLICATIVO
-i) Autenticação, cadastro e permissões (FastAPI) (passo 1)
-ii) Hospedagem (Railway, Render, VPS ou Docker) (passo 7)
+[ ](i) Autenticação, cadastro e permissões (FastAPI)
+[ ](ii) Hospedagem (Railway, Render, VPS ou Docker)
