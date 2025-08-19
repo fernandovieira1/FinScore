@@ -1,0 +1,18 @@
+[theme]
+# Cores principais
+primaryColor = "#0074D9"         # azul claro (links, botões, destaque)
+backgroundColor = "#FFFFFF"      # fundo branco
+secondaryBackgroundColor = "#F0F2F6"  # fundo cinza claro
+textColor = "#000000"            # texto preto
+
+# Fontes
+font = "sans serif"
+
+# Personalização adicional (cores auxiliares que usaremos em detalhes nos gráficos/tabelas)
+[colors]
+blue_dark = "#001F3F"
+blue_light = "#0074D9"
+gray = "#F0F2F6"
+red_cherry = "#D72638"
+yellow_dark = "#FFB400"
+green = "#2ECC40"
