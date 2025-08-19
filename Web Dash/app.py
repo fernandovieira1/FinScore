@@ -1,58 +1,48 @@
-# app.py
-import dash
-from dash import dcc, html, Input, Output, State
-import dash_bootstrap_components as dbc
+import pandas as pd
+import base64
+import io
 
-# Importa os layouts modulares
-from dados.upload_form import layout as input_layout
-from dashboard.layout import layout as output_layout
-from parecer.ia_report import layout as report_layout
+from script.finscore_core import executar_finscore  # ajuste se o nome for outro
 
-# Inicialização
-app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server
-
-# Layout da Página 1 - Login
-login_layout = dbc.Container([
-    html.H2("Login - FinScore"),
-    dbc.Input(id='username', placeholder='Usuário', type='text', className='mb-2'),
-    dbc.Input(id='password', placeholder='Senha', type='password', className='mb-2'),
-    dbc.Button('Entrar', id='login-button', color='primary'),
-    html.Div(id='login-message', className='text-danger mt-2')
-])
-
-# App Layout principal com roteamento
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
-
-# Roteamento entre páginas
-@app.callback(Output('page-content', 'children'),
-              Input('url', 'pathname'))
-def display_page(pathname):
-    if pathname == '/dados':
-        return input_layout
-    elif pathname == '/dashboard':
-        return output_layout
-    elif pathname == '/parecer':
-        return report_layout
-    else:
-        return login_layout
-
-# Autenticação simples
 @app.callback(
-    Output('login-message', 'children'),
-    Output('url', 'pathname'),
-    Input('login-button', 'n_clicks'),
-    State('username', 'value'),
-    State('password', 'value'),
+    Output('process-status', 'children'),
+    Output('resultado-dashboard', 'children'),
+    Input('process-button', 'n_clicks'),
+    State('upload-excel', 'contents'),
+    State('link-google-sheets', 'value'),
     prevent_initial_call=True
 )
-def login(n_clicks, username, password):
-    if username == 'admin' and password == '123':
-        return '', '/dados'
-    return 'Usuário ou senha inválidos', dash.no_update
+def processar_finscore(n_clicks, excel_contents, google_sheets_link):
+    df = None
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+    try:
+        # Caso 1: Upload de Excel
+        if excel_contents:
+            content_type, content_string = excel_contents.split(',')
+            decoded = base64.b64decode(content_string)
+            df = pd.read_excel(io.BytesIO(decoded))
+
+        # Caso 2: Link do Google Sheets
+        elif google_sheets_link:
+            try:
+                # Extrai a ID da planilha do link
+                import re
+                match = re.search(r"/d/([a-zA-Z0-9-_]+)", google_sheets_link)
+                sheet_id = match.group(1)
+                sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx'
+
+                df = pd.read_excel(sheet_url)
+            except Exception as e:
+                return f"Erro ao processar o link do Google Sheets: {str(e)}", None
+
+        if df is None:
+            return "Nenhum dado foi carregado. Faça o upload ou cole o link.", None
+
+        # Processa com o FinScore
+        resultado = executar_finscore(df)
+
+        # Mostra algo simples por enquanto
+        return "FinScore calculado com sucesso!", html.Pre(str(resultado))
+
+    except Exception as e:
+        return f"Ocorreu um erro no processamento: {str(e)}", None
