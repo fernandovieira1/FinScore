@@ -19,8 +19,8 @@ st.markdown("""
   --menu-text:#001733;          /* cor dos textos/ícones do menu lateral */
   --primary-btn:#0a66c2;        /* cor do botão "Iniciar" */
 
-  /* >>> ajuste fino do topo do logo da sidebar <<< */
-  --side-logo-top-fix:-120px;    /* torne mais negativo p/ subir, menos p/ descer */
+  /* offset fino p/ grudar o logo no topo da sidebar */
+  --side-logo-top-fix:-38px;    /* + sobe / - desce */
 }
 
 /* ===== Esconde a barra superior (inclui "Deploy") ===== */
@@ -32,7 +32,7 @@ header[data-testid="stHeader"]{ display:none; }
   background: var(--bg) !important;
 }
 .block-container{
-  padding-top: 0.5rem;  /* alinhado ao topo/nível de referência do conteúdo */
+  padding-top: 0.5rem;  /* alinhado ao topo/nível do logo da sidebar */
   padding-bottom: 2rem;
 }
 
@@ -40,7 +40,7 @@ header[data-testid="stHeader"]{ display:none; }
 h1,h2,h3{ color:var(--text); letter-spacing:.2px; }
 p,li,label,span{ color:var(--text); }
 
-/* Cards reutilizáveis (se quiser usar nas views) */
+/* Cards reutilizáveis */
 .card{
   background: var(--card);
   border-radius: 14px;
@@ -56,7 +56,7 @@ p,li,label,span{ color:var(--text); }
 .stButton > button{
   width: min(260px, 100%);
   display: block;
-  margin: .35rem auto 0 auto;              /* centralizado */
+  margin: .35rem auto 0 auto;
   background: var(--primary-btn);
   color:#fff; border:0; border-radius:12px;
   padding:.65rem 1rem; font-weight:700;
@@ -77,22 +77,20 @@ p,li,label,span{ color:var(--text); }
 /* ===== Sidebar #cdcdcd ===== */
 section[data-testid="stSidebar"] > div:first-child{
   background: var(--sidebar) !important;
-  padding-top: 0 !important;              /* remove qualquer padding do wrapper */
+  padding-top: 0 !important;
 }
 section[data-testid="stSidebar"] .block-container{
-  padding-top: 0 !important;              /* zera padding do conteúdo da sidebar */
+  padding-top: 0 !important;
   padding-bottom: .8rem;
 }
 
-/* ===== Logo da sidebar: CENTRALIZAÇÃO + sem recuo superior =====
-   - gruda no topo usando margem negativa controlável
-   - imagem limitada a 80% da largura, mantendo proporção */
+/* ===== Logo da sidebar ===== */
 section[data-testid="stSidebar"] .side-logo{
-  height: 110px;                          /* pode ajustar a “caixa” do logo */
+  height: 110px;
   display:flex;
-  align-items:center;                     /* centraliza vertical */
-  justify-content:center;                 /* centraliza horizontal */
-  margin: var(--side-logo-top-fix) 8px 10px 8px;  /* <<< sobe/ desce aqui */
+  align-items:center;     /* centraliza vertical */
+  justify-content:center; /* centraliza horizontal */
+  margin: var(--side-logo-top-fix) 8px 10px 8px;
   border-bottom: 1px solid #bdbdbd60;
 }
 section[data-testid="stSidebar"] .side-logo img{
@@ -102,7 +100,7 @@ section[data-testid="stSidebar"] .side-logo img{
   height:auto !important;
 }
 
-/* ===== Força cor do TEXTO/ÍCONES do menu lateral ===== */
+/* ===== Cores do menu lateral ===== */
 section[data-testid="stSidebar"] .nav-link,
 section[data-testid="stSidebar"] .nav-link span,
 section[data-testid="stSidebar"] .nav-link i,
@@ -144,20 +142,20 @@ ss.setdefault("df", None)
 ss.setdefault("out", None)
 ss.setdefault("erros", {})
 ss.setdefault("novo_tab", "Início")
-ss.setdefault("assertif_logo_css", False)
+# ss.setdefault("assertif_logo_css", False)  # <- não precisamos mais desse guard
 
 def _add_logo_assertif(path: Path = ASSETS / "logo.png",
-                       *, width_px: int = 162, top_px: int = 15, right_px: int = 16):
+                       *, width_px: int = 112, top_px: int = 15, right_px: int = 16):
     """
-    Selo ASSERTIF no canto superior direito com pequeno recuo.
+    Injeta SEMPRE o selo ASSERTIF no canto superior direito
+    (precisa rodar a cada rerun/aba).
     """
-    if ss.assertif_logo_css:
-        return
     try:
         with open(path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
     except Exception:
         return
+
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"]::before {{
@@ -175,9 +173,8 @@ def _add_logo_assertif(path: Path = ASSETS / "logo.png",
         }}
         </style>
     """, unsafe_allow_html=True)
-    ss.assertif_logo_css = True
 
-# Render padrão + selo
+# Render padrão + selo (a cada rerun)
 render_header()
 _add_logo_assertif()
 
