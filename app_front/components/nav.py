@@ -1,12 +1,18 @@
+from pathlib import Path
 import streamlit as st
 from streamlit_option_menu import option_menu
 
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
+LOGO = ASSETS / "logo5.png"
+
 def render_sidebar():
     with st.sidebar:
-        # Logo no topo
-        st.image("app_front/assets/logo5.png", use_column_width=True)
+        # Logo centralizado automaticamente (CSS .side-logo cuida do alinhamento)
+        st.markdown('<div class="side-logo">', unsafe_allow_html=True)
+        st.image(str(LOGO))  # sem width fixo -> CSS limita a 80% e centraliza
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # Menu lateral com blocos azuis
+        # Menu integrado na cor da sidebar
         pagina = option_menu(
             None,
             ["Novo", "Resumo", "Tabelas", "Gráficos", "Parecer", "Sobre"],
@@ -15,16 +21,26 @@ def render_sidebar():
             default_index=0,
             orientation="vertical",
             styles={
-                "container": {"background-color": "#0d47a1", "padding": "20px"},
-                "icon": {"color": "white", "font-size": "18px"},
+                "container": {
+                    "background-color": "#cdcdcd",
+                    "padding": "0px",
+                    "border-radius": "0px",
+                },
+                "icon": {"color": "#001733", "font-size": "18px"},
                 "nav-link": {
                     "font-size": "16px",
                     "text-align": "left",
-                    "margin": "10px 0",
-                    "color": "white",
-                    "border-radius": "10px",
+                    "margin": "0",
+                    "padding": "10px 12px",
+                    "color": "#001733",
+                    "background-color": "#cdcdcd",
+                    "border-radius": "0px",
                 },
-                "nav-link-selected": {"background-color": "#1976d2"},
+                "nav-link-selected": {
+                    "background-color": "#bdbdbd",
+                    "color": "#001733",
+                    "border-left": "4px solid #8a8a8a",
+                },
             },
         )
     return pagina

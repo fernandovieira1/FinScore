@@ -4,50 +4,56 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+# ---------------------------
+# 1) Índices contábeis
+# ---------------------------
 def calcular_indices_contabeis(df: pd.DataFrame) -> pd.DataFrame:
-    indices = {}
+    idx = {}
 
     # RENTABILIDADE
-    indices['Margem Líquida'] = df['r_Lucro_Liquido'] / df['r_Receita_Total']
-    indices['ROA'] = df['r_Lucro_Liquido'] / df['p_Ativo_Total']
-    indices['ROE'] = df['r_Lucro_Liquido'] / df['p_Patrimonio_Liquido']
+    idx['Margem Líquida'] = df['r_Lucro_Liquido'] / df['r_Receita_Total']
+    idx['ROA']             = df['r_Lucro_Liquido'] / df['p_Ativo_Total']
+    idx['ROE']             = df['r_Lucro_Liquido'] / df['p_Patrimonio_Liquido']
 
     # EBITDA e Margem
-    ebit = df['r_Lucro_Liquido'] + df['r_Despesa_de_Juros'] + df['r_Despesa_de_Impostos']
+    ebit  = df['r_Lucro_Liquido'] + df['r_Despesa_de_Juros'] + df['r_Despesa_de_Impostos']
     amort = df.get('r_Amortizacao', 0).fillna(0)
-    depr = df.get('r_Depreciacao', 0).fillna(0)
+    depr  = df.get('r_Depreciacao', 0).fillna(0)
     ebitda = ebit + amort + depr
-    indices['EBITDA'] = ebitda
-    indices['Margem EBITDA'] = ebitda / df['r_Receita_Total']
+    idx['EBITDA']        = ebitda
+    idx['Margem EBITDA'] = ebitda / df['r_Receita_Total']
 
-    # Alavancagem e Endividamento
-    df['p_Divida_Bruta'] = df['p_Passivo_Total'] - df['p_Patrimonio_Liquido']
+    # Alavancagem / Endividamento
+    df = df.copy()
+    df['p_Divida_Bruta']  = df['p_Passivo_Total'] - df['p_Patrimonio_Liquido']
     df['p_Divida_Liquida'] = df['p_Divida_Bruta'] - df['p_Caixa']
-    indices['Alavancagem'] = df['p_Divida_Liquida'] / ebitda
-    indices['Endividamento'] = df['p_Divida_Bruta'] / df['p_Ativo_Total']
+    idx['Alavancagem']   = df['p_Divida_Liquida'] / ebitda
+    idx['Endividamento'] = df['p_Divida_Bruta'] / df['p_Ativo_Total']
 
     # Estrutura de Capital
     df['p_Imobilizado'] = df['p_Ativo_Total'] - df['p_Ativo_Circulante']
-    indices['Imobilizado/Ativo'] = df['p_Imobilizado'] / df['p_Ativo_Total']
+    idx['Imobilizado/Ativo'] = df['p_Imobilizado'] / df['p_Ativo_Total']
 
     # Cobertura de Juros
-    indices['Cobertura de Juros'] = ebit / df['r_Despesa_de_Juros']
+    idx['Cobertura de Juros'] = ebit / df['r_Despesa_de_Juros']
 
     # Eficiência e Ciclo
-    indices['Giro do Ativo'] = df['r_Receita_Total'] / df['p_Ativo_Total']
-    indices['Período Médio de Recebimento'] = df['p_Contas_a_Receber'] / df['r_Receita_Total'] * 365
-    indices['Período Médio de Pagamento'] = df['p_Contas_a_Pagar'] / df['r_Custos'] * 365
+    idx['Giro do Ativo']                 = df['r_Receita_Total'] / df['p_Ativo_Total']
+    idx['Período Médio de Recebimento'] = df['p_Contas_a_Receber'] / df['r_Receita_Total'] * 365
+    idx['Período Médio de Pagamento']   = df['p_Contas_a_Pagar']   / df['r_Custos']        * 365
 
     # Liquidez
-    indices['Liquidez Corrente'] = df['p_Ativo_Circulante'] / df['p_Passivo_Circulante']
-    indices['Liquidez Seca'] = (df['p_Ativo_Circulante'] - df['p_Estoques']) / df['p_Passivo_Circulante']
-    indices['CCL/Ativo Total'] = (df['p_Ativo_Circulante'] - df['p_Passivo_Circulante']) / df['p_Ativo_Total']
+    idx['Liquidez Corrente'] = df['p_Ativo_Circulante'] / df['p_Passivo_Circulante']
+    idx['Liquidez Seca']     = (df['p_Ativo_Circulante'] - df['p_Estoques']) / df['p_Passivo_Circulante']
+    idx['CCL/Ativo Total']   = (df['p_Ativo_Circulante'] - df['p_Passivo_Circulante']) / df['p_Ativo_Total']
 
-    df_indices = pd.DataFrame(indices)
+    df_indices = pd.DataFrame(idx)
     df_indices.replace([np.inf, -np.inf], np.nan, inplace=True)
     return df_indices.round(2)
 
-# ---------- Classificadores ----------
+# ---------------------------
+# 2) Classificadores
+# ---------------------------
 def classificar_finscore_ajustado(valor: float) -> str:
     if valor > 875:
         return 'Muito Abaixo do Risco'
@@ -71,7 +77,6 @@ def classificar_serasa(score: int) -> str:
         return 'Muito Baixo'
 
 def classificar_finscore_bruto(valor: float) -> str:
-    # Regras fornecidas por você
     if valor > 1.5:
         return 'Muito Abaixo do Risco'
     elif 1.0 < valor <= 1.5:
@@ -83,7 +88,9 @@ def classificar_finscore_bruto(valor: float) -> str:
     else:
         return 'Muito Acima do Risco'
 
-# ---------- Principal ----------
+# ---------------------------
+# 3) Principal
+# ---------------------------
 def executar_finscore(
     df_dados_contabeis: pd.DataFrame,
     nome_empresa: str,
@@ -91,31 +98,35 @@ def executar_finscore(
     ano_final: int,
     serasa_score: int
 ) -> dict:
-    df_indices = calcular_indices_contabeis(df_dados_contabeis)
 
-    # Se estoques 0, remova Liquidez Seca
-    if (df_dados_contabeis['p_Estoques'] == 0).all():
+    # (opcional) garantir ordem: mais recente -> mais antigo
+    df_dc = df_dados_contabeis.copy()
+    if 'ano' in df_dc.columns:
+        # na 9.7 o "0" é o mais recente; manter 0,1,2...
+        df_dc = df_dc.sort_values('ano', ascending=True).reset_index(drop=True)
+
+    # Índices
+    df_indices = calcular_indices_contabeis(df_dc)
+
+    # Se todos os estoques são 0, remover Liquidez Seca do PCA
+    if (df_dc['p_Estoques'] == 0).all():
         df_indices.drop('Liquidez Seca', axis=1, inplace=True, errors='ignore')
 
-    # Padronização
+    # Padronização e PCA
     scaler = StandardScaler()
-    indices_scaled = scaler.fit_transform(df_indices.fillna(0))
-
-    # PCA
+    X = scaler.fit_transform(df_indices.fillna(0))       # robusto a eventuais NaNs
     pca = PCA()
-    pca_result = pca.fit_transform(indices_scaled)
-    explained_variance_ratio = pca.explained_variance_ratio_
+    Z = pca.fit_transform(X)
 
-    # PCs por observação
-    pca_df = pd.DataFrame(pca_result, columns=[f'PC{i+1}' for i in range(pca_result.shape[1])])
+    explained = pca.explained_variance_ratio_
+    pca_df = pd.DataFrame(Z, columns=[f'PC{i+1}' for i in range(Z.shape[1])])
 
-    # Loadings e top-3 por componente
+    # Loadings e "top 3"
     loadings = pd.DataFrame(
         pca.components_,
         columns=df_indices.columns,
         index=[f'PC{i+1}' for i in range(pca.components_.shape[0])]
     )
-
     top_indices_df = pd.DataFrame([
         {
             'PC': pc,
@@ -129,18 +140,21 @@ def executar_finscore(
         }.items()
     ])
 
-    # FinScore Bruto – combinando PCs ponderados pela variância
-    # (ajuste simples de pesos para as 3 primeiras componentes)
-    pesos = np.array([0.6, 0.25, 0.15] + [0]*(len(explained_variance_ratio)-3))
-    pesos = pesos[:len(explained_variance_ratio)]
-    # projeção total dos PCs (por linha); tiramos média das linhas
-    proj = (pca_df.values * explained_variance_ratio).sum(axis=1)
-    finscore_bruto = round(float(np.average(proj, weights=None) * pesos[:len(pca_df.columns)].sum()), 2)
+    # === FINSCORE BRUTO (como na 9.7) ===
+    # 1) um score por ano: combinação dos PCs ponderados pela variância explicada
+    scores_por_ano = pca_df.dot(explained)  # shape = (n_anos,)
+    # 2) pesos do mais recente para o mais antigo
+    w = np.array([0.6, 0.25, 0.15], dtype=float)
+    if len(scores_por_ano) < len(w):
+        w = w[:len(scores_por_ano)]
+    elif len(scores_por_ano) > len(w):
+        w = np.pad(w, (0, len(scores_por_ano) - len(w)), constant_values=0.0)
+    finscore_bruto = round(float((scores_por_ano.values * w).sum()), 2)
 
-    # FinScore Ajustado (0..1000)
+    # === FINSCORE AJUSTADO (0..1000) ===
     finscore_ajustado = round(min(((finscore_bruto + 2) / 4) * 1000, 1000), 2)
 
-    resultado = {
+    return {
         "empresa": nome_empresa,
         "periodo": f"{ano_inicial}–{ano_final}",
         "finscore_bruto": finscore_bruto,
@@ -154,4 +168,3 @@ def executar_finscore(
         "top_indices_df": top_indices_df,
         "loadings": loadings,
     }
-    return resultado

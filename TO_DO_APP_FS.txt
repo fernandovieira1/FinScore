@@ -1,0 +1,40 @@
+
+******************
+** APP FINSCORE **
+******************
+
+===================
+0. SETAR O PROJETO
+===================
+* (x) Mockup Projeto
+* (x) Organizar Github e VS Code
+* (x) Instalar pacotes python
+* (x) Versão alpha 1
+    - (x) Menus
+    - (x) Gráficos e tabelas
+    - (x) Apresentação André
+---
+Até aqui:
+[v. 0.1, de 19/08/2025]
+---
+
+===================================================
+CONFIGURAÇÃO DE VISUAL E FUNCIONALIDADES BÁSICAS
+===================================================
+* (x) Cores
+* (x) Integração dos menus com logos e posicionamento 
+* (x) Botões
+* (x) Comportamento do APP
+---
+Até aqui:
+[v. 0.2, de 02/09/2025]
+---
+
+* ( ) Logo Assertif em todas as seções/views
+* ( ) Seções André
+    - ( ) Resultados (juntar Resumo, Tabelas e Gráficos da v. 0.1)
+    - ( ) Parecer (LangChain/OpenAI)
+    - ( ) Metodologia
+    - ( ) Glossário
+    - ( ) FAQ
+    - ( ) Contato
