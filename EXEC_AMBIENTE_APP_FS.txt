@@ -4,11 +4,11 @@ py -3.11 -m venv .venv
 # Ativar
 .\.venv\Scripts\Activate.ps1
 
-# Atualizar instaladores
+# Atualizar instaladores (SE PRECISAR)
 python -m pip install -U pip setuptools wheel
 
 # Instalar as dependências
 pip install -r requirements.txt
 
 # Rodar o app
-streamlit run app.py
+streamlit run .\app_front\app.py
