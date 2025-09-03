@@ -1,4 +1,4 @@
-# Criar um venv com Python 3.12
+# Criar um venv com Python 3.11
 py -3.11 -m venv .venv
 
 # Ativar
