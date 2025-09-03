@@ -5,27 +5,29 @@ from streamlit_option_menu import option_menu
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 LOGO = ASSETS / "logo5.png"
 
-def render_sidebar():
+PAGES = ["Novo", "Resumo", "Tabelas", "Gráficos", "Parecer", "Sobre"]
+
+def render_sidebar(current_page: str = "Novo"):
     with st.sidebar:
-        # Logo centralizado automaticamente (CSS .side-logo cuida do alinhamento)
         st.markdown('<div class="side-logo">', unsafe_allow_html=True)
-        st.image(str(LOGO))  # sem width fixo -> CSS limita a 80% e centraliza
+        st.image(str(LOGO))
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Menu integrado na cor da sidebar
+        # posiciona a seleção no item correspondente à página atual
+        try:
+            default_idx = PAGES.index(current_page)
+        except ValueError:
+            default_idx = 0
+
         pagina = option_menu(
             None,
-            ["Novo", "Resumo", "Tabelas", "Gráficos", "Parecer", "Sobre"],
+            PAGES,
             icons=["plus-circle", "bar-chart", "table", "graph-up", "file-earmark-text", "info-circle"],
             menu_icon="cast",
-            default_index=0,
+            default_index=default_idx,
             orientation="vertical",
             styles={
-                "container": {
-                    "background-color": "#cdcdcd",
-                    "padding": "0px",
-                    "border-radius": "0px",
-                },
+                "container": {"background-color": "#cdcdcd", "padding": "0px", "border-radius": "0px"},
                 "icon": {"color": "#001733", "font-size": "18px"},
                 "nav-link": {
                     "font-size": "16px",

@@ -5,7 +5,6 @@ from services.finscore_service import run_finscore
 TABS = ["Início", "Cliente", "Dados"]
 
 def _pill_nav():
-    """Pílulas de navegação (sub-abas) controladas por session_state."""
     ss = st.session_state
     current = ss.get("novo_tab", "Início")
     idx = TABS.index(current) if current in TABS else 0
@@ -17,13 +16,11 @@ def _pill_nav():
         label_visibility="collapsed",
         key="novo_tab_radio",
     )
-    # Sincroniza o valor da radio com o estado global
     if choice != current:
         ss["novo_tab"] = choice
-    st.write("")  # pequeno espaçamento
+    st.write("")
 
 def _auto_save_cliente():
-    """Lê os campos da seção 'Cliente' e salva em ss.meta sem precisar de botão."""
     ss = st.session_state
     meta = ss.meta.copy()
 
@@ -33,30 +30,18 @@ def _auto_save_cliente():
     af_str  = st.text_input("Ano Final",   value=str(meta.get("ano_final", "")),   placeholder="AAAA")
     serasa_str = st.text_input("Serasa Score (0–1000)", value=str(meta.get("serasa", "")), placeholder="Ex.: 550")
 
-    # Normalização leve
     empresa = empresa.strip()
     cnpj = cnpj.strip()
     ai = int(ai_str) if ai_str.strip().isdigit() else None
     af = int(af_str) if af_str.strip().isdigit() else None
     serasa = int(serasa_str) if serasa_str.strip().isdigit() else None
 
-    # Salva somente o que foi digitado
-    new_meta = {
-        "empresa": empresa,
-        "cnpj": cnpj,
-        "ano_inicial": ai,
-        "ano_final": af,
-        "serasa": serasa,
-    }
-    # Remove chaves com None para não “apagar” o que já estava válido
+    new_meta = {"empresa": empresa, "cnpj": cnpj, "ano_inicial": ai, "ano_final": af, "serasa": serasa}
     for k, v in list(new_meta.items()):
         if v is None or v == "":
             new_meta.pop(k)
-
-    # Atualiza o estado global com o que veio preenchido
     ss.meta.update(new_meta)
 
-    # Mensagens de validação informativas
     pend = validar_cliente(ss.meta)
     if pend:
         st.warning(pend)
@@ -64,7 +49,7 @@ def _auto_save_cliente():
         st.success("Cliente salvo automaticamente.")
 
 def _sec_inicio():
-    st.header("Bem‑vindo ao FinScore")
+    st.header("Bem-vindo ao FinScore")
     st.markdown(
         """
         **Fluxo de uso**
@@ -75,7 +60,6 @@ def _sec_inicio():
         """
     )
     st.write("")
-    # Botão que pula para "Cliente"
     if st.button("Iniciar", use_container_width=True):
         st.session_state["novo_tab"] = "Cliente"
         st.rerun()
@@ -84,7 +68,6 @@ def _sec_cliente():
     st.header("Dados do Cliente")
     _auto_save_cliente()
     st.write("")
-    # Botão que pula para "Dados"
     if st.button("Enviar Dados", use_container_width=True):
         st.session_state["novo_tab"] = "Dados"
         st.rerun()
@@ -120,18 +103,16 @@ def _sec_dados():
         st.success(f"✅ Dados carregados (aba: {aba}).")
         st.caption("Prévia:")
         st.dataframe(df.head(), use_container_width=True)
-        # Salva no estado (sem botão)
         st.session_state.df = df.copy()
         chec = check_minimo(st.session_state.df)
         if chec["BP_faltando"] or chec["DRE_faltando"]:
             st.warning("🔎 Checagem de campos mínimos (informativa):")
             st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
         st.success("✅ Dados contábeis salvos.")
-        st.session_state.out = None
+        st.session_state.out = None  # limpa resultados se dados mudaram
 
     st.write("---")
 
-    # Botão Calcular FinScore (verde)
     st.markdown(
         """
         <style>
@@ -156,6 +137,9 @@ def _sec_dados():
                 with st.spinner("Calculando FinScore…"):
                     ss.out = run_finscore(ss.df, ss.meta)
                 st.success("✅ Processamento concluído.")
+                # >>> Navega para Resumo imediatamente
+                ss["page"] = "Resumo"
+                st.rerun()
             except Exception as e:
                 st.error(f"Erro no processamento: {e}")
 
