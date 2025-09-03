@@ -1,24 +1,52 @@
+# app_front/views/novo.py
 import streamlit as st
+import streamlit.components.v1 as components
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore
 
-TABS = ["Início", "Cliente", "Dados"]
+# Rótulos com ícones (ordem fixa na UI)
+TAB_LABELS = {
+    "Início": "🏁 Início",
+    "Cliente": "🏢 Cliente",
+    "Dados": "📥 Dados",
+}
+TAB_ORDER = ["Início", "Cliente", "Dados"]  # ordem visual fixa
 
-def _pill_nav():
-    ss = st.session_state
-    current = ss.get("novo_tab", "Início")
-    idx = TABS.index(current) if current in TABS else 0
-    choice = st.radio(
-        "nav",
-        TABS,
-        index=idx,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="novo_tab_radio",
+
+def _js_select_tab(label_with_icon: str):
+    """
+    Força a seleção visual de uma aba do st.tabs sem reordenar a lista.
+    Usa um pequeno script JS que procura o rótulo e dispara um click.
+    """
+    components.html(
+        f"""
+        <script>
+        (function() {{
+          const target = `{label_with_icon}`;
+          function clickTab() {{
+            // Os tabs do Streamlit são botões; vamos varrer por aria-controls
+            const btns = window.parent.document.querySelectorAll('button[role="tab"]');
+            for (const b of btns) {{
+              const txt = (b.innerText || b.textContent || "").trim();
+              if (txt === target) {{
+                b.click();
+                return true;
+              }}
+            }}
+            return false;
+          }}
+          // tenta algumas vezes até o DOM carregar
+          let attempts = 0;
+          const iv = setInterval(() => {{
+            attempts += 1;
+            if (clickTab() || attempts > 20) clearInterval(iv);
+          }}, 100);
+        }})();
+        </script>
+        """,
+        height=0,
     )
-    if choice != current:
-        ss["novo_tab"] = choice
-    st.write("")
+
 
 def _auto_save_cliente():
     ss = st.session_state
@@ -48,6 +76,7 @@ def _auto_save_cliente():
     else:
         st.success("Cliente salvo automaticamente.")
 
+
 def _sec_inicio():
     st.header("Bem-vindo ao FinScore")
     st.markdown(
@@ -55,14 +84,15 @@ def _sec_inicio():
         **Fluxo de uso**
         1) Aba **Cliente** → informe empresa, período e Serasa.  
         2) Aba **Dados** → envie o Excel (prioriza `lancamentos`).  
-        3) Use **Resumo/Tabelas/Gráficos** para visualizar resultados.  
+        3) Use **Resultados** para visualizar resultados.  
         4) Gere o **Parecer** (PDF/Word) na aba correspondente.
         """
     )
     st.write("")
     if st.button("Iniciar", use_container_width=True):
-        st.session_state["novo_tab"] = "Cliente"
-        st.rerun()
+        st.session_state["novo_tab"] = "Cliente"  # estado lógico
+        st.rerun()  # após o rerun, o JS seleciona visualmente a aba
+
 
 def _sec_cliente():
     st.header("Dados do Cliente")
@@ -71,6 +101,7 @@ def _sec_cliente():
     if st.button("Enviar Dados", use_container_width=True):
         st.session_state["novo_tab"] = "Dados"
         st.rerun()
+
 
 def _sec_dados():
     st.header("Dados Contábeis")
@@ -117,7 +148,7 @@ def _sec_dados():
         """
         <style>
         div.stButton > button:first-child{
-            background:#1f7a34!important; color:white!important; font-weight:600;
+            background:#0074d9!important; color:white!important; font-weight:600;
             border:none!important; border-radius:8px; height:48px;
         }
         div.stButton > button:first-child:hover{ filter:brightness(1.05); }
@@ -137,18 +168,28 @@ def _sec_dados():
                 with st.spinner("Calculando FinScore…"):
                     ss.out = run_finscore(ss.df, ss.meta)
                 st.success("✅ Processamento concluído.")
-                # >>> Navega para Resumo imediatamente
-                ss["page"] = "Resumo"
+                ss["page"] = "Resultados"
                 st.rerun()
             except Exception as e:
                 st.error(f"Erro no processamento: {e}")
 
+
 def render():
-    _pill_nav()
-    tab = st.session_state.get("novo_tab", "Início")
-    if tab == "Início":
+    ss = st.session_state
+    ss.setdefault("novo_tab", "Início")  # estado lógico da aba
+
+    # Cria abas com ordem fixa e ícones
+    labels_with_icons = [TAB_LABELS[name] for name in TAB_ORDER]
+    tabs = st.tabs(labels_with_icons)
+    tab_dict = {name: tab for name, tab in zip(TAB_ORDER, tabs)}
+
+    # Seleção visual (sem reordenar): após o rerun, o JS clica na aba certa
+    _js_select_tab(TAB_LABELS.get(ss["novo_tab"], TAB_LABELS["Início"]))
+
+    # Render do conteúdo (cada aba sempre no mesmo lugar)
+    with tab_dict["Início"]:
         _sec_inicio()
-    elif tab == "Cliente":
+    with tab_dict["Cliente"]:
         _sec_cliente()
-    else:
+    with tab_dict["Dados"]:
         _sec_dados()

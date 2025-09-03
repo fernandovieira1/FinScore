@@ -1,15 +1,36 @@
-# app_front/pages/sobre.py
+# app_front/views/sobre.py
 import streamlit as st
 
-def render():
-    st.header("ℹ️ Sobre este App")
-    st.markdown(
-        """
-        **FinScore** — painel para análise financeira automatizada.
+# rótulos com ícones
+TAB_LABELS = ["🧭 Metodologia", "📚 Glossário", "❓ FAQ"]
 
-        **Como usar**  
-        1) **Novo** → preencha **Cliente** e **Dados** e execute o cálculo.  
-        2) Explore **Resumo**, **Tabelas** e **Gráficos**.  
-        3) Na Fase 2, gere o **Parecer** (PDF/Word).
-        """
-    )
+def _sec_metodologia():
+    st.subheader("Metodologia")
+    st.write("Esta é a página de metodologia.")
+    # TODO: coloque aqui o conteúdo real da metodologia
+    # (tabelas, imagens, markdowns etc.)
+
+def _sec_glossario():
+    st.subheader("Glossário")
+    st.write("Esta é a página de glossário.")
+    # TODO: conteúdo do glossário
+
+def _sec_faq():
+    st.subheader("FAQ")
+    st.write("Esta é a página de FAQ.")
+    # TODO: perguntas e respostas
+
+def render():
+    st.header("Sobre")
+
+    # abas internas
+    tab_met, tab_glos, tab_faq = st.tabs(TAB_LABELS)
+
+    with tab_met:
+        _sec_metodologia()
+
+    with tab_glos:
+        _sec_glossario()
+
+    with tab_faq:
+        _sec_faq()

@@ -17,7 +17,7 @@ st.markdown("""
   --accent2:#1976d2;
   --sidebar:#cdcdcd;
   --menu-text:#001733;
-  --primary-btn:#0a66c2;
+  --primary-btn:#0074d9;
   --side-logo-top-fix:-38px;
 }
 header[data-testid="stHeader"]{ display:none; }
@@ -92,7 +92,7 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 
 from components.header import render_header
 from components.nav import render_sidebar
-from views import novo, resumo, tabelas, graficos, parecer, sobre
+from views import novo, resultados, parecer, sobre, contato
 
 # ---------------------------
 # Estado global
@@ -134,11 +134,10 @@ _add_logo_assertif()
 # ---------------------------
 ROUTES = {
     "Novo": novo.render,
-    "Resumo": resumo.render,
-    "Tabelas": tabelas.render,
-    "Gráficos": graficos.render,
+    "Resultados": resultados.render,
     "Parecer": parecer.render,
     "Sobre": sobre.render,
+    "Contato": contato.render,
 }
 
 # Passa a página atual para a sidebar para destacar o item correto

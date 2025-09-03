@@ -12,6 +12,8 @@ Ideias
     \ Botão Novo
     \ Botão refresh
 
+- Ano ser apenas o inicial (contas +3 automaticamente)
+
 - Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores
 - Botões e subseções da rádio 'Dados' em azul, não verde
@@ -62,10 +64,26 @@ Até aqui:
 [v. 0.5, de 02/09/2025]
 ---
 
-* ( ) Seções André
-    - ( ) Resultados (juntar Resumo, Tabelas e Gráficos da v. 0.1)
-    - ( ) Parecer (LangChain/OpenAI)
-    - ( ) Metodologia
-    - ( ) Glossário
-    - ( ) FAQ
-    - ( ) Contato
+* (x) Substituição de radio por abas na view/seção 'Novo'
+
+* (x) Seções André
+    - (x) Readequação da v. 0.5 (views/seções diferentes)
+    - (x) Resultados (Abas: Resumo, Tabelas e Gráficos da v. 0.1)
+        - (x) Dividido em abas (Resumo, Tabelas e Gráficos)
+        - (x) Resumo
+        - (x) Tabelas
+        - (x) Gráficos
+
+    - (x) Parecer (LangChain/OpenAI)
+
+    - (x) sobre
+        - (x) Dividido em abas (Abas: Metodologia, Glossário e FAQ)
+        - (x) Glossário
+        - (x) FAQ
+        - (x) Contato
+
+* (x) Consistência visual (cores e ícones)
+---
+Até aqui:
+[v. 0.6, de 02/09/2025]
+---

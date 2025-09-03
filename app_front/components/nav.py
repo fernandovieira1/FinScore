@@ -5,10 +5,21 @@ from streamlit_option_menu import option_menu
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 LOGO = ASSETS / "logo5.png"
 
-PAGES = ["Novo", "Resumo", "Tabelas", "Gráficos", "Parecer", "Sobre"]
+PAGES = ["Novo", "Resultados", "Parecer", "Sobre", "Contato"]
 
 def render_sidebar(current_page: str = "Novo"):
     with st.sidebar:
+        st.markdown(
+            """
+            <style>
+            .side-logo {
+                margin-top: -350px !important;
+                padding-top: 0px !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
         st.markdown('<div class="side-logo">', unsafe_allow_html=True)
         st.image(str(LOGO))
         st.markdown('</div>', unsafe_allow_html=True)
@@ -22,7 +33,7 @@ def render_sidebar(current_page: str = "Novo"):
         pagina = option_menu(
             None,
             PAGES,
-            icons=["plus-circle", "bar-chart", "table", "graph-up", "file-earmark-text", "info-circle"],
+            icons=["plus-circle", "graph-up", "file-earmark-text", "info-circle","envelope",],
             menu_icon="cast",
             default_index=default_idx,
             orientation="vertical",
