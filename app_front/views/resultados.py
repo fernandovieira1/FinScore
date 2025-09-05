@@ -23,10 +23,8 @@ def _prepare_base_df() -> pd.DataFrame | None:
     if ss.get("df") is not None:
         base = ss.df
     elif ss.get("out"):
-        # fallback: se alguém quiser plotar a partir do resultado
         base = ss.out.get("df_raw")  # só se você tiver salvo isso no backend
         if base is None:
-            # sem df_raw, não dá para produzir esses gráficos
             return None
 
     df = base.copy()
@@ -40,19 +38,13 @@ def _prepare_base_df() -> pd.DataFrame | None:
         if c != "ano":
             df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    # Ordenar pelos anos (mais recente no topo em gráficos horizontais)
     df = df.sort_values("ano", ascending=False)
     return df
 
 def _bar_h(fig_title: str, tidy_df: pd.DataFrame, x_col: str, y_col: str, color_col: str):
     fig = px.bar(
-        tidy_df,
-        x=x_col,
-        y=y_col,
-        color=color_col,
-        orientation="h",
-        text=x_col,
-        barmode="group",
+        tidy_df, x=x_col, y=y_col, color=color_col,
+        orientation="h", text=x_col, barmode="group",
     )
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False)
     fig.update_layout(
@@ -66,12 +58,7 @@ def _bar_h(fig_title: str, tidy_df: pd.DataFrame, x_col: str, y_col: str, color_
     st.plotly_chart(fig, use_container_width=True)
 
 def _bar_v(fig_title: str, df: pd.DataFrame, x_col: str, y_col: str):
-    fig = px.bar(
-        df,
-        x=x_col,
-        y=y_col,
-        text=y_col,
-    )
+    fig = px.bar(df, x=x_col, y=y_col, text=y_col)
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False)
     fig.update_layout(
         title={"text": fig_title, **TITLE_STYLE},
@@ -82,97 +69,95 @@ def _bar_v(fig_title: str, df: pd.DataFrame, x_col: str, y_col: str):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------- Cabeçalho reutilizável (título + empresa) ----------
+def _render_header_empresa():
+    ss = st.session_state
+    
+    st.subheader("🏢 Empresa")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.caption("Nome:")
+        st.markdown(
+            f"<h3 style='text-align:left;'>{ss.meta.get('empresa', '-')}</h3>",
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        st.caption("CNPJ:")
+        st.markdown(
+            f"<h3 style='text-align:left;'>{ss.meta.get('cnpj', '-') or '-'}</h3>",
+            unsafe_allow_html=True
+        )
+
+    with col3:
+        st.caption("Período:")
+        ai = ss.meta.get("ano_inicial", "-")
+        af = ss.meta.get("ano_final", "-")
+        periodo = f"{ai} – {af}" if ai and af else "-"
+        st.markdown(
+            f"<h3 style='text-align:left;'>{periodo}</h3>",
+            unsafe_allow_html=True
+        )
+
+    st.divider()
+
 # ======================
 # Página
 # ======================
 def render():
     ss = st.session_state
 
-    # Título
-    st.header("Resultados")
-
-    # ----------------------
-    # Cabeçalho da Empresa (sempre visível, fora das abas)
-    # ----------------------
-    st.subheader("🏢 Empresa")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.caption("Nome da Empresa")
-        st.markdown(
-            f"<h3 style='text-align:center;'>{ss.meta.get('empresa', '-')}</h3>",
-            unsafe_allow_html=True
-        )
-
-    with col2:
-        st.caption("CNPJ")
-        st.markdown(
-            f"<h3 style='text-align:center;'>{ss.meta.get('cnpj', '-') or '-'}</h3>",
-            unsafe_allow_html=True
-        )
-
-    with col3:
-        st.caption("Período")
-        ai = ss.meta.get("ano_inicial", "-")
-        af = ss.meta.get("ano_final", "-")
-        periodo = f"{ai} – {af}" if ai and af else "-"
-        st.markdown(
-            f"<h3 style='text-align:center;'>{periodo}</h3>",
-            unsafe_allow_html=True
-        )
-
-    st.divider()
-
-    # Se não houver saída, exibe aviso e retorna (as abas não fazem sentido sem ss.out)
+    # Se não houver saída, mostra header e mensagem (sem abas)
     if not ss.get("out"):
+        _render_header_empresa()
         st.info("Calcule o FinScore em **Novo** para liberar os resultados.")
         return
 
-    # ----------------------
-    # Abas internas
-    # ----------------------
+    # -------- Abas nativas (estilo original) ACIMA do título --------
     tab_resumo, tab_graficos, tab_tabelas = st.tabs(["📊 Resumo", "📈 Gráficos", "📄 Tabelas"])
 
     # ====== Aba: Resumo ======
     with tab_resumo:
+        _render_header_empresa()
+
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.caption("FinScore Bruto")
+            st.markdown("<p style='text-align:left; color:black; font-size:0.9em;'>FinScore Bruto:</p>", unsafe_allow_html=True)
             st.markdown(
-                f"<h3 style='text-align:center;'>{ss.out.get('finscore_bruto', '-')}</h3>",
+                f"<h3 style='text-align:left;'>{ss.out.get('finscore_bruto', '-')}</h3>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='text-align:center;'>{ss.out.get('classificacao_finscore_bruto', '(-)')}</p>",
+                f"<p style='text-align:left;'>{ss.out.get('classificacao_finscore_bruto', '(-)')}</p>",
                 unsafe_allow_html=True
             )
 
         with col2:
-            st.caption("FinScore Ajustado")
+            st.markdown("<p style='text-align:left; color:black; font-size:0.9em;'>FinScore Ajustado:</p>", unsafe_allow_html=True)
             st.markdown(
-                f"<h3 style='text-align:center;'>{ss.out.get('finscore_ajustado', '-')}</h3>",
+                f"<h3 style='text-align:left;'>{ss.out.get('finscore_ajustado', '-')}</h3>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='text-align:center;'>{ss.out.get('classificacao_finscore', '(-)')}</p>",
+                f"<p style='text-align:left;'>{ss.out.get('classificacao_finscore', '(-)')}</p>",
                 unsafe_allow_html=True
             )
 
         with col3:
-            st.caption("Serasa Score")
+            st.markdown("<p style='text-align:left; color:black; font-size:0.9em;'>Serasa Score:</p>", unsafe_allow_html=True)
             st.markdown(
-                f"<h3 style='text-align:center;'>{ss.out.get('serasa', '-')}</h3>",
+                f"<h3 style='text-align:left;'>{ss.out.get('serasa', '-')}</h3>",
                 unsafe_allow_html=True
             )
             st.markdown(
-                f"<p style='text-align:center;'>{ss.out.get('classificacao_serasa', '(-)')}</p>",
+                f"<p style='text-align:left;'>{ss.out.get('classificacao_serasa', '(-)')}</p>",
                 unsafe_allow_html=True
             )
 
-        st.write("")  # pequeno respiro visual
+        st.write("")
 
-        # Dashboard de evolução (se existir)
         df_indices = ss.out.get("df_indices")
         if mostrar_dashboard and df_indices is not None:
             try:
@@ -182,11 +167,13 @@ def render():
 
     # ====== Aba: Gráficos ======
     with tab_graficos:
+        _render_header_empresa()
+
         df_base = _prepare_base_df()
         if df_base is None:
             st.info("Carregue os dados em **Novo → Dados** para visualizar os gráficos.")
         else:
-            # 1) Ativo e Passivo Circulante (barras horizontais, agrupadas)
+            # 1) Ativo e Passivo Circulante
             needed_1 = {"p_Ativo_Circulante", "p_Passivo_Circulante"}
             if needed_1.issubset(df_base.columns):
                 tidy1 = df_base[["ano", "p_Ativo_Circulante", "p_Passivo_Circulante"]].melt(
@@ -203,7 +190,7 @@ def render():
 
             st.divider()
 
-            # 2) Receita Total (barras verticais)
+            # 2) Receita Total
             if "r_Receita_Total" in df_base.columns:
                 _bar_v("Receita Total", df_base, x_col="ano", y_col="r_Receita_Total")
             else:
@@ -211,7 +198,7 @@ def render():
 
             st.divider()
 
-            # 3) Juros, Lucro e Receita Total (barras horizontais empilhadas)
+            # 3) Juros, Lucro e Receita Total
             needed_3 = {"r_Despesa_de_Juros", "r_Lucro_Liquido", "r_Receita_Total"}
             if needed_3.issubset(df_base.columns):
                 tidy3 = df_base[["ano", "r_Despesa_de_Juros", "r_Lucro_Liquido", "r_Receita_Total"]].melt(
@@ -223,13 +210,8 @@ def render():
                     "r_Receita_Total": "Receita Total",
                 })
                 fig3 = px.bar(
-                    tidy3,
-                    x="Valor",
-                    y="ano",
-                    color="Conta",
-                    orientation="h",
-                    text="Valor",
-                    barmode="stack",
+                    tidy3, x="Valor", y="ano", color="Conta",
+                    orientation="h", text="Valor", barmode="stack",
                 )
                 fig3.update_traces(texttemplate="%{text:,.0f}", textposition="none")
                 fig3.update_layout(
@@ -247,6 +229,8 @@ def render():
 
     # ====== Aba: Tabelas ======
     with tab_tabelas:
+        _render_header_empresa()
+
         st.markdown("**Índices Contábeis Calculados**")
         if ss.out.get("df_indices") is not None:
             st.dataframe(ss.out["df_indices"], use_container_width=True)

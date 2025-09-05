@@ -87,3 +87,9 @@ Até aqui:
 Até aqui:
 [v. 0.6, de 02/09/2025]
 ---
+
+* (x) Formatação e alinhamento de textos nas views/abas
+---
+Até aqui:
+[v. 0.6.1, de 05/09/2025]
+---
