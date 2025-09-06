@@ -34,9 +34,11 @@ Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mai
     st.markdown("""
     O **FinScore** transforma dados contábeis das **três demonstrações contábeis** mais recentes da empresa em um **número único (0–1000)** 
     que resume sua saúde econômico-financeira e risco de crédito. O cálculo combina três etapas principais: 
-    1) índices financeiros clássicos, 2) técnicas estatísticas e 3) ponderação temporal.
-                
-    O ponto de partida do FinScore são indicadores extraídos da contabilidade que permitem avaliar 
+    **1) índices contábeis, 2) técnicas estatísticas e 3) ponderação temporal**.
+
+    **1) índices contábeis**
+
+    O ponto de partida do FinScore são indicadores extraídos das três últimas demonstrações financeiras que permitem avaliar
     diferentes dimensões da empresa.
 
     - **Liquidez** (Liquidez Corrente, Liquidez Seca, CCL/Ativo): mede a capacidade de honrar 
@@ -47,6 +49,8 @@ Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mai
       o grau de dependência de recursos de terceiros e a capacidade operacional de sustentar o serviço da dívida.
     - **Eficiência Operacional** (Giro do Ativo, PMR, PMP): avalia a velocidade do ciclo financeiro e o uso dos ativos para gerar receita.
 
+                
+    2) **Técnicas estatísticas**
     Esses índices não são avaliados de forma isolada: o FinScore relaciona sinais distintos, destacando 
     combinações que revelam pontos fortes e fragilidades. Para tornar os indicadores comparáveis e extrair padrões relevantes, 
     o FinScore padroniza e reduz a dimensionalidade dos dados, com vistas a otimizar a análise.
@@ -57,14 +61,16 @@ Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mai
     - Já a **análise de componentes principais (PCA)** resume grupos de variáveis correlacionadas em fatores que não se sobrepõem, 
       facilitando a interpretação dos dados, o que é crucial para um modelo de risco. Isto é computado com base em:
         
-        - Cargas (loadings): coeficientes que mostram o quanto cada índice influencia cada fator, ajudando a entender quais variáveis mais afetam o risco.
-        As cargas (loadings) representam o grau de influência de cada variável original sobre os fatores extraídos, ou seja: valores mais altos 
-        indicam maior contribuição daquela variável para o fator;
+        - **Cargas (loadings)**: coeficientes que mostram o quanto cada índice influencia cada fator, ajudando a entender quais variáveis mais 
+        afetam o risco. As cargas (loadings) representam o grau de influência de cada variável original sobre os fatores extraídos, ou seja: 
+        valores mais altos indicam maior contribuição daquela variável para o fator;
 
-        - Variância explicada: indica o quanto cada fator consegue representar dos dados originais; quanto maior essa variância, mais relevante é o fator na composição do escore.
+        - **Variância explicada**: indica o quanto cada fator consegue representar dos dados originais. Quanto maior essa variância, mais relevante 
+        é o fator na composição do escore.
 
-    Esse processo reduz a complexidade: em vez de acompanhar uma lista extensa de índices, o FinScore trabalha com poucos fatores que concentram 
-    a essência das informações.
+    Esse processo reduz a complexidade ao tempo em que dá mais eficência no cômputo do índice, pois em vez de acompanhar uma lista extensa de 
+    índices contábeis, o FinScore sopesa todos eles e escolhe, ao final, trabalhar com os fatores que concentram a essência das informações daquela
+    empresa, consoante o contexto dado pelo seu histórico recente.
                 """)
 
     fluxograma = ASSETS_PATH / "finscore_pipeline.png"
@@ -74,6 +80,8 @@ Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mai
         st.info("Fluxograma não encontrado em assets. Esperado: `finscore_pipeline.png`.")
 
     st.markdown("""
+    **3) Ponderação temporal**
+                
     O modelo também incorpora a evolução no tempo, considerando até três exercícios consecutivos, 
     com pesos diferenciados:
 

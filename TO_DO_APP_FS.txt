@@ -3,12 +3,18 @@
 ** APP FINSCORE **
 ******************
 
+=========
+Diversos
+=========
+Logo: https://turbologo.com/
+
 ===================
 Ideias
 ===================
 - Criar página inicial, como painel:
     \ Breve texto sobre o FINSCORE
     \ Total de cálculos
+    \ Botão Login
     \ Botão Novo
     \ Botão refresh
 
@@ -17,7 +23,7 @@ Ideias
 - Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores
 - Botões e subseções da rádio 'Dados' em azul, não verde
-- Criar navbar / barra de menu na parte superior (início, novo, relatórios, usuários etc)
+- 
 
 ===================
 0. SETAR O PROJETO
@@ -97,6 +103,12 @@ Até aqui:
 ============
 3. SOBRE
 ============
+* ( ) Criar topbar na parte superior (início, novo, relatórios, usuários etc)
+---
+Até aqui:
+[v. 0.7.10, de 06/09/2025]
+---
+
 * ( ) Seção Metodologia
 ---
 Até aqui:

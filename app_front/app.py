@@ -23,7 +23,10 @@ st.markdown("""
 header[data-testid="stHeader"]{ display:none; }
 #MainMenu{ display:none; }
 [data-testid="stAppViewContainer"]{ background: var(--bg) !important; }
+
+/* dá um respiro para a topbar sticky */
 .block-container{ padding-top: .5rem; padding-bottom: 2rem; }
+
 h1,h2,h3{ color:var(--text); letter-spacing:.2px; }
 p,li,label,span{ color:var(--text); }
 .card{
@@ -90,6 +93,9 @@ hr{ border-color: rgba(2,6,23,.08); }
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
+# ===== NOVO: topbar global =====
+from components.topbar import render_topbar
+
 from components.header import render_header
 from components.nav import render_sidebar
 from views import novo, resultados, parecer, sobre, contato
@@ -126,6 +132,8 @@ def _add_logo_assertif(path: Path = ASSETS / "logo.png",
         </style>
     """, unsafe_allow_html=True)
 
+# ----- ordem de renderização do topo -----
+render_topbar()     # <— barra estilo MacMagazine (fixa e global)
 render_header()
 _add_logo_assertif()
 
