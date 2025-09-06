@@ -5,10 +5,12 @@ from streamlit_option_menu import option_menu
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 LOGO = ASSETS / "logo5.png"
 
-PAGES = ["Novo", "Resultados", "Parecer", "Sobre", "Contato"]
+# nomes exibidos no menu lateral
+PAGES = ["Lançamentos", "Análise", "Parecer", "Sobre", "Contato"]
 
-def render_sidebar(current_page: str = "Novo"):
+def render_sidebar(current_page: str = "Lançamentos"):
     with st.sidebar:
+        # hover mais claro nos itens
         st.markdown(
             """
             <style>
@@ -16,10 +18,15 @@ def render_sidebar(current_page: str = "Novo"):
                 margin-top: -350px !important;
                 padding-top: 0px !important;
             }
+            /* suaviza o hover dos itens do option_menu */
+            .nav-link:hover{
+                background-color: #e9e9e9 !important;
+            }
             </style>
             """,
             unsafe_allow_html=True
         )
+
         st.markdown('<div class="side-logo">', unsafe_allow_html=True)
         st.image(str(LOGO))
         st.markdown('</div>', unsafe_allow_html=True)
@@ -33,7 +40,7 @@ def render_sidebar(current_page: str = "Novo"):
         pagina = option_menu(
             None,
             PAGES,
-            icons=["plus-circle", "graph-up", "file-earmark-text", "info-circle","envelope",],
+            icons=["plus-circle", "graph-up", "file-earmark-text", "info-circle", "envelope"],
             menu_icon="cast",
             default_index=default_idx,
             orientation="vertical",
@@ -49,10 +56,11 @@ def render_sidebar(current_page: str = "Novo"):
                     "background-color": "#cdcdcd",
                     "border-radius": "0px",
                 },
+                # seleção mais clara e sutil
                 "nav-link-selected": {
-                    "background-color": "#bdbdbd",
+                    "background-color": "#d6d6d6",
                     "color": "#001733",
-                    "border-left": "4px solid #8a8a8a",
+                    "border-left": "3px solid #9aa0a6",
                 },
             },
         )

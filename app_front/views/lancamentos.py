@@ -1,4 +1,4 @@
-# app_front/views/novo.py
+# app_front/views/lancamentos.py
 import streamlit as st
 import streamlit.components.v1 as components
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
@@ -14,28 +14,20 @@ TAB_ORDER = ["Início", "Cliente", "Dados"]  # ordem visual fixa
 
 
 def _js_select_tab(label_with_icon: str):
-    """
-    Força a seleção visual de uma aba do st.tabs sem reordenar a lista.
-    Usa um pequeno script JS que procura o rótulo e dispara um click.
-    """
+    """Força a seleção visual de uma aba do st.tabs sem reordenar a lista."""
     components.html(
         f"""
         <script>
-        (function() {{
+        (function(){{
           const target = `{label_with_icon}`;
-          function clickTab() {{
-            // Os tabs do Streamlit são botões; vamos varrer por aria-controls
+          function clickTab(){{
             const btns = window.parent.document.querySelectorAll('button[role="tab"]');
-            for (const b of btns) {{
+            for (const b of btns){{
               const txt = (b.innerText || b.textContent || "").trim();
-              if (txt === target) {{
-                b.click();
-                return true;
-              }}
+              if (txt === target) {{ b.click(); return true; }}
             }}
             return false;
           }}
-          // tenta algumas vezes até o DOM carregar
           let attempts = 0;
           const iv = setInterval(() => {{
             attempts += 1;
@@ -52,12 +44,14 @@ def _auto_save_cliente():
     ss = st.session_state
     meta = ss.meta.copy()
 
+    # --- FORMULÁRIO CLIENTE ---
     empresa = st.text_input("Nome da Empresa", value=meta.get("empresa", ""), placeholder="Ex.: ACME S.A.")
-    cnpj    = st.text_input("CNPJ (opcional)", value=meta.get("cnpj", ""), placeholder="00.000.000/0000-00")
+    cnpj    = st.text_input("CNPJ", value=meta.get("cnpj", ""), placeholder="00.000.000/0000-00")
     ai_str  = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="AAAA")
     af_str  = st.text_input("Ano Final",   value=str(meta.get("ano_final", "")),   placeholder="AAAA")
     serasa_str = st.text_input("Serasa Score (0–1000)", value=str(meta.get("serasa", "")), placeholder="Ex.: 550")
 
+    # normalização
     empresa = empresa.strip()
     cnpj = cnpj.strip()
     ai = int(ai_str) if ai_str.strip().isdigit() else None
@@ -84,21 +78,23 @@ def _sec_inicio():
         **Fluxo de uso**
         1) Aba **Cliente** → informe empresa, período e Serasa.  
         2) Aba **Dados** → envie o Excel (prioriza `lancamentos`).  
-        3) Use **Resultados** para visualizar resultados.  
+        3) Use **Análise** para visualizar resultados.  
         4) Gere o **Parecer** (PDF/Word) na aba correspondente.
         """
     )
     st.write("")
-    if st.button("Iniciar", use_container_width=True):
-        st.session_state["novo_tab"] = "Cliente"  # estado lógico
-        st.rerun()  # após o rerun, o JS seleciona visualmente a aba
+    # botão menor e centralizado (sem use_container_width)
+    if st.button("Iniciar"):
+        st.session_state["novo_tab"] = "Cliente"
+        st.rerun()
 
 
 def _sec_cliente():
     st.header("Dados do Cliente")
     _auto_save_cliente()
     st.write("")
-    if st.button("Enviar Dados", use_container_width=True):
+    # botão menor e centralizado
+    if st.button("Enviar Dados"):
         st.session_state["novo_tab"] = "Dados"
         st.rerun()
 
@@ -117,7 +113,7 @@ def _sec_dados():
         if up:
             df, aba, erro = ler_planilha(up)
     else:
-        url = st.text_input("Cole o link compartilhável do Google Sheets", placeholder="https://docs.google.com/…")
+        url = st.text_input("Cole o link do Google Sheets (pressione ENTER para ver a prévia)", placeholder="https://docs.google.com/…")
         if url:
             try:
                 sid = url.split("/d/")[1].split("/")[0]
@@ -144,19 +140,8 @@ def _sec_dados():
 
     st.write("---")
 
-    st.markdown(
-        """
-        <style>
-        div.stButton > button:first-child{
-            background:#0074d9!important; color:white!important; font-weight:600;
-            border:none!important; border-radius:8px; height:48px;
-        }
-        div.stButton > button:first-child:hover{ filter:brightness(1.05); }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Calcular FinScore", use_container_width=True):
+    # botão "Calcular" menor e centralizado
+    if st.button("Calcular FinScore"):
         ss = st.session_state
         pend = validar_cliente(ss.meta)
         if pend:
@@ -166,27 +151,80 @@ def _sec_dados():
         else:
             try:
                 with st.spinner("Calculando FinScore…"):
-                    ss.out = run_finscore(ss.df, ss.meta)
+                    res = run_finscore(ss.df, ss.meta)
+                # aceita dict ou tupla/lista
+                out = res[0] if isinstance(res, (list, tuple)) else res
+                if not isinstance(out, dict):
+                    raise ValueError("Formato de retorno inesperado do run_finscore.")
+                ss.out = out
+                ss["analise_tab"] = "Resumo"  # abre na aba Resumo
                 st.success("✅ Processamento concluído.")
-                ss["page"] = "Resultados"
-                st.rerun()
+                # Navega para Análise
+                if "_navigate_to" in ss:
+                    ss["_navigate_to"]("Análise")
+                else:
+                    ss["page"] = "Análise"
+                    st.rerun()
             except Exception as e:
                 st.error(f"Erro no processamento: {e}")
 
 
 def render():
     ss = st.session_state
-    ss.setdefault("novo_tab", "Início")  # estado lógico da aba
+    ss.setdefault("novo_tab", "Início")
+
+    # ===== CSS específico desta view =====
+    st.markdown(
+        """
+        <style>
+        /* Centraliza barra de abas desta view */
+        div[data-testid="stTabs"] > div[role="tablist"],
+        div[data-baseweb="tab-list"]{
+            display:flex; justify-content:center;
+        }
+        div[data-testid="stTabs"] button[role="tab"],
+        div[data-baseweb="tab"]{ flex: 0 0 auto; }
+
+        /* Garante títulos alinhados à esquerda */
+        h1, h2, h3{ text-align:left !important; }
+
+        /* ---- Botões menores e centralizados ---- */
+        div.stButton { text-align: center; }  /* centraliza o conteúdo do st.button */
+        .stButton > button{
+            display:inline-block;           /* tamanho do texto */
+            margin: .5rem auto;             /* centralizado */
+            padding: .6rem 1.2rem;          /* “tamanho” do botão */
+            background:#0074d9; color:#fff; font-weight:600;
+            border:none; border-radius:8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,.15);
+            transition: filter .15s ease, transform .02s ease;
+        }
+        .stButton > button:hover{ filter:brightness(.96); }
+        .stButton > button:active{ transform: translateY(1px); }
+
+        /* ---- Campos do formulário com fundo branco ---- */
+        .stTextInput > div > div > input,
+        [data-baseweb="select"] > div,
+        .stFileUploader > div > div,
+        .stTextArea > div > textarea{
+            background:#ffffff !important;
+            border-radius:10px;
+            border:1px solid rgba(2,6,23,.12);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # Cria abas com ordem fixa e ícones
     labels_with_icons = [TAB_LABELS[name] for name in TAB_ORDER]
     tabs = st.tabs(labels_with_icons)
     tab_dict = {name: tab for name, tab in zip(TAB_ORDER, tabs)}
 
-    # Seleção visual (sem reordenar): após o rerun, o JS clica na aba certa
+    # Seleção visual (sem reordenar)
     _js_select_tab(TAB_LABELS.get(ss["novo_tab"], TAB_LABELS["Início"]))
 
-    # Render do conteúdo (cada aba sempre no mesmo lugar)
+    # Render do conteúdo
     with tab_dict["Início"]:
         _sec_inicio()
     with tab_dict["Cliente"]:

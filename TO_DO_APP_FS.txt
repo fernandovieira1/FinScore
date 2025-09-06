@@ -7,6 +7,8 @@
 Diversos
 =========
 Logo: https://turbologo.com/
+Emojis: https://emojipedia.org/
+Cores hex: https://www.color-hex.com/
 
 ===================
 Ideias
@@ -103,18 +105,29 @@ Até aqui:
 ============
 3. SOBRE
 ============
-* ( ) Criar topbar na parte superior (início, novo, relatórios, usuários etc)
----
-Até aqui:
-[v. 0.7.10, de 06/09/2025]
----
 
-* ( ) Seção Metodologia
+* (x) Seção Metodologia iniciada
 ---
 Até aqui:
 [v. 0.7, de 06/09/2025]
 ---
 
+* (x) Criar topbar na parte superior (início, novo, relatórios, usuários etc)
+---
+Até aqui:
+[v. 0.7.10, de 06/09/2025]
+---
+
+* (x) Encerrada a formatação da versão estática da topbar
+* (x) Centralização das abas e formatação de textos nas seções/views
+* (x) Renomear as views: 'Novo' para 'Lançamentos', e 'Resultados' para 'Análise'
+---
+Até aqui:
+[v. 0.7.11, de 06/09/2025]
+---
+
+* ( ) Adequar texto Lançamentos/Início
+* ( ) Inserir ícones nos títulos das abas de Lançamentos
 * ( ) Seção Glossário
 * ( ) Seção FAQ
 

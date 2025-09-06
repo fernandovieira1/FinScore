@@ -1,99 +1,56 @@
 # app_front/views/sobre.py
 import streamlit as st
+from pathlib import Path
 
 # rótulos com ícones
 TAB_LABELS = ["🧭 Metodologia", "📚 Glossário", "❓ FAQ"]
 
 def _sec_metodologia():
-    import os, pandas as pd
-    from pathlib import Path
+    import pandas as pd
 
-    st.subheader("FinScore")
+    st.subheader("📶 FinScore")
 
     # caminho robusto para os assets (independente de onde o app é executado)
     ASSETS_PATH = Path(__file__).resolve().parents[1] / "assets"
 
-    # 1) O que é o FinScore
+    # 1) O que é o FinScore (texto executivo, impessoal)
     st.markdown("""
-    O FinScore transforma as demonstrações contábeis da empresa em um número único (0 a 1000) que resume sua saúde econômico-financeira e risco de crédito.
-
-Ele combina três elementos:
-
-- Índices financeiros clássicos — como liquidez, rentabilidade e endividamento.
-
-- Técnicas estatísticas — que colocam todos os índices na mesma escala e evidenciam os que mais pesam no risco.
-
-- Ponderação temporal — que valoriza o desempenho mais recente (60% do peso), mas sem perder a visão do histórico (25% e 15%).
-
-Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mais alto, menor a probabilidade percebida de problemas financeiros.
+    O **FinScore** transforma as demonstrações contábeis da empresa em um **número único (0–1000)**
+    que resume sua saúde econômico-financeira e risco de crédito. O cálculo combina informações de até
+    **três exercícios** e entrega um resultado comparável entre empresas e ao longo do tempo.
     """)
 
-    # 2) Fluxo visual do cálculo
-    st.markdown("#### Metodologia")
-
+    # 2) Metodologia (texto descritivo com termos técnicos explicados)
+    st.markdown("#### 📕 Metodologia")
     st.markdown("""
-    O **FinScore** transforma dados contábeis das **três demonstrações contábeis** mais recentes da empresa em um **número único (0–1000)** 
-    que resume sua saúde econômico-financeira e risco de crédito. O cálculo combina três etapas principais: 
-    **1) índices contábeis, 2) técnicas estatísticas e 3) ponderação temporal**.
+    A construção do FinScore ocorre em três blocos integrados:
 
-    **1) índices contábeis**
+    **a) Índices contábeis.** São extraídos indicadores que cobrem quatro dimensões: **liquidez**
+    (capacidade de honrar compromissos de curto prazo), **rentabilidade** (eficiência em gerar lucro),
+    **endividamento/alavancagem** (grau de dependência de capital de terceiros e folga para serviço da dívida)
+    e **eficiência operacional** (ritmo do ciclo financeiro e uso de ativos para gerar receita).
+    Esses índices não são lidos de forma isolada; o interesse é o **conjunto**, pois combinações específicas
+    revelam forças e fragilidades.
 
-    O ponto de partida do FinScore são indicadores extraídos das três últimas demonstrações financeiras que permitem avaliar
-    diferentes dimensões da empresa.
+    **b) Técnicas estatísticas.** Para comparação equilibrada, os índices passam por **padronização (z-score)**,
+    que os coloca em uma escala comum (média zero, desvio-padrão um), evitando que um indicador pese mais apenas
+    por ter valores naturalmente maiores. Em seguida, emprega-se **PCA (Análise de Componentes Principais)**,
+    que organiza informações correlacionadas em poucos **fatores independentes**. Duas noções guiam a leitura:
+    **cargas (loadings)**, que indicam a contribuição de cada índice em um fator, e **variância explicada**,
+    que mostra quanto do comportamento total aquele fator representa. Na prática, a PCA reduz complexidade e
+    destaca **quais índices realmente dirigem** o resultado em cada caso.
 
-    - **Liquidez** (Liquidez Corrente, Liquidez Seca, CCL/Ativo): mede a capacidade de honrar 
-      compromissos de curto prazo e sinaliza a folga de caixa.
-    - **Rentabilidade** (Margem Líquida, ROA, ROE, Margem EBITDA): indica a eficiência em transformar 
-      receita em lucro e o retorno obtido pelos ativos e pelo capital próprio.
-    - **Endividamento/Alavancagem** (Dívida/Ativo, Dívida Líquida/EBITDA, Cobertura de Juros): mostra 
-      o grau de dependência de recursos de terceiros e a capacidade operacional de sustentar o serviço da dívida.
-    - **Eficiência Operacional** (Giro do Ativo, PMR, PMP): avalia a velocidade do ciclo financeiro e o uso dos ativos para gerar receita.
+    **c) Ponderação temporal.** Para refletir a situação atual sem perder contexto, os escores anuais são
+    combinados com pesos **60% (t)**, **25% (t−1)** e **15% (t−2)**. O efeito é valorizar o desempenho recente,
+    preservando tendência e reduzindo a influência de anos atípicos.
+    """)
 
-                
-    2) **Técnicas estatísticas**
-    Esses índices não são avaliados de forma isolada: o FinScore relaciona sinais distintos, destacando 
-    combinações que revelam pontos fortes e fragilidades. Para tornar os indicadores comparáveis e extrair padrões relevantes, 
-    o FinScore padroniza e reduz a dimensionalidade dos dados, com vistas a otimizar a análise.
-
-    - **A padronização (z-score)** converte todos os índices para uma escala comum (média zero, desvio-padrão um), 
-      permitindo comparações equilibradas.
-    
-    - Já a **análise de componentes principais (PCA)** resume grupos de variáveis correlacionadas em fatores que não se sobrepõem, 
-      facilitando a interpretação dos dados, o que é crucial para um modelo de risco. Isto é computado com base em:
-        
-        - **Cargas (loadings)**: coeficientes que mostram o quanto cada índice influencia cada fator, ajudando a entender quais variáveis mais 
-        afetam o risco. As cargas (loadings) representam o grau de influência de cada variável original sobre os fatores extraídos, ou seja: 
-        valores mais altos indicam maior contribuição daquela variável para o fator;
-
-        - **Variância explicada**: indica o quanto cada fator consegue representar dos dados originais. Quanto maior essa variância, mais relevante 
-        é o fator na composição do escore.
-
-    Esse processo reduz a complexidade ao tempo em que dá mais eficência no cômputo do índice, pois em vez de acompanhar uma lista extensa de 
-    índices contábeis, o FinScore sopesa todos eles e escolhe, ao final, trabalhar com os fatores que concentram a essência das informações daquela
-    empresa, consoante o contexto dado pelo seu histórico recente.
-                """)
-
+    # Fluxograma do cálculo
     fluxograma = ASSETS_PATH / "finscore_pipeline.png"
     if fluxograma.exists():
         st.image(str(fluxograma), use_column_width=True)
     else:
         st.info("Fluxograma não encontrado em assets. Esperado: `finscore_pipeline.png`.")
-
-    st.markdown("""
-    **3) Ponderação temporal**
-                
-    O modelo também incorpora a evolução no tempo, considerando até três exercícios consecutivos, 
-    com pesos diferenciados:
-
-    - **Ano mais recente (t): 60%**
-    - **Ano anterior (t−1): 25%**
-    - **Dois anos antes (t−2): 15%**
-
-    Essa ponderação valoriza o desempenho atual sem desconsiderar a trajetória. Resultados recentes 
-    têm maior influência, mas ainda moderados pelo histórico. O escore final é convertido para a escala 
-    de **0 a 1000** e classificado em faixas de risco, o que facilita a leitura e a comunicação em 
-    decisões de crédito.
-    """)
 
     # 3) Índices considerados (tabela)
     st.markdown("#### Índices utilizados")
@@ -110,6 +67,31 @@ Em outras palavras, o FinScore funciona como um termômetro de risco: quanto mai
     else:
         st.info("Tabela de índices não encontrada em assets. Esperado: `finscore_indices_formulas.csv`.")
 
+    # 4) Ponderação temporal (texto + imagem)
+    st.markdown("#### Ponderação temporal")
+    st.markdown("""
+    O FinScore utiliza até três exercícios consecutivos para equilibrar **recência** e **consistência histórica**.
+    A distribuição de pesos é **60%** para o ano mais recente, **25%** para o ano anterior e **15%** para o ano anterior a esse.
+    """)
+    pesos_img = ASSETS_PATH / "finscore_pesos_temporais.png"
+    if pesos_img.exists():
+        st.image(str(pesos_img), use_column_width=False)
+        st.caption("Ano t: 60% · Ano t−1: 25% · Ano t−2: 15%")
+    else:
+        st.info("Gráfico de pesos não encontrado em assets. Esperado: `finscore_pesos_temporais.png`.")
+
+    # 5) Faixas de risco (texto + imagem)
+    st.markdown("#### Faixas de risco (FinScore 0–1000)")
+    st.markdown("""
+    O escore final é convertido para a escala **0–1000** e classificado em faixas de risco predefinidas,
+    facilitando a comunicação para decisão de crédito.
+    """)
+    faixas_img = ASSETS_PATH / "finscore_faixas_risco.png"
+    if faixas_img.exists():
+        st.image(str(faixas_img), use_column_width=True)
+    else:
+        st.info("Gráfico de faixas não encontrado em assets. Esperado: `finscore_faixas_risco.png`.")
+
 def _sec_glossario():
     st.subheader("Glossário")
     st.write("Esta é a página de glossário.")
@@ -121,7 +103,25 @@ def _sec_faq():
     # TODO: perguntas e respostas
 
 def render():
-    st.header("Sobre")
+    # --- CSS desta view: CENTRALIZAR A BARRA DE ABAS ---
+    st.markdown(
+        """
+        <style>
+        /* Centraliza o container das abas nesta página */
+        div[data-testid="stTabs"] > div[role="tablist"],
+        div[data-baseweb="tab-list"]{
+            display:flex;
+            justify-content:center;
+        }
+        /* Mantém largura natural dos botões de aba */
+        div[data-testid="stTabs"] button[role="tab"],
+        div[data-baseweb="tab"]{
+            flex: 0 0 auto;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # abas internas
     tab_met, tab_glos, tab_faq = st.tabs(TAB_LABELS)
