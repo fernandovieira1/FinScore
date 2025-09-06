@@ -1,0 +1,43 @@
+# 4) Pesos temporais
+    st.markdown("#### Ponderação temporal")
+    pesos_img = ASSETS_PATH / "finscore_pesos_temporais.png"
+    if pesos_img.exists():
+        st.image(str(pesos_img), use_column_width=False)
+        st.caption("Ano mais recente: 60% · Ano anterior: 25% · Dois anos antes: 15%")
+    else:
+        st.info("Gráfico de pesos não encontrado em assets. Esperado: `finscore_pesos_temporais.png`.")
+
+    # 5) Faixas de risco
+    st.markdown("#### Faixas de risco (FinScore 0–1000)")
+    faixas_img = ASSETS_PATH / "finscore_faixas_risco.png"
+    if faixas_img.exists():
+        st.image(str(faixas_img), use_column_width=True)
+    else:
+        st.info("Gráfico de faixas não encontrado em assets. Esperado: `finscore_faixas_risco.png`.")
+    st.markdown("""
+    - **0–125:** Muito Arriscado  
+    - **126–250:** Levemente Arriscado  
+    - **251–750:** Neutro  
+    - **751–875:** Levemente Sólido  
+    - **>875:** Muito Sólido
+    """)
+
+    # 6) Glossário rápido dos termos técnicos (curto, para não parecer paper)
+    with st.expander("Ver explicações rápidas dos termos estatísticos"):
+        st.markdown("""
+        - **Padronização** (z-score): transformar todos os índices para uma mesma escala (média = 0, desvio = 1),
+          permitindo **comparação justa** entre métricas diferentes.
+        - **PCA (Análise de Componentes Principais)**: técnica que **resume a informação** de muitos índices em poucos
+          **fatores independentes** (componentes) que representam os padrões mais fortes dos dados.
+        - **Loading**: **peso** de cada índice em um componente; mostra **o que puxa** cada fator.
+        - **Variância explicada**: indica **quanto do comportamento dos dados** aquele componente resume.
+        """)
+
+    # 7) Limites e governança
+    st.markdown("#### Limites e governança")
+    st.markdown("""
+    - **Qualidade dos dados**: o resultado depende da consistência dos balanços (preferir auditados).
+    - **Dados extremos/faltantes**: tratamos na preparação, mas recomenda-se checagem prévia.
+    - **Contexto setorial**: fatores podem mudar conforme o setor; por isso o modelo recalcula os pesos a cada rodada.
+    - **Versionamento**: cada cálculo registra a versão do modelo (ex.: v9.7) para assegurar **rastreabilidade**.
+    """)

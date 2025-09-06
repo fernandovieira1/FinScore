@@ -35,7 +35,7 @@ Até aqui:
 ---
 
 ===================================================
-CONFIGURAÇÃO DE VISUAL E FUNCIONALIDADES BÁSICAS
+1. CONFIGURAÇÃO DE VISUAL E FUNCIONALIDADES BÁSICAS
 ===================================================
 * (x) Cores
 * (x) Integração dos menus com logos e posicionamento 
@@ -91,5 +91,26 @@ Até aqui:
 * (x) Formatação e alinhamento de textos nas views/abas
 ---
 Até aqui:
-[v. 0.6.1, de 05/09/2025]
+[v. 0.6.01, de 05/09/2025]
 ---
+
+============
+3. SOBRE
+============
+* ( ) Seção Metodologia
+---
+Até aqui:
+[v. 0.7, de 06/09/2025]
+---
+
+* ( ) Seção Glossário
+* ( ) Seção FAQ
+
+============
+3. PARECER
+============
+* ( ) Configurar OpenAI e LangChain
+* ( ) Definir e configurar dados que servirão de parâmetro
+* ( ) Vincular LangChain no Código
+* ( ) Configurar modelo padrão
+* ( ) Testar diferentes resultados/cenários
