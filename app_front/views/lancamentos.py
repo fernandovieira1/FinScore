@@ -86,8 +86,12 @@ def _sec_inicio():
 
     # Botão “Iniciar” permanece igual
     if st.button("Iniciar"):
-        st.session_state["novo_tab"] = "Cliente"
-        st.rerun()
+    st.session_state["novo_tab"] = "Cliente"
+    try:
+        st.query_params["p"] = "lanc"
+    except Exception:
+        pass
+    st.rerun()
 
 def _sec_cliente():
     st.header("Dados do Cliente")
@@ -172,6 +176,13 @@ def _sec_dados():
 def render():
     ss = st.session_state
     ss.setdefault("novo_tab", "Início")
+
+    # >>> FIX: mantenha o slug desta página sempre como ?p=lanc
+    try:
+        if st.query_params.get("p") != "lanc":
+            st.query_params["p"] = "lanc"
+    except Exception:
+        pass
 
     # ===== CSS específico desta view =====
     st.markdown(

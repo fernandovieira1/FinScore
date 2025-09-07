@@ -67,7 +67,7 @@ def render_topbar(current_page: str | None = None) -> None:
         <div class="mm-wrap">
           <div class="mm-topbar">
             <nav class="nav">
-              <a class="pill-btn {is_active("Início")}"        href="?p=home" target="_self">Início</a>
+              <a class="pill-btn {is_active("Página Inicial")}"        href="?p=home" target="_self">Página Inicial</a>
               <a class="pill-btn"                              href="?p=lanc" target="_self">Definir1</a>
               <a class="pill-btn"                              href="?p=lanc" target="_self">Definir2</a>
               <a class="pill-btn {is_active("Guia Rápido")}"   href="?p=guia" target="_self">Guia Rápido</a>

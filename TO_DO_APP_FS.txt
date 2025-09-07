@@ -31,6 +31,8 @@ Ideias
 ===================
 0. SETAR O PROJETO
 ===================
+
+-----Novidades-----
 * (x) Mockup Projeto
 * (x) Organizar Github e VS Code
 * (x) Instalar pacotes python
@@ -46,6 +48,8 @@ Até aqui:
 ===================================================
 1. CONFIGURAÇÃO DE VISUAL E FUNCIONALIDADES BÁSICAS
 ===================================================
+
+-----Novidades-----
 * (x) Cores
 * (x) Integração dos menus com logos e posicionamento 
 * (x) Botões
@@ -55,26 +59,29 @@ Até aqui:
 [v. 0.2, de 02/09/2025]
 ---
 
+-----Novidades-----
 * (x) Logo Assertif em todas as seções/views
 ---
 Até aqui:
 [v. 0.3, de 02/09/2025]
 ---
 
+-----Novidades-----
 * (x) Planilha Excel (local) e Google Docs (web) funcionando
 ---
 Até aqui:
 [v. 0.4, de 02/09/2025]
 ---
 
+-----Novidades-----
 * (x) Após "processamento concluído" automaticamente vai para a seção "Resumo"
 ---
 Até aqui:
 [v. 0.5, de 02/09/2025]
 ---
 
+-----Novidades-----
 * (x) Substituição de radio por abas na view/seção 'Novo'
-
 * (x) Seções André
     - (x) Readequação da v. 0.5 (views/seções diferentes)
     - (x) Resultados (Abas: Resumo, Tabelas e Gráficos da v. 0.1)
@@ -97,6 +104,7 @@ Até aqui:
 [v. 0.6, de 02/09/2025]
 ---
 
+-----Novidades-----
 * (x) Formatação e alinhamento de textos nas views/abas
 ---
 Até aqui:
@@ -107,18 +115,21 @@ Até aqui:
 3. SOBRE
 ============
 
+-----Novidades-----
 * (x) Seção Metodologia iniciada
 ---
 Até aqui:
 [v. 0.7, de 06/09/2025]
 ---
 
+-----Novidades-----
 * (x) Criar topbar na parte superior (início, novo, relatórios, usuários etc)
 ---
 Até aqui:
 [v. 0.7.10, de 06/09/2025]
 ---
 
+-----Novidades-----
 * (x) Encerrada a formatação da versão estática da topbar
 * (x) Centralização das abas e formatação de textos nas seções/views
 * (x) Renomear as views: 'Novo' para 'Lançamentos', e 'Resultados' para 'Análise'
@@ -127,12 +138,14 @@ Até aqui:
 [v. 0.7.11, de 06/09/2025]
 ---
 
+-----Novidades-----
 * (x) Guia rápido e Lançamentos/Início (ideia inicial)
 ---
 Até aqui:
 [v. 0.7.12, de 07/09/2025]
 ---
 
+-----Novidades-----
 * ( ) Topbar interativa
     - (x) Criação da página Guia Rápido
     - (x) Criação da página Início
@@ -142,10 +155,17 @@ Até aqui:
 [v. 0.7.13, de 07/09/2025]
 ---
 
+---Ajustes---
+* (x) Troquei 'Início' por 'Página Principal' em topbar (evitar confusão com lancamentos.py)
+* (x) Ajuste da largura da topbar para se alinhar ao texto
+
+-----Novidades-----
+* (x) Remover opção de fechar barra lateral [v. 0.7.13a, de 07/09/2025]
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
 * ( ) Inserir ícones nos títulos das abas de Lançamentos
 
+-----Novidades-----
 * ( ) Seção Glossário
 * ( ) Seção FAQ 
 * ( ) Remover "View fullscreen" da barra lateral

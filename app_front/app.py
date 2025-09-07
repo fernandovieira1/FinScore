@@ -33,7 +33,8 @@ p,li,label,span{ color:var(--text); }
   padding:18px 18px 14px; border:1px solid rgba(2,6,23,.06); margin-bottom:1rem;}
 .card-title{ font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.25rem;}
 .card-sub{ font-size:.82rem; color:var(--muted); margin-top:-2px;}
-/* sidebar */
+
+/* -------- sidebar -------- */
 section[data-testid="stSidebar"] > div:first-child{ background:#cdcdcd !important; padding-top:0 !important;}
 section[data-testid="stSidebar"] .block-container{ padding-top:0 !important; padding-bottom:.8rem;}
 section[data-testid="stSidebar"] .side-logo{ height:110px; display:flex; align-items:center; justify-content:center;
@@ -48,6 +49,16 @@ section[data-testid="stSidebar"] .nav-link-selected span,
 section[data-testid="stSidebar"] .nav-link-selected i{ color:#001733 !important;}
 section[data-testid="stSidebar"] .nav-link{ background-color:#cdcdcd !important; border-radius:0 !important; margin:0 !important; padding:10px 12px !important;}
 section[data-testid="stSidebar"] .nav-link-selected{ background-color:#bdbdbd !important; border-left:4px solid #8a8a8a !important;}
+
+/* REMOVER o botão de fechar/colapsar (“X”) da sidebar (cobertura ampla de seletores) */
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+section[data-testid="stSidebar"] [data-testid="baseButton-header"],
+section[data-testid="stSidebar"] button[aria-label="Close"],
+section[data-testid="stSidebar"] button[aria-label="Fechar"],
+section[data-testid="stSidebar"] > div:first-child button{
+  display: none !important;
+}
+
 hr{ border-color: rgba(2,6,23,.08); }
 </style>
 """, unsafe_allow_html=True)
@@ -57,25 +68,25 @@ from views import analise as view_analise
 from views import lancamentos as view_lancamentos
 from views import parecer, sobre, contato
 from views import guia_rapido
-from views import inicio as view_inicio       # view da página "Início"
+from app_front.views import home as view_home       # view da página "Home"
 from components.topbar import render_topbar
 from components.nav import render_sidebar
 
 # --------------- estado global ---------------
 ss = st.session_state
+ss.setdefault("page", "Home")
 ss.setdefault("meta", {})
 ss.setdefault("df", None)
 ss.setdefault("out", None)
 ss.setdefault("erros", {})
-ss.setdefault("novo_tab", "Início")
+ss.setdefault("novo_tab", "Home")
 ss.setdefault("analise_tab", "Resumo")
-ss.setdefault("page", "Início")                  # começa em Início
 ss.setdefault("_from_topbar_once", False)
 ss.setdefault("_last_slug", None)                # <— p anterior da URL
 
 # --------------- rotas ---------------
 ROUTES = {
-    "Início": view_inicio.render,
+    "Home": view_home.render,
     "Lançamentos": view_lancamentos.render,
     "Análise": view_analise.render,
     "Parecer": parecer.render,
@@ -86,7 +97,7 @@ ROUTES = {
 
 # --- mapa slug <-> rota para ?p=... ---
 slug_map = {
-    "home": "Início",
+    "home": "Home",
     "lanc": "Lançamentos",
     "guia": "Guia Rápido",
     "analise": "Análise",
@@ -149,7 +160,7 @@ ss["_navigate_to"] = navigate_to
 
 # --------------- render ---------------
 try:
-    ROUTES.get(ss.get("page", "Início"), view_inicio.render)()
+    ROUTES.get(ss.get("page", "Home"), view_home.render)()
 except Exception as e:
     st.error("Erro ao renderizar a página selecionada.")
     st.exception(e)
