@@ -133,12 +133,21 @@ Até aqui:
 [v. 0.7.12, de 07/09/2025]
 ---
 
-* ( ) Guia Rápido (topbar)
+* ( ) Topbar interativa
+    - (x) Criação da página Guia Rápido
+    - (x) Criação da página Início
+    - (x) Ajuste para igualar largura com as margens dos textos
+---
+Até aqui:
+[v. 0.7.13, de 07/09/2025]
+---
+
+* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
 * ( ) Inserir ícones nos títulos das abas de Lançamentos
+
 * ( ) Seção Glossário
 * ( ) Seção FAQ 
-* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Remover "View fullscreen" da barra lateral
 
 ============

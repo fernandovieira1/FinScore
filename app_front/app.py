@@ -1,7 +1,6 @@
 from pathlib import Path
 import sys
 import streamlit as st
-import base64
 
 # ---------------- path setup ----------------
 APP_DIR = Path(__file__).resolve().parent          # .../FinScore/app_front
@@ -53,12 +52,12 @@ hr{ border-color: rgba(2,6,23,.08); }
 </style>
 """, unsafe_allow_html=True)
 
-ASSETS = Path(__file__).resolve().parent / "assets"
-
-# --------------- imports das views ---------------
+# --------------- imports das views/comp ---------------
 from views import analise as view_analise
 from views import lancamentos as view_lancamentos
 from views import parecer, sobre, contato
+from views import guia_rapido
+from views import inicio as view_inicio       # view da página "Início"
 from components.topbar import render_topbar
 from components.nav import render_sidebar
 
@@ -70,26 +69,66 @@ ss.setdefault("out", None)
 ss.setdefault("erros", {})
 ss.setdefault("novo_tab", "Início")
 ss.setdefault("analise_tab", "Resumo")
-ss.setdefault("page", "Lançamentos")
-
-# --------------- topbar ---------------
-render_topbar()
+ss.setdefault("page", "Início")                  # começa em Início
+ss.setdefault("_from_topbar_once", False)
+ss.setdefault("_last_slug", None)                # <— p anterior da URL
 
 # --------------- rotas ---------------
 ROUTES = {
+    "Início": view_inicio.render,
     "Lançamentos": view_lancamentos.render,
     "Análise": view_analise.render,
     "Parecer": parecer.render,
+    "Guia Rápido": guia_rapido.render,
     "Sobre": sobre.render,
     "Contato": contato.render,
 }
 
-pagina_sidebar = render_sidebar(current_page=ss["page"])
-if pagina_sidebar in ROUTES and pagina_sidebar != ss["page"]:
-    ss["page"] = pagina_sidebar
-    st.rerun()
+# --- mapa slug <-> rota para ?p=... ---
+slug_map = {
+    "home": "Início",
+    "lanc": "Lançamentos",
+    "guia": "Guia Rápido",
+    "analise": "Análise",
+    "parecer": "Parecer",
+    "sobre": "Sobre",
+    "contato": "Contato",
+}
+rev_slug_map = {v: k for k, v in slug_map.items()}
 
-# remove hash de URL de outras views
+def _set_query_for(page: str):
+    """Sincroniza ?p=... com a página atual."""
+    slug = rev_slug_map.get(page)
+    if slug:
+        st.query_params["p"] = slug
+
+# --- navegação via query param (topbar com href="?p=...") ---
+curr_slug = st.query_params.get("p", None)
+if curr_slug:
+    target = slug_map.get(curr_slug, curr_slug)
+    if target in ROUTES:
+        # sempre respeita o slug atual
+        ss["page"] = target
+        # ativa o guard APENAS quando o slug mudar (clique novo na topbar)
+        if curr_slug != ss["_last_slug"]:
+            ss["_from_topbar_once"] = True
+        ss["_last_slug"] = curr_slug
+
+# --------------- topbar ---------------
+render_topbar(current_page=ss["page"])
+
+# --------------- sidebar ---------------
+pagina_sidebar = render_sidebar(current_page=ss["page"])
+if ss.pop("_from_topbar_once", False):
+    # ignora 1x o sidebar logo após clique na topbar
+    pass
+else:
+    if pagina_sidebar in ROUTES and pagina_sidebar != ss["page"]:
+        ss["page"] = pagina_sidebar
+        _set_query_for(ss["page"])
+        st.rerun()
+
+# remove hash de URL de outras views (estético)
 st.markdown("""
 <script>
 try{
@@ -103,13 +142,14 @@ try{
 def navigate_to(page: str):
     if page in ROUTES:
         ss["page"] = page
+        _set_query_for(page)
         st.rerun()
 
 ss["_navigate_to"] = navigate_to
 
 # --------------- render ---------------
 try:
-    ROUTES.get(ss.get("page", "Lançamentos"), view_lancamentos.render)()
+    ROUTES.get(ss.get("page", "Início"), view_inicio.render)()
 except Exception as e:
     st.error("Erro ao renderizar a página selecionada.")
     st.exception(e)
