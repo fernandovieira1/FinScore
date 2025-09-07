@@ -75,12 +75,58 @@ def _sec_inicio():
     st.header("Bem-vindo ao FinScore")
     st.markdown(
         """
-        **Fluxo de uso**
-        1) Aba **Cliente** → informe empresa, período e Serasa.  
-        2) Aba **Dados** → envie o Excel (prioriza `lancamentos`).  
-        3) Use **Análise** para visualizar resultados.  
-        4) Gere o **Parecer** (PDF/Word) na aba correspondente.
+        O FinScore é uma ferramenta de análise financeira que utiliza dados contábeis para gerar um parecer detalhado sobre a saúde 
+        financeira de uma empresa.
+
+        Na barra lateral esquerda, você pode navegar entre as diferentes seções do aplicativo, e, conforme as seções, abas centralizadas
+        na parte superior da tela indicarão o conteúdo correspondente. 
+        
+            """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
+    st.markdown("#### 🟥 Seções disponíveis")
+    st.markdown(
         """
+        As seções disponíveis são:
+        - <span style='color:#0d1a33;'><b>|Lançamentos|</b></span>: Onde você insere os dados do cliente e as demonstrações contábeis.
+        - <span style='color:#0d1a33;'><b>|Análise|</b></span>: Onde você visualiza os resultados preliminares da análise financeira.
+        - <span style='color:#0d1a33;'><b>|Parecer|</b></span>: Onde você pode gerar e editar um parecer em formato PDF.
+        - <span style='color:#0d1a33;'><b>|Sobre|</b></span>: Informações sobre o FinScore e seus desenvolvedores.
+        - <span style='color:#0d1a33;'><b>|Contato|</b></span>: Formulário para enviar dúvidas, sugestões ou relatar problemas.
+
+        As seções <span style='color:#0d1a33;'><b>|Análise|</b></span> e <span style='color:#0d1a33;'><b>|Parecer|</b></span> estarão disponíveis somente após o cálculo do FinScore, feitos na seção
+        <span style='color:#0d1a33;'><b>|Lançamentos|</b></span>, conforme instruções abaixo.
+
+                    """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
+    st.markdown("#### 🔶 Como lançar os dados")
+    st.markdown(
+        """
+        Para dar início, clique no botão <span style='color:#004f94;'><b>[Iniciar]</b></span> abaixo e siga os passos indicados:
+
+        Na aba *Cliente*, informe nome e CNPJ da empresa, anos inicial e final das demonstrações contábeis utilizadas e o escore Serasa.
+
+        Logo após, vá para a aba *Dados* e escolha uma das opções para fornecer os dados contábeis:
+        1) Upload de arquivo **Excel**: Envie a planilha (*xlsx*) com as demonstrações contábeis; ou
+        2) Link do **Google Sheets**: Cole o link de uma planilha do Google Sheets; ou
+        3) Lance os dados **manualmente no formulário**.
+
+        Feito isto, clique no botão <span style='color:#004f94;'><b>[Calcular FinScore]</b></span>.
+                """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
+   
+    st.markdown("#### ☑️ Como analisar e interpretar os resultados")
+    st.markdown(
+        """ 
+        Conheça os resultados preliminares na aba <span style='color:#0d1a33;'><b>|Análise|</b></span>, e depois, se desejar, visualize (*pdf*) 
+        ou edite o parecer na aba correspondente.
+        """,
+        unsafe_allow_html=True,
     )
     st.write("")
     # botão menor e centralizado (sem use_container_width)

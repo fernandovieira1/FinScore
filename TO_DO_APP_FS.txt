@@ -9,6 +9,7 @@ Diversos
 Logo: https://turbologo.com/
 Emojis: https://emojipedia.org/
 Cores hex: https://www.color-hex.com/
+Streamlit: https://docs.streamlit.io/
 
 ===================
 Ideias
@@ -126,10 +127,19 @@ Até aqui:
 [v. 0.7.11, de 06/09/2025]
 ---
 
-* ( ) Adequar texto Lançamentos/Início
+* (x) Guia rápido e Lançamentos/Início (ideia inicial)
+---
+Até aqui:
+[v. 0.7.12, de 07/09/2025]
+---
+
+* ( ) Guia Rápido (topbar)
+* ( ) Reescrita de Lançamentos/Início
 * ( ) Inserir ícones nos títulos das abas de Lançamentos
 * ( ) Seção Glossário
-* ( ) Seção FAQ
+* ( ) Seção FAQ 
+* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
+* ( ) Remover "View fullscreen" da barra lateral
 
 ============
 3. PARECER

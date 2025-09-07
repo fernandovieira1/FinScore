@@ -91,7 +91,7 @@ def render_topbar():
           <span class="pill-btn">Início</span>
           <span class="pill-btn">Definir1</span>
           <span class="pill-btn">Definir2</span>
-          <span class="pill-btn">Definir3</span>
+          <span class="pill-btn">Guia Rápido</span>
         </nav>
 
         <div class="right">
