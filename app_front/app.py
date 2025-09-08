@@ -24,66 +24,19 @@ from views import guia_rapido
 from views import definir1, definir2
 from app_front.views import home as view_home
 
+# --------------- carregar CSS externo ---------------
+def load_css():
+    # O CSS está na pasta styles dentro de app_front
+    css_path = APP_DIR / "styles" / "main.css"
+    if css_path.exists():
+        with open(css_path, "r", encoding="utf-8") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    else:
+        st.warning("Arquivo CSS não encontrado. Usando estilo padrão.")
+
 # --------------- tema / css ---------------
-st.markdown("""
-<style>
-:root {
-  --bg: #f2f4f5; --card: #ffffff; --text: #1f2937; --muted: #6b7280;
-  --accent: #0d47a1; --accent2: #1976d2; --sidebar: #cdcdcd;
-  --menu-text: #001733; --primary-btn: #0074d9; --side-logo-top-fix: -38px;
-}
-header[data-testid="stHeader"] { display: none !important; }
-div[data-testid="stToolbar"] { display: none !important; }
-[data-testid="stAppViewContainer"] > .main { padding-top: 0 !important; margin-top: 0 !important; }
-#MainMenu { display: none; }
-[data-testid="stAppViewContainer"] { background: var(--bg) !important; }
-.block-container { padding-top: .5rem; padding-bottom: 2rem; }
-.block-container > hr:first-of-type { display: none !important; }
-h1, h2, h3 { color: var(--text); letter-spacing: .2px; }
-p, li, label, span { color: var(--text); }
-.card { 
-  background: var(--card); border-radius: 14px; box-shadow: 0 6px 22px rgba(16,24,40,.06), 0 2px 8px rgba(16,24,40,.04);
-  padding: 18px 18px 14px; border: 1px solid rgba(2,6,23,.06); margin-bottom: 1rem;
-}
-.card-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
-.card-sub { font-size: .82rem; color: var(--muted); margin-top: -2px; }
-
-/* -------- sidebar -------- */
-section[data-testid="stSidebar"] > div:first-child { background: #cdcdcd !important; padding-top: 0 !important; }
-section[data-testid="stSidebar"] .block-container { padding-top: 0 !important; padding-bottom: .8rem; }
-section[data-testid="stSidebar"] .side-logo { 
-  height: 110px; display: flex; align-items: center; justify-content: center;
-  margin: var(--side-logo-top-fix) 8px 10px; border-bottom: 1px solid #bdbdbd60;
-}
-section[data-testid="stSidebar"] .side-logo img { 
-  display: block !important; margin: 0 auto !important; max-width: 80% !important; height: auto !important;
-}
-section[data-testid="stSidebar"] .nav-link,
-section[data-testid="stSidebar"] .nav-link span,
-section[data-testid="stSidebar"] .nav-link i,
-section[data-testid="stSidebar"] .icon,
-section[data-testid="stSidebar"] .nav-link-selected,
-section[data-testid="stSidebar"] .nav-link-selected span,
-section[data-testid="stSidebar"] .nav-link-selected i { color: #001733 !important; }
-section[data-testid="stSidebar"] .nav-link { 
-  background-color: #cdcdcd !important; border-radius: 0 !important; margin: 0 !important; padding: 10px 12px !important;
-}
-section[data-testid="stSidebar"] .nav-link-selected { 
-  background-color: #bdbdbd !important; border-left: 4px solid #8a8a8a !important;
-}
-
-/* ocultar o botão de fechar/colapsar a sidebar */
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
-section[data-testid="stSidebar"] [data-testid="baseButton-header"],
-section[data-testid="stSidebar"] button[aria-label="Close"],
-section[data-testid="stSidebar"] button[aria-label="Fechar"],
-section[data-testid="stSidebar"] > div:first-child button {
-  display: none !important;
-}
-
-hr { border-color: rgba(2,6,23,.08); }
-</style>
-""", unsafe_allow_html=True)
+load_css()
 
 # --------------- inicialização do estado ---------------
 AppState.initialize()

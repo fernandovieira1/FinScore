@@ -1,15 +1,31 @@
 
-******************
-** APP FINSCORE **
-******************
+******************************************************
+******************** APP FINSCORE ********************
+******************************************************
 
-=========
-Diversos
-=========
+* Feito por F.V.
+* Cliente: Assertif
+* Início: 24/07/2025
+
+//////////////////////////////////////////////
+Controle de Versões
+//////////////////////////////////////////////
+** Aplha    :  0.x.yy
+** Beta     :  1.x.yy
+** Estáveis : 2+.x.yy (+codinome: pers. lit.)
+* x         : Mudanças significativas
+* y         : Pequenos ajustes  
+* Letras    : Alterações e ajustes incrementais, junto a yy (a, b, ..., z)
+......................................................................................................................
+
+====================================
+Links e dicas
+====================================
 Logo: https://turbologo.com/
 Emojis: https://emojipedia.org/
 Cores hex: https://www.color-hex.com/
 Streamlit: https://docs.streamlit.io/
+......................................................................................................................
 
 ====================================
 Ideias
@@ -26,7 +42,8 @@ Ideias
 - Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores
 - Botões e subseções da rádio 'Dados' em azul, não verde
-- 
+......................................................................................................................
+
 
 ====================================
 0. SETAR O PROJETO
@@ -36,7 +53,7 @@ Ideias
 * (x) Mockup Projeto
 * (x) Organizar Github e VS Code
 * (x) Instalar pacotes python
-* (x) Versão alpha 1
+* (x) Versão alpha 0.1
     - (x) Menus
     - (x) Gráficos e tabelas
     - (x) Apresentação André
@@ -177,9 +194,16 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Clicar em 'Sobre' após calcular o FinScore precisa de clique duplo
+* (x) Clicar em 'Sobre' após calcular o FinScore precisa de clique duplo
+* ( ) Diminuir 1cm de cada lado as margens dos textos [Não funcionou - decidi manter como está]
+    - (x) Separado o css de app.py (styles/main.css)
+---
+Até aqui:
+[v. 0.7.15a, de 08/09/2025]
+---
 
 =====Novidades=====
+* ( ) Criar uma seção/view 'Novo', diferente de 'Home' (sidbar / nav), que de fato é igual a 'Página Inicial' (topbar)
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
 * ( ) Inserir ícones nos títulos das abas de Lançamentos
@@ -188,6 +212,7 @@ Até aqui:
 * ( ) Seção Glossário
 * ( ) Seção FAQ 
 * ( ) Remover "View fullscreen" da barra lateral
+......................................................................................................................
 
 ============
 3. PARECER
@@ -197,3 +222,6 @@ Até aqui:
 * ( ) Vincular LangChain no Código
 * ( ) Configurar modelo padrão
 * ( ) Testar diferentes resultados/cenários
+......................................................................................................................
+
+
