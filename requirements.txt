@@ -27,3 +27,4 @@ reportlab==4.2.2
 openai==1.37.0
 langchain==0.2.10
 langchain-community==0.2.9
+# chromadb==0.3.28

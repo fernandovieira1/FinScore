@@ -11,9 +11,9 @@ Emojis: https://emojipedia.org/
 Cores hex: https://www.color-hex.com/
 Streamlit: https://docs.streamlit.io/
 
-===================
+====================================
 Ideias
-===================
+====================================
 - Criar página inicial, como painel:
     \ Breve texto sobre o FINSCORE
     \ Total de cálculos
@@ -28,9 +28,9 @@ Ideias
 - Botões e subseções da rádio 'Dados' em azul, não verde
 - 
 
-===================
+====================================
 0. SETAR O PROJETO
-===================
+====================================
 
 =====Novidades=====
 * (x) Mockup Projeto
@@ -45,9 +45,9 @@ Até aqui:
 [v. 0.1, de 19/08/2025]
 ---
 
-===================================================
-1. CONFIGURAÇÃO DE VISUAL E FUNCIONALIDADES BÁSICAS
-===================================================
+====================================
+1. CONFIGURAÇÃO DE VISUAL
+====================================
 
 =====Novidades=====
 * (x) Cores
@@ -111,9 +111,9 @@ Até aqui:
 [v. 0.6.01, de 05/09/2025]
 ---
 
-============
-3. SOBRE
-============
+====================================
+2. SEÇÕES E FUNCIONALIDADES
+====================================
 
 =====Novidades=====
 * (x) Seção Metodologia iniciada
