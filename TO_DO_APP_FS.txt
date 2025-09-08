@@ -128,9 +128,9 @@ Até aqui:
 [v. 0.6.01, de 05/09/2025]
 ---
 
-====================================
-2. SEÇÕES E FUNCIONALIDADES
-====================================
+===============================================
+2. SEÇÕES (topbar e sidebar) E FUNCIONALIDADES
+===============================================
 
 =====Novidades=====
 * (x) Seção Metodologia iniciada
@@ -203,15 +203,18 @@ Até aqui:
 ---
 
 =====Novidades=====
+* ( ) Remover "View fullscreen" da barra lateral
 * ( ) Criar uma seção/view 'Novo', diferente de 'Home' (sidbar / nav), que de fato é igual a 'Página Inicial' (topbar)
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
 * ( ) Inserir ícones nos títulos das abas de Lançamentos
 
 =====Novidades=====
-* ( ) Seção Glossário
-* ( ) Seção FAQ 
-* ( ) Remover "View fullscreen" da barra lateral
+* ( ) Textos seções:
+    - ( ) Guia Rápido
+    - ( ) Sobre/Metodologia
+    - ( ) Sobre/Glossário
+    - ( ) Sobre/FAQ
 ......................................................................................................................
 
 ============
