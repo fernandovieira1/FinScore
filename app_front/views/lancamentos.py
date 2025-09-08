@@ -5,40 +5,42 @@ from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore
 
 # Rótulos com ícones (ordem fixa na UI)
-TAB_LABELS = {
-    "Início": "🏁 Início",
-    "Cliente": "🏢 Cliente",
-    "Dados": "📥 Dados",
-}
-TAB_ORDER = ["Início", "Cliente", "Dados"]  # ordem visual fixa
-
+TAB_LABELS = {"Início": "🏁 Início", "Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
+TAB_ORDER = ["Início", "Cliente", "Dados"]  # Ordem visual fixa
 
 def _js_select_tab(label_with_icon: str):
     """Força a seleção visual de uma aba do st.tabs sem reordenar a lista."""
     components.html(
         f"""
         <script>
-        (function(){{
+        (function() {{
           const target = `{label_with_icon}`;
-          function clickTab(){{
+          function clickTab() {{
             const btns = window.parent.document.querySelectorAll('button[role="tab"]');
-            for (const b of btns){{
+            for (const b of btns) {{
+              // Matching mais robusto: usa includes() para ignorar espaços extras
               const txt = (b.innerText || b.textContent || "").trim();
-              if (txt === target) {{ b.click(); return true; }}
+              if (txt.includes(target.replace(/\\s/g, ' ').trim())) {{  // Remove quebras de linha e compara
+                b.click();
+                return true;
+              }}
             }}
             return false;
           }}
           let attempts = 0;
           const iv = setInterval(() => {{
+            if (clickTab() || attempts > 30) {{  // Aumentado para 3s de tentativas
+              clearInterval(iv);
+            }}
             attempts += 1;
-            if (clickTab() || attempts > 20) clearInterval(iv);
           }}, 100);
+          // Fallback: tenta uma vez após delay inicial
+          setTimeout(clickTab, 200);
         }})();
         </script>
         """,
         height=0,
     )
-
 
 def _auto_save_cliente():
     ss = st.session_state
@@ -46,12 +48,12 @@ def _auto_save_cliente():
 
     # --- FORMULÁRIO CLIENTE ---
     empresa = st.text_input("Nome da Empresa", value=meta.get("empresa", ""), placeholder="Ex.: ACME S.A.")
-    cnpj    = st.text_input("CNPJ", value=meta.get("cnpj", ""), placeholder="00.000.000/0000-00")
-    ai_str  = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="AAAA")
-    af_str  = st.text_input("Ano Final",   value=str(meta.get("ano_final", "")),   placeholder="AAAA")
+    cnpj = st.text_input("CNPJ", value=meta.get("cnpj", ""), placeholder="00.000.000/0000-00")
+    ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="AAAA")
+    af_str = st.text_input("Ano Final", value=str(meta.get("ano_final", "")), placeholder="AAAA")
     serasa_str = st.text_input("Serasa Score (0–1000)", value=str(meta.get("serasa", "")), placeholder="Ex.: 550")
 
-    # normalização
+    # Normalização
     empresa = empresa.strip()
     cnpj = cnpj.strip()
     ai = int(ai_str) if ai_str.strip().isdigit() else None
@@ -70,8 +72,6 @@ def _auto_save_cliente():
     else:
         st.success("Cliente salvo automaticamente.")
 
-
-# app_front/views/lancamentos.py  (apenas a função _sec_inicio alterada)
 def _sec_inicio():
     st.header("Bem-vindo ao FinScore")
     st.markdown(
@@ -84,26 +84,28 @@ def _sec_inicio():
     )
     st.write("")
 
-    # Botão “Iniciar” permanece igual
+    # Botão "Iniciar": muda a aba para Cliente e sinaliza navegação interna
     if st.button("Iniciar"):
-    st.session_state["novo_tab"] = "Cliente"
-    try:
-        st.query_params["p"] = "lanc"
-    except Exception:
-        pass
-    st.rerun()
+        st.session_state["novo_tab"] = "Cliente"
+        st.session_state["_internal_nav"] = True
+        st.rerun()
 
 def _sec_cliente():
     st.header("Dados do Cliente")
     _auto_save_cliente()
     st.write("")
-    # botão menor e centralizado
     if st.button("Enviar Dados"):
         st.session_state["novo_tab"] = "Dados"
+        st.session_state["_internal_nav"] = True
         st.rerun()
 
-
 def _sec_dados():
+    # DEBUG: Verificar se há referências a _navigate_to
+    if "_navigate_to" in st.session_state:
+        st.warning("⚠️ _navigate_to encontrado no session_state. Removendo...")
+        del st.session_state["_navigate_to"]
+    
+    # ... resto do código existente ...
     st.header("Dados Contábeis")
     modo = st.radio(
         "Como deseja fornecer os dados contábeis?",
@@ -140,11 +142,10 @@ def _sec_dados():
             st.warning("🔎 Checagem de campos mínimos (informativa):")
             st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
         st.success("✅ Dados contábeis salvos.")
-        st.session_state.out = None  # limpa resultados se dados mudaram
+        st.session_state.out = None  # Limpa resultados se dados mudaram
 
     st.write("---")
 
-    # botão "Calcular" menor e centralizado
     if st.button("Calcular FinScore"):
         ss = st.session_state
         pend = validar_cliente(ss.meta)
@@ -156,33 +157,26 @@ def _sec_dados():
             try:
                 with st.spinner("Calculando FinScore…"):
                     res = run_finscore(ss.df, ss.meta)
-                # aceita dict ou tupla/lista
+                # Aceita dict ou tupla/lista
                 out = res[0] if isinstance(res, (list, tuple)) else res
                 if not isinstance(out, dict):
                     raise ValueError("Formato de retorno inesperado do run_finscore.")
                 ss.out = out
-                ss["analise_tab"] = "Resumo"  # abre na aba Resumo
+                ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
                 st.success("✅ Processamento concluído.")
-                # Navega para Análise
-                if "_navigate_to" in ss:
-                    ss["_navigate_to"]("Análise")
-                else:
-                    ss["page"] = "Análise"
-                    st.rerun()
+                
+                # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
+                # Método 1: Via session state + query params (mais robusto)
+                ss.page = "Análise"
+                st.query_params["p"] = "analise"
+                st.rerun()
+                
             except Exception as e:
                 st.error(f"Erro no processamento: {e}")
 
-
 def render():
     ss = st.session_state
-    ss.setdefault("novo_tab", "Início")
-
-    # >>> FIX: mantenha o slug desta página sempre como ?p=lanc
-    try:
-        if st.query_params.get("p") != "lanc":
-            st.query_params["p"] = "lanc"
-    except Exception:
-        pass
+    # Removido o reset automático de novo_tab para preservar navegação interna (ex.: após 'Iniciar')
 
     # ===== CSS específico desta view =====
     st.markdown(
@@ -190,37 +184,34 @@ def render():
         <style>
         /* Centraliza barra de abas desta view */
         div[data-testid="stTabs"] > div[role="tablist"],
-        div[data-baseweb="tab-list"]{
-            display:flex; justify-content:center;
+        div[data-baseweb="tab-list"] {
+            display: flex; justify-content: center;
         }
         div[data-testid="stTabs"] button[role="tab"],
-        div[data-baseweb="tab"]{ flex: 0 0 auto; }
+        div[data-baseweb="tab"] { flex: 0 0 auto; }
 
         /* Garante títulos alinhados à esquerda */
-        h1, h2, h3{ text-align:left !important; }
+        h1, h2, h3 { text-align: left !important; }
 
         /* ---- Botões menores e centralizados ---- */
-        div.stButton { text-align: center; }  /* centraliza o conteúdo do st.button */
-        .stButton > button{
-            display:inline-block;           /* tamanho do texto */
-            margin: .5rem auto;             /* centralizado */
-            padding: .6rem 1.2rem;          /* “tamanho” do botão */
-            background:#0074d9; color:#fff; font-weight:600;
-            border:none; border-radius:8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,.15);
+        div.stButton { text-align: center; }
+        .stButton > button {
+            display: inline-block; margin: .5rem auto; padding: .6rem 1.2rem;
+            background: #0074d9; color: #fff; font-weight: 600;
+            border: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,.15);
             transition: filter .15s ease, transform .02s ease;
         }
-        .stButton > button:hover{ filter:brightness(.96); }
-        .stButton > button:active{ transform: translateY(1px); }
+        .stButton > button:hover { filter: brightness(.96); }
+        .stButton > button:active { transform: translateY(1px); }
 
         /* ---- Campos do formulário com fundo branco ---- */
         .stTextInput > div > div > input,
         [data-baseweb="select"] > div,
         .stFileUploader > div > div,
-        .stTextArea > div > textarea{
-            background:#ffffff !important;
-            border-radius:10px;
-            border:1px solid rgba(2,6,23,.12);
+        .stTextArea > div > textarea {
+            background: #ffffff !important;
+            border-radius: 10px;
+            border: 1px solid rgba(2,6,23,.12);
         }
         </style>
         """,

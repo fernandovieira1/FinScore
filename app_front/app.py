@@ -1,10 +1,11 @@
 from pathlib import Path
 import sys
 import streamlit as st
+from components.nav import render_sidebar, PAGES
 
 # ---------------- path setup ----------------
-APP_DIR = Path(__file__).resolve().parent          # .../FinScore/app_front
-ROOT_DIR = APP_DIR.parent                          # .../FinScore
+APP_DIR = Path(__file__).resolve().parent
+ROOT_DIR = APP_DIR.parent
 for p in (str(APP_DIR), str(ROOT_DIR)):
     if p not in sys.path:
         sys.path.insert(0, p)
@@ -15,51 +16,61 @@ st.set_page_config(page_title="FinScore Dashboard", layout="wide")
 # --------------- tema / css ---------------
 st.markdown("""
 <style>
-:root{
-  --bg:#f2f4f5; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
-  --accent:#0d47a1; --accent2:#1976d2; --sidebar:#cdcdcd;
-  --menu-text:#001733; --primary-btn:#0074d9; --side-logo-top-fix:-38px;
+:root {
+  --bg: #f2f4f5; --card: #ffffff; --text: #1f2937; --muted: #6b7280;
+  --accent: #0d47a1; --accent2: #1976d2; --sidebar: #cdcdcd;
+  --menu-text: #001733; --primary-btn: #0074d9; --side-logo-top-fix: -38px;
 }
-header[data-testid="stHeader"]{ display:none !important; }
-div[data-testid="stToolbar"]{ display:none !important; }
-[data-testid="stAppViewContainer"] > .main{ padding-top:0 !important; margin-top:0 !important; }
-#MainMenu{ display:none; }
-[data-testid="stAppViewContainer"]{ background: var(--bg) !important; }
-.block-container{ padding-top:.5rem; padding-bottom:2rem; }
-.block-container > hr:first-of-type{ display:none !important; }
-h1,h2,h3{ color:var(--text); letter-spacing:.2px; }
-p,li,label,span{ color:var(--text); }
-.card{ background:var(--card); border-radius:14px; box-shadow:0 6px 22px rgba(16,24,40,.06), 0 2px 8px rgba(16,24,40,.04);
-  padding:18px 18px 14px; border:1px solid rgba(2,6,23,.06); margin-bottom:1rem;}
-.card-title{ font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.25rem;}
-.card-sub{ font-size:.82rem; color:var(--muted); margin-top:-2px;}
+header[data-testid="stHeader"] { display: none !important; }
+div[data-testid="stToolbar"] { display: none !important; }
+[data-testid="stAppViewContainer"] > .main { padding-top: 0 !important; margin-top: 0 !important; }
+#MainMenu { display: none; }
+[data-testid="stAppViewContainer"] { background: var(--bg) !important; }
+.block-container { padding-top: .5rem; padding-bottom: 2rem; }
+.block-container > hr:first-of-type { display: none !important; }
+h1, h2, h3 { color: var(--text); letter-spacing: .2px; }
+p, li, label, span { color: var(--text); }
+.card { 
+  background: var(--card); border-radius: 14px; box-shadow: 0 6px 22px rgba(16,24,40,.06), 0 2px 8px rgba(16,24,40,.04);
+  padding: 18px 18px 14px; border: 1px solid rgba(2,6,23,.06); margin-bottom: 1rem;
+}
+.card-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+.card-sub { font-size: .82rem; color: var(--muted); margin-top: -2px; }
 
 /* -------- sidebar -------- */
-section[data-testid="stSidebar"] > div:first-child{ background:#cdcdcd !important; padding-top:0 !important;}
-section[data-testid="stSidebar"] .block-container{ padding-top:0 !important; padding-bottom:.8rem;}
-section[data-testid="stSidebar"] .side-logo{ height:110px; display:flex; align-items:center; justify-content:center;
-  margin:var(--side-logo-top-fix) 8px 10px; border-bottom:1px solid #bdbdbd60;}
-section[data-testid="stSidebar"] .side-logo img{ display:block !important; margin:0 auto !important; max-width:80% !important; height:auto !important;}
+section[data-testid="stSidebar"] > div:first-child { background: #cdcdcd !important; padding-top: 0 !important; }
+section[data-testid="stSidebar"] .block-container { padding-top: 0 !important; padding-bottom: .8rem; }
+section[data-testid="stSidebar"] .side-logo { 
+  height: 110px; display: flex; align-items: center; justify-content: center;
+  margin: var(--side-logo-top-fix) 8px 10px; border-bottom: 1px solid #bdbdbd60;
+}
+section[data-testid="stSidebar"] .side-logo img { 
+  display: block !important; margin: 0 auto !important; max-width: 80% !important; height: auto !important;
+}
 section[data-testid="stSidebar"] .nav-link,
 section[data-testid="stSidebar"] .nav-link span,
 section[data-testid="stSidebar"] .nav-link i,
 section[data-testid="stSidebar"] .icon,
 section[data-testid="stSidebar"] .nav-link-selected,
 section[data-testid="stSidebar"] .nav-link-selected span,
-section[data-testid="stSidebar"] .nav-link-selected i{ color:#001733 !important;}
-section[data-testid="stSidebar"] .nav-link{ background-color:#cdcdcd !important; border-radius:0 !important; margin:0 !important; padding:10px 12px !important;}
-section[data-testid="stSidebar"] .nav-link-selected{ background-color:#bdbdbd !important; border-left:4px solid #8a8a8a !important;}
+section[data-testid="stSidebar"] .nav-link-selected i { color: #001733 !important; }
+section[data-testid="stSidebar"] .nav-link { 
+  background-color: #cdcdcd !important; border-radius: 0 !important; margin: 0 !important; padding: 10px 12px !important;
+}
+section[data-testid="stSidebar"] .nav-link-selected { 
+  background-color: #bdbdbd !important; border-left: 4px solid #8a8a8a !important;
+}
 
-/* REMOVER o botão de fechar/colapsar (“X”) da sidebar (cobertura ampla de seletores) */
+/* ocultar o botão de fechar/colapsar a sidebar */
 section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
 section[data-testid="stSidebar"] [data-testid="baseButton-header"],
 section[data-testid="stSidebar"] button[aria-label="Close"],
 section[data-testid="stSidebar"] button[aria-label="Fechar"],
-section[data-testid="stSidebar"] > div:first-child button{
+section[data-testid="stSidebar"] > div:first-child button {
   display: none !important;
 }
 
-hr{ border-color: rgba(2,6,23,.08); }
+hr { border-color: rgba(2,6,23,.08); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,9 +79,9 @@ from views import analise as view_analise
 from views import lancamentos as view_lancamentos
 from views import parecer, sobre, contato
 from views import guia_rapido
-from app_front.views import home as view_home       # view da página "Home"
+from views import definir1, definir2
+from app_front.views import home as view_home
 from components.topbar import render_topbar
-from components.nav import render_sidebar
 
 # --------------- estado global ---------------
 ss = st.session_state
@@ -79,18 +90,21 @@ ss.setdefault("meta", {})
 ss.setdefault("df", None)
 ss.setdefault("out", None)
 ss.setdefault("erros", {})
-ss.setdefault("novo_tab", "Home")
+ss.setdefault("novo_tab", "Início")
 ss.setdefault("analise_tab", "Resumo")
-ss.setdefault("_from_topbar_once", False)
-ss.setdefault("_last_slug", None)                # <— p anterior da URL
+ss.setdefault("_last_slug", None)
+ss.setdefault("_navigating_from_topbar", False)
+# ss.setdefault("_navigate_to", None) 
 
 # --------------- rotas ---------------
 ROUTES = {
     "Home": view_home.render,
+    "Definir1": definir1.render,
+    "Definir2": definir2.render,
+    "Guia Rápido": guia_rapido.render,
     "Lançamentos": view_lancamentos.render,
     "Análise": view_analise.render,
     "Parecer": parecer.render,
-    "Guia Rápido": guia_rapido.render,
     "Sobre": sobre.render,
     "Contato": contato.render,
 }
@@ -98,8 +112,10 @@ ROUTES = {
 # --- mapa slug <-> rota para ?p=... ---
 slug_map = {
     "home": "Home",
-    "lanc": "Lançamentos",
+    "def1": "Definir1",
+    "def2": "Definir2",
     "guia": "Guia Rápido",
+    "lanc": "Lançamentos",
     "analise": "Análise",
     "parecer": "Parecer",
     "sobre": "Sobre",
@@ -108,59 +124,72 @@ slug_map = {
 rev_slug_map = {v: k for k, v in slug_map.items()}
 
 def _set_query_for(page: str):
-    """Sincroniza ?p=... com a página atual."""
     slug = rev_slug_map.get(page)
     if slug:
         st.query_params["p"] = slug
+    else:
+        st.query_params.clear()
 
-# --- navegação via query param (topbar com href="?p=...") ---
-curr_slug = st.query_params.get("p", None)
-if curr_slug:
-    target = slug_map.get(curr_slug, curr_slug)
-    if target in ROUTES:
-        # sempre respeita o slug atual
+# --- navegação inicial e via query param ---
+if not ss.get("_app_initialized", False):
+    # Verifica se há query param na inicialização
+    curr_slug = st.query_params.get("p", None)
+    if curr_slug:
+        target = slug_map.get(curr_slug, "Home")
         ss["page"] = target
-        # ativa o guard APENAS quando o slug mudar (clique novo na topbar)
-        if curr_slug != ss["_last_slug"]:
-            ss["_from_topbar_once"] = True
+    else:
+        ss["page"] = "Home"
+        st.query_params.clear()
+    
+    ss["_app_initialized"] = True
+    ss["_navigating_from_topbar"] = False
+    st.rerun()
+
+curr_slug = st.query_params.get("p", None)
+
+# Processar navegação via query param (topbar) - PRIMEIRO
+if curr_slug and curr_slug != ss.get("_last_slug"):
+    target = slug_map.get(curr_slug, "Home")
+    if target in ROUTES:
+        ss["page"] = target
         ss["_last_slug"] = curr_slug
+        ss["_navigating_from_topbar"] = True
+        st.cache_data.clear()
+        st.rerun()
 
 # --------------- topbar ---------------
 render_topbar(current_page=ss["page"])
 
 # --------------- sidebar ---------------
 pagina_sidebar = render_sidebar(current_page=ss["page"])
-if ss.pop("_from_topbar_once", False):
-    # ignora 1x o sidebar logo após clique na topbar
-    pass
-else:
-    if pagina_sidebar in ROUTES and pagina_sidebar != ss["page"]:
-        ss["page"] = pagina_sidebar
-        _set_query_for(ss["page"])
-        st.rerun()
 
-# remove hash de URL de outras views (estético)
+# Processar navegação via sidebar (APENAS se não veio da topbar)
+if (pagina_sidebar and pagina_sidebar in ROUTES and 
+    pagina_sidebar != ss["page"] and not ss.get("_navigating_from_topbar", False)):
+    ss["page"] = pagina_sidebar
+    _set_query_for(ss["page"])
+    st.cache_data.clear()
+    st.rerun()
+
+# Resetar flag após processamento
+ss["_navigating_from_topbar"] = False
+
+# Remove hash da URL (estético)
 st.markdown("""
 <script>
-try{
+try {
   if (window.location.hash) {
     history.replaceState('', document.title, window.location.pathname + window.location.search);
   }
-}catch(e){}
+} catch(e) {}
 </script>
 """, unsafe_allow_html=True)
-
-def navigate_to(page: str):
-    if page in ROUTES:
-        ss["page"] = page
-        _set_query_for(page)
-        st.rerun()
-
-ss["_navigate_to"] = navigate_to
 
 # --------------- render ---------------
 try:
     ROUTES.get(ss.get("page", "Home"), view_home.render)()
 except Exception as e:
-    st.error("Erro ao renderizar a página selecionada.")
+    st.error(f"Erro ao renderizar {ss.get('page', 'Home')}: {str(e)}")
     st.exception(e)
+    ss["page"] = "Home"
+    st.rerun()

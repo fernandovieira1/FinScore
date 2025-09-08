@@ -1,8 +1,7 @@
-# app_front/views/home.py
 import streamlit as st
 
 def render():
-    st.header("Bem-vindo ao FinScore")
+    st.header("Definir1")
     st.markdown(
         """
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.

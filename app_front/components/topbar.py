@@ -23,43 +23,23 @@ def render_topbar(current_page: str | None = None) -> None:
             --tb-border: rgba(2,6,23,.10); --tb-hover: rgba(2,6,23,.06);
             --radius:14px;
           }}
-
-          /* container da topbar ocupa toda a largura da área de conteúdo */
-          .mm-wrap {{
-            display:flex;
-            justify-content:flex-start;   /* nada de centralizar */
-            margin:10px 0;
-            width:100%;
-          }}
-
-          /* barra em largura total (alinha com a margem do texto) */
+          .mm-wrap {{ display:flex; justify-content:flex-start; margin:10px 0; width:100%; }}
           .mm-topbar {{
-            width:100%;
-            max-width:none;               /* remove limite de 1060px */
-            height:60px;
-            padding:0 18px;
+            width:100%; max-width:none; height:60px; padding:0 18px;
             display:flex; align-items:center; justify-content:space-between;
             background:var(--tb-bg); color:var(--tb-fg);
-            border:1px solid var(--tb-border);
-            border-radius:var(--radius);
+            border:1px solid var(--tb-border); border-radius:var(--radius);
           }}
-
           .nav {{ display:flex; align-items:center; gap:16px; margin:0; }}
-
-          .pill-btn,
-          .pill-btn:link,
-          .pill-btn:visited,
-          .pill-btn:active {{
+          .pill-btn, .pill-btn:link, .pill-btn:visited, .pill-btn:active {{
             display:inline-block; padding:6px 10px; border-radius:10px;
             color:var(--tb-fg-muted); font-weight:600; font-size:.92rem; line-height:1;
             border:1px solid transparent; text-decoration:none;
           }}
-          .pill-btn:hover,
-          .pill-btn.active {{
+          .pill-btn:hover, .pill-btn.active {{
             color:var(--tb-fg); background:var(--tb-hover); border-color:var(--tb-border);
             text-decoration:none;
           }}
-
           .right {{ display:flex; align-items:center; gap:14px; }}
           .assertif-logo {{ height:22px; display:block; border-radius:4px; }}
         </style>
@@ -67,10 +47,10 @@ def render_topbar(current_page: str | None = None) -> None:
         <div class="mm-wrap">
           <div class="mm-topbar">
             <nav class="nav">
-              <a class="pill-btn {is_active("Página Inicial")}"        href="?p=home" target="_self">Página Inicial</a>
-              <a class="pill-btn"                              href="?p=lanc" target="_self">Definir1</a>
-              <a class="pill-btn"                              href="?p=lanc" target="_self">Definir2</a>
-              <a class="pill-btn {is_active("Guia Rápido")}"   href="?p=guia" target="_self">Guia Rápido</a>
+              <a class="pill-btn {is_active('Home')}" href="?p=home" target="_self">Página Inicial</a>
+              <a class="pill-btn {is_active('Definir1')}" href="?p=def1" target="_self">Definir1</a>
+              <a class="pill-btn {is_active('Definir2')}" href="?p=def2" target="_self">Definir2</a>
+              <a class="pill-btn {is_active('Guia Rápido')}" href="?p=guia" target="_self">Guia Rápido</a>
             </nav>
             <div class="right">
               <img class="assertif-logo" src="{logo_src}" alt="assertif"/>

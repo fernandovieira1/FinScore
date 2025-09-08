@@ -28,7 +28,11 @@ pip install -r requirements.txt
 
 -------------------
 # RODAR O APP
+# Normal
 streamlit run .\app_front\app.py
+
+# Com log
+Streamlit run .\app_front\app.py --logger.level=debug
 -------------------
 
 -------------------

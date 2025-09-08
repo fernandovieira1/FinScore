@@ -2,7 +2,8 @@
 import streamlit as st
 
 def render():
-    st.header("Guia Rápido")
+    st.header("🚀 Guia Rápido")
+    st.markdown("---")
     st.caption("Como usar o FinScore passo a passo.")
 
     st.markdown(

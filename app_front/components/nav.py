@@ -5,10 +5,10 @@ from streamlit_option_menu import option_menu
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 LOGO = ASSETS / "logo5.png"
 
-# nomes exibidos no menu lateral
+# TODAS as páginas disponíveis na sidebar
 PAGES = ["Lançamentos", "Análise", "Parecer", "Sobre", "Contato"]
 
-def render_sidebar(current_page: str = "Lançamentos"):
+def render_sidebar(current_page: str = "Home"):
     with st.sidebar:
         # hover mais claro nos itens
         st.markdown(
@@ -35,12 +35,12 @@ def render_sidebar(current_page: str = "Lançamentos"):
         try:
             default_idx = PAGES.index(current_page)
         except ValueError:
-            default_idx = 0
+            default_idx = 0  # Fallback para "Home"
 
         pagina = option_menu(
             None,
             PAGES,
-            icons=["plus-circle", "graph-up", "file-earmark-text", "info-circle", "envelope"],
+            icons=["house", "plus-circle", "graph-up", "file-earmark-text", "book", "info-circle", "envelope"],
             menu_icon="cast",
             default_index=default_idx,
             orientation="vertical",
