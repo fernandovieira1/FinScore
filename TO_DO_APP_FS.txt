@@ -166,6 +166,19 @@ Até aqui:
 [v. 0.7.14, de 08/09/2025]
 ---
 
+=====Ajustes=====
+* (x) Resolvendo de vez conflitos entre topbar e sidebar
+    - (x) state_manager.py, config.py
+    - (x) Atualização app.py, nav.py e topbar.py
+    - (x) Testes
+---
+Até aqui:
+[v. 0.7.15, de 08/09/2025]
+---
+
+=====Ajustes=====
+* ( ) Clicar em 'Sobre' após calcular o FinScore precisa de clique duplo
+
 =====Novidades=====
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início

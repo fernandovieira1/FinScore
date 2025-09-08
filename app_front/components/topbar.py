@@ -1,9 +1,11 @@
-# app_front/components/topbar.py
+# components/topbar.py
 import streamlit as st
 import base64
 from pathlib import Path
+from components.config import TOPBAR_PAGES
 
 def render_topbar(current_page: str | None = None) -> None:
+    """Renderiza a barra superior de navegação"""
     # Logo
     logo_path = Path(__file__).resolve().parent.parent / "assets" / "logo.png"
     try:
@@ -35,6 +37,7 @@ def render_topbar(current_page: str | None = None) -> None:
             display:inline-block; padding:6px 10px; border-radius:10px;
             color:var(--tb-fg-muted); font-weight:600; font-size:.92rem; line-height:1;
             border:1px solid transparent; text-decoration:none;
+            cursor: pointer;
           }}
           .pill-btn:hover, .pill-btn.active {{
             color:var(--tb-fg); background:var(--tb-hover); border-color:var(--tb-border);

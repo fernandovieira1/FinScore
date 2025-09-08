@@ -1,7 +1,7 @@
+# app.py
 from pathlib import Path
 import sys
 import streamlit as st
-from components.nav import render_sidebar, PAGES
 
 # ---------------- path setup ----------------
 APP_DIR = Path(__file__).resolve().parent
@@ -12,6 +12,17 @@ for p in (str(APP_DIR), str(ROOT_DIR)):
 
 # --------------- config ---------------
 st.set_page_config(page_title="FinScore Dashboard", layout="wide")
+
+# --------------- imports ---------------
+from components import AppState, render_sidebar, render_topbar, DEBUG_MODE
+
+# Import das views
+from views import analise as view_analise
+from views import lancamentos as view_lancamentos
+from views import parecer, sobre, contato
+from views import guia_rapido
+from views import definir1, definir2
+from app_front.views import home as view_home
 
 # --------------- tema / css ---------------
 st.markdown("""
@@ -74,29 +85,10 @@ hr { border-color: rgba(2,6,23,.08); }
 </style>
 """, unsafe_allow_html=True)
 
-# --------------- imports das views/comp ---------------
-from views import analise as view_analise
-from views import lancamentos as view_lancamentos
-from views import parecer, sobre, contato
-from views import guia_rapido
-from views import definir1, definir2
-from app_front.views import home as view_home
-from components.topbar import render_topbar
+# --------------- inicialização do estado ---------------
+AppState.initialize()
 
-# --------------- estado global ---------------
-ss = st.session_state
-ss.setdefault("page", "Home")
-ss.setdefault("meta", {})
-ss.setdefault("df", None)
-ss.setdefault("out", None)
-ss.setdefault("erros", {})
-ss.setdefault("novo_tab", "Início")
-ss.setdefault("analise_tab", "Resumo")
-ss.setdefault("_last_slug", None)
-ss.setdefault("_navigating_from_topbar", False)
-# ss.setdefault("_navigate_to", None) 
-
-# --------------- rotas ---------------
+# --------------- definição das rotas ---------------
 ROUTES = {
     "Home": view_home.render,
     "Definir1": definir1.render,
@@ -109,70 +101,27 @@ ROUTES = {
     "Contato": contato.render,
 }
 
-# --- mapa slug <-> rota para ?p=... ---
-slug_map = {
-    "home": "Home",
-    "def1": "Definir1",
-    "def2": "Definir2",
-    "guia": "Guia Rápido",
-    "lanc": "Lançamentos",
-    "analise": "Análise",
-    "parecer": "Parecer",
-    "sobre": "Sobre",
-    "contato": "Contato",
-}
-rev_slug_map = {v: k for k, v in slug_map.items()}
+# --------------- processamento de navegação ---------------
 
-def _set_query_for(page: str):
-    slug = rev_slug_map.get(page)
-    if slug:
-        st.query_params["p"] = slug
-    else:
-        st.query_params.clear()
+# 1. Sincroniza a partir da URL (prioridade máxima)
+url_changed = AppState.sync_from_query_params()
 
-# --- navegação inicial e via query param ---
-if not ss.get("_app_initialized", False):
-    # Verifica se há query param na inicialização
-    curr_slug = st.query_params.get("p", None)
-    if curr_slug:
-        target = slug_map.get(curr_slug, "Home")
-        ss["page"] = target
-    else:
-        ss["page"] = "Home"
-        st.query_params.clear()
-    
-    ss["_app_initialized"] = True
-    ss["_navigating_from_topbar"] = False
-    st.rerun()
+# 2. Renderiza a topbar
+render_topbar(current_page=AppState.get_current_page())
 
-curr_slug = st.query_params.get("p", None)
+# 3. Renderiza a sidebar
+sidebar_page = render_sidebar(current_page=AppState.get_current_page())
 
-# Processar navegação via query param (topbar) - PRIMEIRO
-if curr_slug and curr_slug != ss.get("_last_slug"):
-    target = slug_map.get(curr_slug, "Home")
-    if target in ROUTES:
-        ss["page"] = target
-        ss["_last_slug"] = curr_slug
-        ss["_navigating_from_topbar"] = True
-        st.cache_data.clear()
-        st.rerun()
+# 4. Processa navegação da sidebar (prioridade média)
+if sidebar_page and sidebar_page in ROUTES:
+    if sidebar_page != AppState.get_current_page():
+        if not AppState.should_ignore_navigation('sidebar'):
+            AppState.set_current_page(sidebar_page, 'sidebar')
+            AppState.sync_to_query_params()
+            st.rerun()
 
-# --------------- topbar ---------------
-render_topbar(current_page=ss["page"])
-
-# --------------- sidebar ---------------
-pagina_sidebar = render_sidebar(current_page=ss["page"])
-
-# Processar navegação via sidebar (APENAS se não veio da topbar)
-if (pagina_sidebar and pagina_sidebar in ROUTES and 
-    pagina_sidebar != ss["page"] and not ss.get("_navigating_from_topbar", False)):
-    ss["page"] = pagina_sidebar
-    _set_query_for(ss["page"])
-    st.cache_data.clear()
-    st.rerun()
-
-# Resetar flag após processamento
-ss["_navigating_from_topbar"] = False
+# 5. Sincroniza para a URL (mantém consistência)
+AppState.sync_to_query_params()
 
 # Remove hash da URL (estético)
 st.markdown("""
@@ -185,11 +134,23 @@ try {
 </script>
 """, unsafe_allow_html=True)
 
-# --------------- render ---------------
+# --------------- renderização da página ---------------
 try:
-    ROUTES.get(ss.get("page", "Home"), view_home.render)()
+    current_page = AppState.get_current_page()
+    render_function = ROUTES.get(current_page, view_home.render)
+    render_function()
 except Exception as e:
-    st.error(f"Erro ao renderizar {ss.get('page', 'Home')}: {str(e)}")
-    st.exception(e)
-    ss["page"] = "Home"
-    st.rerun()
+    st.error(f"Erro ao renderizar {current_page}: {str(e)}")
+    # Fallback para Home em caso de erro
+    AppState.set_current_page("Home", 'error')
+    view_home.render()
+
+# --------------- debug info ---------------
+if DEBUG_MODE:
+    with st.expander("🔧 Debug Info", expanded=False):
+        st.write(f"**Página atual:** {AppState.get_current_page()}")
+        st.write(f"**Sidebar retornou:** {sidebar_page}")
+        st.write(f"**Query param:** {st.query_params.get('p', None)}")
+        st.write(f"**Última navegação:** {st.session_state.get('last_navigation_time')}")
+        st.write(f"**Fonte:** {st.session_state.get('navigation_source')}")
+        st.write(f"**Mudança por URL:** {url_changed}")
