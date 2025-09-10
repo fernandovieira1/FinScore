@@ -45,6 +45,55 @@ def render_topbar(current_page: str | None = None) -> None:
           }}
           .right {{ display:flex; align-items:center; gap:14px; }}
           .assertif-logo {{ height:22px; display:block; border-radius:4px; }}
+          
+          /* Estilo para botões sociais e de configuração */
+          .social-btn, .theme-btn, .config-btn {{
+            display: flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: transparent;
+            border: 1px solid rgba(2,6,23,.10);
+            font-size: 14px; cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+          }}
+          /* Cores para todos os botões - forçando com máxima especificidade */
+          .social-btn,
+          .social-btn i,
+          .social-btn .fab,
+          .social-btn .fas,
+          a.social-btn,
+          a.social-btn i,
+          button.theme-btn,
+          button.theme-btn i,
+          button.config-btn,
+          button.config-btn i {{
+            color: #999999 !important;
+          }}
+          
+          .social-btn:hover,
+          .social-btn:hover i,
+          .social-btn:hover .fab,
+          .social-btn:hover .fas,
+          a.social-btn:hover,
+          a.social-btn:hover i,
+          button.theme-btn:hover,
+          button.theme-btn:hover i,
+          button.config-btn:hover,
+          button.config-btn:hover i {{
+            background: rgba(2,6,23,.06) !important;
+            color: #bcbcbc !important;
+          }}
+        </style>
+
+        <!-- Link para Font Awesome (ícones) -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <!-- CSS adicional para sobrescrever cores do Font Awesome -->
+        <style>
+          /* Garantir que os ícones não herdem cores do Font Awesome */
+          .fa, .fab, .fas, .far, .fal, .fad, .fak {{
+            color: inherit !important;
+          }}
         </style>
 
         <div class="mm-wrap">
@@ -56,6 +105,21 @@ def render_topbar(current_page: str | None = None) -> None:
               <a class="pill-btn {is_active('Guia Rápido')}" href="?p=guia" target="_self">Guia Rápido</a>
             </nav>
             <div class="right">
+              <a href="#" class="social-btn" title="Facebook">
+                <i class="fab fa-facebook-f"></i>
+              </a>
+              <a href="#" class="social-btn" title="YouTube">
+                <i class="fab fa-youtube"></i>
+              </a>
+              <a href="#" class="social-btn" title="LinkedIn">
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+              <button class="theme-btn" title="Alternar tema">
+                <i class="fas fa-moon"></i>
+              </button>
+              <button class="config-btn" title="Configurações">
+                <i class="fas fa-cog"></i>
+              </button>
               <img class="assertif-logo" src="{logo_src}" alt="assertif"/>
             </div>
           </div>

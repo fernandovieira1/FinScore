@@ -4,12 +4,8 @@
 py -3.11 -m venv .venv
 
 -------------------
-
--------------------
 # ATIVAR
 .\.venv\Scripts\Activate.ps1
-
--------------------
 
 -------------------
 # Atualizar instaladores (SE PRECISAR)
@@ -18,13 +14,9 @@ py -3.11 -m venv .venv
 python -m pip install -U pip setuptools wheel
 
 -------------------
-
--------------------
 # Instalar as dependências
 # **apenas a primeira vez
 pip install -r requirements.txt
-
--------------------
 
 -------------------
 # RODAR O APP
@@ -33,9 +25,7 @@ streamlit run .\app_front\app.py
 
 # Com log
 Streamlit run .\app_front\app.py --logger.level=debug
--------------------
 
 -------------------
 # Comandos úteis
 tree /f # Lista o diretório (pastas, subpastas e arquivos) de forma esquemática
--------------------

@@ -203,11 +203,16 @@ Até aqui:
 ---
 
 =====Novidades=====
-* ( ) Remover "View fullscreen" da barra lateral
+* (x) Remover "View fullscreen" da barra lateral
+* (x) Inserir ícones (ainda não interativos) nos títulos das abas de Lançamentos
+---
+Até aqui:
+[v. 0.7.16, de 10/09/2025]
+---
+
 * ( ) Criar uma seção/view 'Novo', diferente de 'Home' (sidbar / nav), que de fato é igual a 'Página Inicial' (topbar)
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
-* ( ) Inserir ícones nos títulos das abas de Lançamentos
 
 =====Novidades=====
 * ( ) Textos seções:
