@@ -42,13 +42,13 @@ def render_sidebar(current_page: str = "Home"):
         try:
             default_idx = SIDEBAR_PAGES.index(current_page)
         except ValueError:
-            default_idx = 0  # Fallback para "Home"
+            default_idx = 0  # Fallback para primeiro item
 
         # Menu de navegação
         pagina_selecionada = option_menu(
             None,
             SIDEBAR_PAGES,
-            icons=["house", "plus-circle", "graph-up", "file-earmark-text", "info-circle", "envelope"],
+            icons=["plus-circle", "list-task", "graph-up", "file-earmark-text", "info-circle", "envelope"],
             menu_icon="cast",
             default_index=default_idx,
             orientation="vertical",
@@ -79,6 +79,27 @@ def render_sidebar(current_page: str = "Home"):
                 },
             },
         )
+        
+        # Controle de navegação automática vs manual
+        # Se a página atual não está na sidebar, só retorna se houve mudança real
+        if current_page not in SIDEBAR_PAGES:
+            # Inicializa o controle se for a primeira vez
+            if 'sidebar_initialized' not in st.session_state:
+                st.session_state.sidebar_initialized = True
+                st.session_state.sidebar_selection = pagina_selecionada
+                pagina_selecionada = None  # Não navega na primeira execução
+            else:
+                # Verifica se houve mudança real
+                previous_selection = st.session_state.get('sidebar_selection', None)
+                if pagina_selecionada != previous_selection:
+                    # Houve mudança = clique real
+                    st.session_state.sidebar_selection = pagina_selecionada
+                else:
+                    # Mesma seleção = não houve clique real
+                    pagina_selecionada = None
+        else:
+            # Se a página atual está na sidebar, funciona normalmente
+            st.session_state.sidebar_selection = pagina_selecionada
         
         # Debug info
         if DEBUG_MODE:

@@ -15,6 +15,7 @@ st.set_page_config(page_title="FinScore Dashboard", layout="wide")
 
 # --------------- imports ---------------
 from components import AppState, render_sidebar, render_topbar, DEBUG_MODE
+from components.config import TOPBAR_PAGES, SIDEBAR_PAGES
 
 # Import das views
 from views import analise as view_analise
@@ -23,6 +24,7 @@ from views import parecer, sobre, contato
 from views import guia_rapido
 from views import definir1, definir2
 from app_front.views import home as view_home
+from app_front.views import novo as view_novo
 
 # --------------- carregar CSS externo ---------------
 def load_css():
@@ -44,6 +46,7 @@ AppState.initialize()
 # --------------- definição das rotas ---------------
 ROUTES = {
     "Home": view_home.render,
+    "Novo": view_novo.render,
     "Definir1": definir1.render,
     "Definir2": definir2.render,
     "Guia Rápido": guia_rapido.render,
@@ -67,7 +70,8 @@ sidebar_page = render_sidebar(current_page=AppState.get_current_page())
 
 # 4. Processa navegação da sidebar (prioridade média)
 if sidebar_page and sidebar_page in ROUTES:
-    if sidebar_page != AppState.get_current_page():
+    current_page = AppState.get_current_page()
+    if sidebar_page != current_page:
         if not AppState.should_ignore_navigation('sidebar'):
             AppState.set_current_page(sidebar_page, 'sidebar')
             AppState.sync_to_query_params()
