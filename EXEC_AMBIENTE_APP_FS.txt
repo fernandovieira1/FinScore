@@ -1,25 +1,25 @@
 -------------------
-# Criar um venv com Python 3.11
+# (I) Criar um venv com Python 3.11
 # **apenas a primeira vez
 py -3.11 -m venv .venv
 
 -------------------
-# ATIVAR
+# (II) ATIVAR
 .\.venv\Scripts\Activate.ps1
 
 -------------------
-# Atualizar instaladores (SE PRECISAR)
+# (III) Atualizar instaladores (SE PRECISAR)
 # **apenas a primeira vez
 # **geralmente não precisa
 python -m pip install -U pip setuptools wheel
 
 -------------------
-# Instalar as dependências
+# (IV) Instalar as dependências
 # **apenas a primeira vez
 pip install -r requirements.txt
 
 -------------------
-# RODAR O APP
+# (V) RODAR O APP
 # Normal
 streamlit run .\app_front\app.py
 
@@ -27,5 +27,5 @@ streamlit run .\app_front\app.py
 Streamlit run .\app_front\app.py --logger.level=debug
 
 -------------------
-# Comandos úteis
-tree /f # Lista o diretório (pastas, subpastas e arquivos) de forma esquemática
+# (VI) Passos I, II e IV
+py -3.11 -m venv .venv && .\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt
