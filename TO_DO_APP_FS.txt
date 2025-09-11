@@ -216,6 +216,9 @@ Até aqui:
 [v. 0.7.17, de 10/09/2025]
 ---
 
+=====Ajustes=====
+* ( ) Novo só funcionando após clicar em outro link da sidebar
+=====Novidades=====
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
 
