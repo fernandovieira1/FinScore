@@ -25,25 +25,8 @@ Logo: https://turbologo.com/
 Emojis: https://emojipedia.org/
 Cores hex: https://www.color-hex.com/
 Streamlit: https://docs.streamlit.io/
+Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
 ......................................................................................................................
-
-====================================
-Ideias
-====================================
-- Criar página inicial, como painel:
-    \ Breve texto sobre o FINSCORE
-    \ Total de cálculos
-    \ Botão Login
-    \ Botão Novo
-    \ Botão refresh
-
-- Ano ser apenas o inicial (contas +3 automaticamente)
-
-- Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
-- Campos 'Dados do Cliente' com crítica de valores
-- Botões e subseções da rádio 'Dados' em azul, não verde
-......................................................................................................................
-
 
 ====================================
 0. SETAR O PROJETO
@@ -210,6 +193,12 @@ Até aqui:
 [v. 0.7.16, de 10/09/2025]
 ---
 
+=====Novidades=====
+* ( ) Textos seções:
+    - (x) Guia Rápido (topbar)
+    - (x) Sobre/Metodologia (sidebar/nav)
+    - (x) Sobre/Glossário (sidebar/nav)
+    - (x) Sobre/FAQ (sidebar/nav)
 * (x) Criar na sidebar/nav a seção/view 'Novo' em substituição à seção/view 'Home'
 ---
 Até aqui:
@@ -217,17 +206,20 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Novo só funcionando após clicar em outro link da sidebar
+* (x) Novo só funcionando após clicar em outro link da sidebar
+=====Novidades=====
+* (x) Dropdown Menu "Processo", colapsando "Novo", "Lançamentos", "Análise" e "Parecer" (sidebar/nav)
+* (x) Botões de redes sociais, configurações e tema claro/escuro (topbar)
+---
+Até aqui:
+[v. 0.7.18, de 12/09/2025]
+---
+
 =====Novidades=====
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
 * ( ) Reescrita de Lançamentos/Início
+* ( ) Criar footer no estilo da topbar
 
-=====Novidades=====
-* ( ) Textos seções:
-    - ( ) Guia Rápido
-    - ( ) Sobre/Metodologia
-    - ( ) Sobre/Glossário
-    - ( ) Sobre/FAQ
 ......................................................................................................................
 
 ============
@@ -240,4 +232,20 @@ Até aqui:
 * ( ) Testar diferentes resultados/cenários
 ......................................................................................................................
 
+====================================
+Ideias
+====================================
+- Criar página inicial, como painel:
+    \ Breve texto sobre o FINSCORE
+    \ Total de cálculos
+    \ Botão Login
+    \ Botão Novo
+    \ Botão refresh
+
+- Ano ser apenas o inicial (contas +3 automaticamente)
+
+- Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
+- Campos 'Dados do Cliente' com crítica de valores
+- Botões e subseções da rádio 'Dados' em azul, não verde
+......................................................................................................................
 

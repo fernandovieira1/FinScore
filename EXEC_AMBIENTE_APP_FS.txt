@@ -19,13 +19,13 @@ python -m pip install -U pip setuptools wheel
 pip install -r requirements.txt
 
 -------------------
-# (V) RODAR O APP
+# (V) Passos I, II e IV
+py -3.11 -m venv .venv && .\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt
+
+-------------------
+# (VI) RODAR O APP
 # Normal
 streamlit run .\app_front\app.py
 
 # Com log
 Streamlit run .\app_front\app.py --logger.level=debug
-
--------------------
-# (VI) Passos I, II e IV
-py -3.11 -m venv .venv && .\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt

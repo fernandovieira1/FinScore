@@ -22,9 +22,12 @@ from views import analise as view_analise
 from views import lancamentos as view_lancamentos
 from views import parecer, sobre, contato
 from views import guia_rapido
+from views import faq as view_faq
+from views import glossario as view_glossario
 from views import definir1, definir2
-from app_front.views import home as view_home
-from app_front.views import novo as view_novo
+from views import home as view_home
+from views import novo as view_novo
+from views import processo as view_processo
 
 # --------------- carregar CSS externo ---------------
 def load_css():
@@ -46,10 +49,13 @@ AppState.initialize()
 # --------------- definição das rotas ---------------
 ROUTES = {
     "Home": view_home.render,
+    "Processo": view_processo.render,     # <-- NOVO
     "Novo": view_novo.render,
     "Definir1": definir1.render,
     "Definir2": definir2.render,
     "Guia Rápido": guia_rapido.render,
+    "FAQ": view_faq.render,
+    "Glossário": view_glossario.render,
     "Lançamentos": view_lancamentos.render,
     "Análise": view_analise.render,
     "Parecer": parecer.render,

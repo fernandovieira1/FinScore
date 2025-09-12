@@ -1,8 +1,10 @@
 # app_front/utils_finscore.py
 import numpy as np
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+"""
+Nota: As dependências do scikit-learn são importadas dentro da função executar_finscore
+para evitar falhas na importação do módulo quando o app é iniciado com o Python errado.
+"""
 
 # ---------------------------
 # 1) Índices contábeis
@@ -17,8 +19,8 @@ def calcular_indices_contabeis(df: pd.DataFrame) -> pd.DataFrame:
 
     # EBITDA e Margem
     ebit  = df['r_Lucro_Liquido'] + df['r_Despesa_de_Juros'] + df['r_Despesa_de_Impostos']
-    amort = df.get('r_Amortizacao', 0).fillna(0)
-    depr  = df.get('r_Depreciacao', 0).fillna(0)
+    amort = df.get('r_Amortizacao', pd.Series(0, index=df.index)).fillna(0)
+    depr  = df.get('r_Depreciacao', pd.Series(0, index=df.index)).fillna(0)
     ebitda = ebit + amort + depr
     idx['EBITDA']        = ebitda
     idx['Margem EBITDA'] = ebitda / df['r_Receita_Total']
@@ -112,7 +114,17 @@ def executar_finscore(
     if (df_dc['p_Estoques'] == 0).all():
         df_indices.drop('Liquidez Seca', axis=1, inplace=True, errors='ignore')
 
-    # Padronização e PCA
+    # Padronização e PCA (imports tardios para evitar crash ao iniciar o app sem sklearn)
+    try:
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.decomposition import PCA
+    except Exception as e:
+        raise ImportError(
+            "scikit-learn não está disponível no ambiente atual. "
+            "Execute o app com a venv do projeto (.venv) ou instale as dependências: "
+            "pip install -r requirements.txt"
+        ) from e
+
     scaler = StandardScaler()
     X = scaler.fit_transform(df_indices.fillna(0))       # robusto a eventuais NaNs
     pca = PCA()
