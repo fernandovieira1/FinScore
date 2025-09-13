@@ -21,9 +21,11 @@ Para dar início, siga os passos descritos:
    Em seguida, clique no botão **[Enviar Dados]**, localizado no final do formulário.
 3. Na aba **|Dados|**, faça o lançamento dos dados contábeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
     * Se optar pelo upload de arquivo, certifique-se de que ele esteja no formato correto (.xlsx).
-4. Clique **[Calcular FinScore]**.
+4. Clique em **[Calcular FinScore]**.
 
-A análise será detalhada (mexer nessa parte) na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
+A análise será detalhada na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
+*(melhorar esse final)*
+
         """,
         unsafe_allow_html=True
     )

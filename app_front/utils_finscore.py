@@ -1,4 +1,7 @@
 # app_front/utils_finscore.py
+## Biblioteca de funções para cálculo do FinScore
+### Baseado em metodologia do 9.7 (finscore\v9\FINSCORE_v9.7.ipynb), adaptado para o app
+#### Autor: Fernando Vieira
 import numpy as np
 import pandas as pd
 """

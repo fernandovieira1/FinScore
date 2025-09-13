@@ -306,8 +306,15 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.7.23, de 13/09/2025]
+[v. 0.7.23a, de 13/09/2025] (roadmap FORMULÁRIO)
 ---
  
+
+ =====Novidades=====
+* ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
+em 'Enviar Dados' se alguma informação faltar.
+* ( ) PENSAR NOS COMPORTAMENTOS, REGRAS E TRAVAS DO FORMULÁRIO
+
 ......................................................................................................................
 
 ============
