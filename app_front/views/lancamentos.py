@@ -65,7 +65,7 @@ def _auto_save_cliente():
     cnpj_default = mascara_cnpj(cnpj_raw)
     cnpj_input = st.text_input("CNPJ", value=cnpj_default, placeholder="00.000.000/0000-00", max_chars=18, key="cnpj_input")
     cnpj = mascara_cnpj(cnpj_input)
-    # Aceita apenas 4 dígitos para ano
+    # Aceita apenas 4 dígitos para campo ano
     ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="YYYY", max_chars=4)
     ai = int(ai_str) if ai_str.isdigit() and len(ai_str) == 4 else None
     # Ano Final é calculado automaticamente
