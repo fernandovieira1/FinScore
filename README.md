@@ -124,15 +124,6 @@ O sistema aceita demonstrações contábeis nos formatos:
 - Validações em `services/io_validation.py`
 - Lógica de negócio em `services/finscore_service.py`
 
-## 🚧 Desenvolvimento Futuro
-
-- [ ] API REST para integração externa
-- [ ] Dashboard administrativo
-- [ ] Relatórios em PDF
-- [ ] Integração com mais fontes de dados
-- [ ] Machine Learning para previsões
-- [ ] Sistema de usuários e permissões
-
 ## 📄 Licença
 
 Este projeto está sob licença proprietária. Consulte o arquivo LICENSE para mais detalhes.

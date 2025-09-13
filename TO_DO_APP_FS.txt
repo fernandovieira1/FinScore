@@ -255,6 +255,7 @@ Até aqui:
 
 =====Novidades=====
 * (x) Arquivo README.md
+* (x) Arquivo LICENSE.md
 ---
 Até aqui:
 [v. 0.7.20b, de 13/09/2025]
