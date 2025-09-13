@@ -1,4 +1,4 @@
-# FinScore - Sistema de Análise de Risco Financeiro
+# FinScore
 
 ## 📊 Visão Geral
 
