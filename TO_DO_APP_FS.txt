@@ -253,6 +253,13 @@ Até aqui:
 [v. 0.7.20a, de 13/09/2025]
 ---
 
+=====Novidades=====
+* (x) Arquivo README.md
+---
+Até aqui:
+[v. 0.7.20b, de 13/09/2025]
+---
+
 ......................................................................................................................
 
 ============
@@ -282,5 +289,12 @@ Ideias
 - Campos 'Dados do Cliente' com crítica de valores
 - Botões e subseções da rádio 'Dados' em azul, não verde
 - No dropdown da sidebar, inserir o menu/view 'Consultar', mas só depois de criar o backend com do banco de dados
+
+- API REST para integração externa
+- Dashboard administrativo
+- Relatórios em PDF
+- Integração com mais fontes de dados
+- Machine Learning para previsões
+- Sistema de usuários e permissões
 ......................................................................................................................
 
