@@ -79,6 +79,24 @@ def _sec_cliente():
     st.header("Dados do Cliente")
     _auto_save_cliente()
     st.write("")
+    st.markdown("""
+    <style>
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background: var(--primary-btn, #5ea68d) !important;
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 1.05rem;
+        border-radius: 6px !important;
+        padding: 0.7rem 2.2rem !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+        transition: background 0.2s;
+    }
+    .stButton>button[data-testid="baseButton-secondary"]:hover {
+        background: #468c6f !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     if st.button("Enviar Dados"):
         st.session_state["novo_tab"] = "Dados"
         st.session_state["_internal_nav"] = True
@@ -131,6 +149,24 @@ def _sec_dados():
 
     st.write("---")
 
+    st.markdown("""
+    <style>
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background: var(--primary-btn, #5ea68d) !important;
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 1.05rem;
+        border-radius: 6px !important;
+        padding: 0.7rem 2.2rem !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+        transition: background 0.2s;
+    }
+    .stButton>button[data-testid="baseButton-secondary"]:hover {
+        background: #468c6f !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     if st.button("Calcular FinScore"):
         ss = st.session_state
         pend = validar_cliente(ss.meta)
@@ -148,14 +184,13 @@ def _sec_dados():
                     raise ValueError("Formato de retorno inesperado do run_finscore.")
                 ss.out = out
                 ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
+                ss["liberar_analise"] = True
+                ss["liberar_parecer"] = True
                 st.success("✅ Processamento concluído.")
-                
                 # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
-                # Método 1: Via session state + query params (mais robusto)
                 ss.page = "Análise"
                 st.query_params["p"] = "analise"
                 st.rerun()
-                
             except Exception as e:
                 st.error(f"Erro no processamento: {e}")
 

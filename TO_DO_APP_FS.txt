@@ -229,6 +229,23 @@ Até aqui:
 [v. 0.7.19, de 13/09/2025]
 ---
 
+=====Ajustes=====
+* (x) Subi a sidebar/nav para ficar mais próxima da topbar.
+* (x) Mudança da cor dos botões para #5ea68d.
+---
+Até aqui:
+[v. 0.7.19a, de 13/09/2025]
+---
+
+=====Novidades=====
+* (x) Seção Lançamentos só fica clicável/destravado após o usuário clicar no botão 'Iniciar' da seção Novo.
+* (x) Seções Análise e Parecer só ficam clicáveis/destravadas após o usuário clicar no botão 'Calcular FinScore'
+da seção Lançamentos.
+---
+Até aqui:
+[v. 0.7.20, de 13/09/2025]
+---
+
 =====Novidades=====
 * ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados.
 * ( ) Reescrita de Lançamentos/Início.

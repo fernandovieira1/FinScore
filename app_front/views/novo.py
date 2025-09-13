@@ -52,5 +52,6 @@ A análise será detalhada (mexer nessa parte) na seção **"Análise"** e você
         """
         st.markdown(btn_style, unsafe_allow_html=True)
         if st.button("Iniciar", key="btn_iniciar", help="Ir para lançamentos"):
+            st.session_state["liberar_lancamentos"] = True
             AppState.set_current_page("Lançamentos", source="novo_iniciar_btn")
             st.rerun()

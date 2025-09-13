@@ -16,7 +16,7 @@
     --accent2: #1976d2;
     --sidebar: #cdcdcd;
     --menu-text: #001733;
-    --primary-btn: #0074d9;
+    --primary-btn: #5ea68d;
     --side-logo-top-fix: -38px;
 }
 
@@ -109,12 +109,12 @@ section[data-testid="stSidebar"] .block-container {
 }
 
 section[data-testid="stSidebar"] .side-logo {
-    height: 110px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: var(--side-logo-top-fix) 8px 10px;
-    border-bottom: 1px solid #bdbdbd60;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-bottom: none !important;
 }
 
 section[data-testid="stSidebar"] .side-logo img {
