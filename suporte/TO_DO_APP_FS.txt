@@ -12,7 +12,7 @@ Controle de Versões
 //////////////////////////////////////////////
 ** Aplha    :  0.x.yy
 ** Beta     :  1.x.yy
-** Estáveis : 2+.x.yy (+codinome: pers. lit.)
+** Estáveis :  2+.x.yy (+codinome: pers. lit.)
 * x         : Mudanças significativas
 * y         : Pequenos ajustes  
 * Letras    : Alterações e ajustes incrementais, junto a yy (a, b, ..., z)
@@ -272,6 +272,15 @@ Até aqui:
 Até aqui:
 [v. 0.7.20d, de 13/09/2025]
 ---
+
+=====Novidades=====
+* (x) Reescrita da seção 'Sobre':
+    - (x) Metodologia;
+    - (x) Glossário;
+    - (x) FAQ. 
+---
+Até aqui:
+[v. 0.7.21, de 13/09/2025]
 
 ......................................................................................................................
 
