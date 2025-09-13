@@ -47,21 +47,67 @@ def _auto_save_cliente():
     meta = ss.meta.copy()
 
     # --- FORMULÁRIO CLIENTE ---
+
+    import re
+    def mascara_cnpj(valor):
+        # Remove tudo que não for dígito
+        v = re.sub(r'\D', '', valor)
+        # Garante 14 dígitos
+        if len(v) < 14:
+            return ''
+        v = v[:14]
+        # Aplica máscara xx.xxx.xxx/xxxx-xx
+        return f"{v[:2]}.{v[2:5]}.{v[5:8]}/{v[8:12]}-{v[12:14]}"
+
     empresa = st.text_input("Nome da Empresa", value=meta.get("empresa", ""), placeholder="Ex.: ACME S.A.")
-    cnpj = st.text_input("CNPJ", value=meta.get("cnpj", ""), placeholder="00.000.000/0000-00")
-    ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="AAAA")
-    af_str = st.text_input("Ano Final", value=str(meta.get("ano_final", "")), placeholder="AAAA")
-    serasa_str = st.text_input("Serasa Score (0–1000)", value=str(meta.get("serasa", "")), placeholder="Ex.: 550")
-    serasa_data = st.text_input("Data de Consulta do Serasa", value=str(meta.get("serasa_data", "")), placeholder="DD/MM/AAAA")
+    cnpj_raw = meta.get("cnpj", "")
+    # Aplica máscara ANTES de exibir o campo
+    cnpj_default = mascara_cnpj(cnpj_raw)
+    cnpj_input = st.text_input("CNPJ", value=cnpj_default, placeholder="00.000.000/0000-00", max_chars=18, key="cnpj_input")
+    cnpj = mascara_cnpj(cnpj_input)
+    # Aceita apenas 4 dígitos para ano
+    ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="YYYY", max_chars=4)
+    ai = int(ai_str) if ai_str.isdigit() and len(ai_str) == 4 else None
+    # Ano Final é calculado automaticamente
+    af = ai + 2 if ai else None
+    af_str = str(af) if af else ""
+    st.text_input("Ano Final", value=af_str, placeholder="YYYY", max_chars=4, disabled=True)
+    # Serasa Score como float
+    serasa_val = meta.get("serasa", "")
+    serasa_str = st.text_input(
+        "Serasa Score (0–1000)",
+        value=str(int(float(serasa_val))) if str(serasa_val).replace(",", ".").replace(" ", "").replace(".0", "").isdigit() else "",
+        placeholder="Ex.: 550"
+    )
+    try:
+        serasa = float(int(float(serasa_str.replace(",", ".")))) if serasa_str.strip() else None
+    except Exception:
+        serasa = None
+    # Data de Consulta como DD/MM/YYYY
+    serasa_data_raw = str(meta.get("serasa_data", ""))
+    import re
+    def mascara_data_br(valor):
+        # Remove tudo que não for dígito
+        v = re.sub(r'\D', '', valor)
+        if len(v) < 8:
+            return ''
+        v = v[:8]
+        # Aplica máscara DD/MM/YYYY
+        return f"{v[:2]}/{v[2:4]}/{v[4:8]}"
+    serasa_data_default = mascara_data_br(serasa_data_raw)
+    serasa_data_input = st.text_input("Data de Consulta ao Serasa", value=serasa_data_default, placeholder="DD/MM/YYYY", max_chars=10, key="serasa_data_input")
+    def valida_data_br(data):
+        if not data:
+            return ""
+        m = re.match(r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$", data)
+        return data if m else ""
+    serasa_data = valida_data_br(mascara_data_br(serasa_data_input))
 
     # Normalização
-    empresa = empresa.strip()
-    cnpj = cnpj.strip()
-    ai = int(ai_str) if ai_str.strip().isdigit() else None
-    af = int(af_str) if af_str.strip().isdigit() else None
-    serasa = int(serasa_str) if serasa_str.strip().isdigit() else None
+    empresa = empresa.strip() if empresa else ""
+    cnpj = mascara_cnpj(cnpj.strip()) if cnpj else ""
 
-    new_meta = {"empresa": empresa, "cnpj": cnpj, "ano_inicial": ai, "ano_final": af, "serasa": serasa}
+    new_meta = {"empresa": empresa, "cnpj": cnpj, "ano_inicial": ai, "ano_final": af, "serasa": serasa, "serasa_data": serasa_data}
     for k, v in list(new_meta.items()):
         if v is None or v == "":
             new_meta.pop(k)
