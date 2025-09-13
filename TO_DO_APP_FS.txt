@@ -33,13 +33,13 @@ Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
 ====================================
 
 =====Novidades=====
-* (x) Mockup Projeto
-* (x) Organizar Github e VS Code
-* (x) Instalar pacotes python
-* (x) Versão alpha 0.1
-    - (x) Menus
-    - (x) Gráficos e tabelas
-    - (x) Apresentação André
+* (x) Mockup Projeto.
+* (x) Organizar Github e VS Code.
+* (x) Instalar pacotes python.
+* (x) Versão alpha 0.1:
+    - (x) Menus;
+    - (x) Gráficos e tabelas;
+    - (x) Apresentação André.
 ---
 Até aqui:
 [v. 0.1, de 19/08/2025]
@@ -50,62 +50,62 @@ Até aqui:
 ====================================
 
 =====Novidades=====
-* (x) Cores
-* (x) Integração dos menus com logos e posicionamento 
-* (x) Botões
-* (x) Comportamento do APP
+* (x) Cores.
+* (x) Integração dos menus com logos e posicionamento.
+* (x) Botões.
+* (x) Comportamento do APP.
 ---
 Até aqui:
 [v. 0.2, de 02/09/2025]
 ---
 
 =====Novidades=====
-* (x) Logo Assertif em todas as seções/views
+* (x) Logo Assertif em todas as seções/views.
 ---
 Até aqui:
 [v. 0.3, de 02/09/2025]
 ---
 
 =====Novidades=====
-* (x) Planilha Excel (local) e Google Docs (web) funcionando
+* (x) Planilha Excel (local) e Google Docs (web) funcionando.
 ---
 Até aqui:
 [v. 0.4, de 02/09/2025]
 ---
 
 =====Novidades=====
-* (x) Após "processamento concluído" automaticamente vai para a seção "Resumo"
+* (x) Após "processamento concluído" automaticamente vai para a seção "Resumo".
 ---
 Até aqui:
 [v. 0.5, de 02/09/2025]
 ---
 
 =====Novidades=====
-* (x) Substituição de radio por abas na view/seção 'Novo'
-* (x) Seções André
-    - (x) Readequação da v. 0.5 (views/seções diferentes)
-    - (x) Resultados (Abas: Resumo, Tabelas e Gráficos da v. 0.1)
-        - (x) Dividido em abas (Resumo, Tabelas e Gráficos)
-        - (x) Resumo
-        - (x) Tabelas
-        - (x) Gráficos
+* (x) Substituição de radio por abas na view/seção 'Novo'.
+* (x) Seções André.
+    - (x) Readequação da v. 0.5 (views/seções diferentes).
+    - (x) Resultados (Abas: Resumo, Tabelas e Gráficos da v. 0.1):
+        - (x) Dividido em abas (Resumo, Tabelas e Gráficos);
+        - (x) Resumo;
+        - (x) Tabelas;
+        - (x) Gráficos.
 
-    - (x) Parecer (LangChain/OpenAI)
+    - (x) Parecer (LangChain/OpenAI).
 
-    - (x) sobre
-        - (x) Dividido em abas (Abas: Metodologia, Glossário e FAQ)
-        - (x) Glossário
-        - (x) FAQ
-        - (x) Contato
+    - (x) sobre:
+        - (x) Dividido em abas (Abas: Metodologia, Glossário e FAQ);
+        - (x) Glossário;
+        - (x) FAQ;
+        - (x) Contato.
 
-* (x) Consistência visual (cores e ícones)
+* (x) Consistência visual (cores e ícones).
 ---
 Até aqui:
 [v. 0.6, de 02/09/2025]
 ---
 
 =====Novidades=====
-* (x) Formatação e alinhamento de textos nas views/abas
+* (x) Formatação e alinhamento de textos nas views/abas.
 ---
 Até aqui:
 [v. 0.6.01, de 05/09/2025]
@@ -116,78 +116,78 @@ Até aqui:
 ===============================================
 
 =====Novidades=====
-* (x) Seção Metodologia iniciada
+* (x) Seção Metodologia iniciada.
 ---
 Até aqui:
 [v. 0.7, de 06/09/2025]
 ---
 
 =====Novidades=====
-* (x) Criar topbar na parte superior (início, novo, relatórios, usuários etc)
+* (x) Criar topbar na parte superior (início, novo, relatórios, usuários etc).
 ---
 Até aqui:
 [v. 0.7.10, de 06/09/2025]
 ---
 
 =====Novidades=====
-* (x) Encerrada a formatação da versão estática da topbar
-* (x) Centralização das abas e formatação de textos nas seções/views
-* (x) Renomear as views: 'Novo' para 'Lançamentos', e 'Resultados' para 'Análise'
+* (x) Encerrada a formatação da versão estática da topbar.
+* (x) Centralização das abas e formatação de textos nas seções/views.
+* (x) Renomear as views: 'Novo' para 'Lançamentos', e 'Resultados' para 'Análise'.
 ---
 Até aqui:
 [v. 0.7.11, de 06/09/2025]
 ---
 
 =====Novidades=====
-* (x) Guia rápido e Lançamentos/Início (ideia inicial)
+* (x) Guia rápido e Lançamentos/Início (ideia inicial).
 ---
 Até aqui:
 [v. 0.7.12, de 07/09/2025]
 ---
 
 =====Novidades=====
-* ( ) Topbar interativa
-    - (x) Criação da página Guia Rápido
-    - (x) Criação da página Início
-    - (x) Ajuste para igualar largura com as margens dos textos
+* ( ) Topbar interativa:
+    - (x) Criação da página Guia Rápido;
+    - (x) Criação da página Início;
+    - (x) Ajuste para igualar largura com as margens dos textos.
 ---
 Até aqui:
 [v. 0.7.13, de 07/09/2025]
 ---
 
 =====Ajustes=====
-* (x) Troquei 'Início' por 'Página Principal' em topbar (evitar confusão com lancamentos.py)
-* (x) Ajuste da largura da topbar para se alinhar ao texto
-* (x) Diversos (8 horas nisso!!) conflitos entra sidebar e topbar
+* (x) Troquei 'Início' por 'Página Principal' em topbar (evitar confusão com lancamentos.py).
+* (x) Ajuste da largura da topbar para se alinhar ao texto.
+* (x) Diversos (8 horas nisso!!) conflitos entra sidebar e topbar.
 =====Novidades=====
-* (x) Remover opção de fechar barra lateral [v. 0.7.13a, de 07/09/2025]
+* (x) Remover opção de fechar barra lateral [v. 0.7.13a, de 07/09/2025].
 ---
 Até aqui:
 [v. 0.7.14, de 08/09/2025]
 ---
 
 =====Ajustes=====
-* (x) Resolvendo de vez conflitos entre topbar e sidebar
-    - (x) state_manager.py, config.py
-    - (x) Atualização app.py, nav.py e topbar.py
-    - (x) Testes
+* (x) Resolvendo de vez conflitos entre topbar e sidebar:
+    - (x) state_manager.py, config.py;
+    - (x) Atualização app.py, nav.py e topbar.py;
+    - (x) Testes.
 ---
 Até aqui:
 [v. 0.7.15, de 08/09/2025]
 ---
 
 =====Ajustes=====
-* (x) Clicar em 'Sobre' após calcular o FinScore precisa de clique duplo
-* ( ) Diminuir 1cm de cada lado as margens dos textos [Não funcionou - decidi manter como está]
-    - (x) Separado o css de app.py (styles/main.css)
+* (x) Clicar em 'Sobre' após calcular o FinScore precisa de clique duplo.
+* ( ) Diminuir 1cm de cada lado as margens dos textos [Não funcionou - decidi manter como está].
+* (x) Separado o css de app.py (styles/main.css).
 ---
 Até aqui:
 [v. 0.7.15a, de 08/09/2025]
 ---
 
 =====Novidades=====
-* (x) Remover "View fullscreen" da barra lateral
-* (x) Inserir ícones (ainda não interativos) nos títulos das abas de Lançamentos
+* (x) Remover "View fullscreen" da barra lateral.
+* (x) Inserir ícones (ainda não interativos) nos títulos das abas de Lançamentos.
 ---
 Até aqui:
 [v. 0.7.16, de 10/09/2025]
@@ -195,41 +195,55 @@ Até aqui:
 
 =====Novidades=====
 * ( ) Textos seções:
-    - (x) Guia Rápido (topbar)
-    - (x) Sobre/Metodologia (sidebar/nav)
-    - (x) Sobre/Glossário (sidebar/nav)
-    - (x) Sobre/FAQ (sidebar/nav)
-* (x) Criar na sidebar/nav a seção/view 'Novo' em substituição à seção/view 'Home'
+    - (x) Guia Rápido (topbar);
+    - (x) Sobre/Metodologia (sidebar/nav);
+    - (x) Sobre/Glossário (sidebar/nav);
+    - (x) Sobre/FAQ (sidebar/nav).
+* (x) Criar na sidebar/nav a seção/view 'Novo' em substituição à seção/view 'Home'.
 ---
 Até aqui:
 [v. 0.7.17, de 10/09/2025]
 ---
 
 =====Ajustes=====
-* (x) Novo só funcionando após clicar em outro link da sidebar
+* (x) Novo só funcionando após clicar em outro link da sidebar.
 =====Novidades=====
-* (x) Dropdown Menu "Processo", colapsando "Novo", "Lançamentos", "Análise" e "Parecer" (sidebar/nav)
-* (x) Botões de redes sociais, configurações e tema claro/escuro (topbar)
+* (x) Dropdown Menu "Processo", colapsando "Novo", "Lançamentos", "Análise" e "Parecer" (sidebar/nav).
+* (x) Botões de redes sociais, configurações e tema claro/escuro (topbar).
 ---
 Até aqui:
 [v. 0.7.18, de 12/09/2025]
 ---
 
 =====Novidades=====
-* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados
-* ( ) Reescrita de Lançamentos/Início
-* ( ) Criar footer no estilo da topbar
+* (x) Texto da seção/view 'Novo' Reformulada (sidebar/nav).
+* (x) Criado botão 'iniciar' em 'Novo' (sidebar/nav).
+* (x) Removida a aba 'Início', da seção/view 'Lançamentos' (sidebar/nav).
+* (x) Renomeadas as seções e os apontamentos (para as views) 'Definir1' e 'Definir2' para 'Estoque' e 'Cadastros', 
+respectivamente (topbar).
+* (x) Reescrita da seção/view 'Guia Rápido' (topbar).
+* (x) Em negrito a renderização das seções Processo, Sobre e Contato (sidebar/nav).
+* (x) Fontes e cor das seções da sidebar/nav reformuladas para combinar com a topbar e o logo do FinScore.
+---
+Até aqui:
+[v. 0.7.19, de 13/09/2025]
+---
+
+=====Novidades=====
+* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados.
+* ( ) Reescrita de Lançamentos/Início.
+* ( ) Criar footer no estilo da topbar.
 
 ......................................................................................................................
 
 ============
 3. PARECER
 ============
-* ( ) Configurar OpenAI e LangChain
-* ( ) Definir e configurar dados que servirão de parâmetro
-* ( ) Vincular LangChain no Código
-* ( ) Configurar modelo padrão
-* ( ) Testar diferentes resultados/cenários
+* ( ) Configurar OpenAI e LangChain.
+* ( ) Definir e configurar dados que servirão de parâmetro.
+* ( ) Vincular LangChain no Código.
+* ( ) Configurar modelo padrão.
+* ( ) Testar diferentes resultados/cenários.
 ......................................................................................................................
 
 ====================================
@@ -247,5 +261,6 @@ Ideias
 - Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores
 - Botões e subseções da rádio 'Dados' em azul, não verde
+- No dropdown da sidebar, inserir o menu/view 'Consultar', mas só depois de criar o backend com do banco de dados
 ......................................................................................................................
 

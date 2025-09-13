@@ -100,8 +100,8 @@ def render_topbar(current_page: str | None = None) -> None:
           <div class="mm-topbar">
             <nav class="nav">
               <a class="pill-btn {is_active('Home')}" href="?p=home" target="_self">Página Inicial</a>
-              <a class="pill-btn {is_active('Definir1')}" href="?p=def1" target="_self">Definir1</a>
-              <a class="pill-btn {is_active('Definir2')}" href="?p=def2" target="_self">Definir2</a>
+              <a class="pill-btn {is_active('Estoque')}" href="?p=def1" target="_self">Estoque</a>
+              <a class="pill-btn {is_active('Cadastros')}" href="?p=def2" target="_self">Cadastros</a>
               <a class="pill-btn {is_active('Guia Rápido')}" href="?p=guia" target="_self">Guia Rápido</a>
             </nav>
             <div class="right">

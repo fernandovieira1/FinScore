@@ -36,6 +36,8 @@ def render_sidebar(current_page: str = "Home"):
             .fs-menu summary::-webkit-details-marker { display: none; }
             .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; }
             details[open] > summary .caret { transform: rotate(180deg); }
+            /* Negrito para seções específicas */
+            .fs-menu .bold { font-weight: bold; }
             </style>
             """,
             unsafe_allow_html=True
@@ -53,6 +55,7 @@ def render_sidebar(current_page: str = "Home"):
         # Constrói o HTML do menu com submenus
         def build_menu_html():
             html = ['<nav class="fs-menu">']
+            bold_sections = {"Processo", "Sobre", "Contato"}
             for item in SIDEBAR_MENU:
                 label = item["label"]
                 slug = item["slug"]
@@ -61,10 +64,11 @@ def render_sidebar(current_page: str = "Home"):
                 is_active_top = (current_slug == slug) or any(current_slug == c.get("slug") for c in children)
                 open_attr = " open" if is_active_top else ""
                 active_cls = " active" if current_slug == slug else ""
+                bold_cls = " bold" if label in bold_sections else ""
 
                 if children:
                     html.append(
-                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▾</span></summary>'
+                        f'<details{open_attr}><summary class="item{active_cls}{bold_cls}">{label}<span class="caret">▾</span></summary>'
                     )
                     for c in children:
                         c_label, c_slug = c["label"], c["slug"]
@@ -72,7 +76,7 @@ def render_sidebar(current_page: str = "Home"):
                         html.append(f'<div class="submenu"><a class="item{c_active}" href="?p={c_slug}" target="_self">{c_label}</a></div>')
                     html.append('</details>')
                 else:
-                    html.append(f'<a class="item{active_cls}" href="?p={slug}" target="_self">{label}</a>')
+                    html.append(f'<a class="item{active_cls}{bold_cls}" href="?p={slug}" target="_self">{label}</a>')
             html.append('</nav>')
             return "\n".join(html)
 

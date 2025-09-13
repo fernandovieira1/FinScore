@@ -14,6 +14,7 @@ for p in (str(APP_DIR), str(ROOT_DIR)):
 st.set_page_config(page_title="FinScore Dashboard", layout="wide")
 
 # --------------- imports ---------------
+from app_front.views import estoque
 from components import AppState, render_sidebar, render_topbar, DEBUG_MODE
 from components.config import TOPBAR_PAGES, SIDEBAR_PAGES
 
@@ -24,7 +25,7 @@ from views import parecer, sobre, contato
 from views import guia_rapido
 from views import faq as view_faq
 from views import glossario as view_glossario
-from views import definir1, definir2
+from app_front.views import cadastros
 from views import home as view_home
 from views import novo as view_novo
 from views import processo as view_processo
@@ -51,8 +52,8 @@ ROUTES = {
     "Home": view_home.render,
     "Processo": view_processo.render,     # <-- NOVO
     "Novo": view_novo.render,
-    "Definir1": definir1.render,
-    "Definir2": definir2.render,
+    "Definir1": estoque.render,
+    "Definir2": cadastros.render,
     "Guia Rápido": guia_rapido.render,
     "FAQ": view_faq.render,
     "Glossário": view_glossario.render,

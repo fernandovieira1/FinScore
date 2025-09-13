@@ -1,3 +1,12 @@
+/* Botão fake visual para instrução */
+.fake-button {
+    background-color: #006fbe58;
+    color: rgb(63, 63, 63);
+    padding: 0px 1.5px;
+    border-radius: 3px;
+    font-family: sans-serif;
+    display: inline-block;
+}
 :root {
     --bg: #f2f4f5;
     --card: #ffffff;
@@ -79,10 +88,19 @@ span {
     margin-top: -2px;
 }
 
+
 /* -------- sidebar -------- */
 section[data-testid="stSidebar"]>div:first-child {
     background: #cdcdcd !important;
     padding-top: 0 !important;
+}
+
+/* Unifica fonte da sidebar com a topbar */
+.fs-menu, .fs-menu a, .fs-menu .item, .fs-menu summary, .fs-menu .submenu a {
+    font-family: 'Segoe UI', 'Inter', 'system-ui', 'Arial', sans-serif !important;
+    font-size: 0.92rem;
+    letter-spacing: 0.01em;
+    color: #235561 !important;
 }
 
 section[data-testid="stSidebar"] .block-container {
@@ -144,6 +162,10 @@ hr {
 .st-emotion-cache-1jmve5d {
     padding-left: 37.8px;
     padding-right: 37.8px;
+}
+
+.fs-menu .bold {
+    font-weight: bold !important;
 }
 
 /* USAR ESTA */

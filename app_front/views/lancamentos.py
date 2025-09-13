@@ -5,8 +5,8 @@ from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore
 
 # Rótulos com ícones (ordem fixa na UI)
-TAB_LABELS = {"Início": "🏁 Início", "Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
-TAB_ORDER = ["Início", "Cliente", "Dados"]  # Ordem visual fixa
+TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
+TAB_ORDER = ["Cliente", "Dados"]  # Ordem visual fixa
 
 def _js_select_tab(label_with_icon: str):
     """Força a seleção visual de uma aba do st.tabs sem reordenar a lista."""
@@ -52,6 +52,7 @@ def _auto_save_cliente():
     ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="AAAA")
     af_str = st.text_input("Ano Final", value=str(meta.get("ano_final", "")), placeholder="AAAA")
     serasa_str = st.text_input("Serasa Score (0–1000)", value=str(meta.get("serasa", "")), placeholder="Ex.: 550")
+    serasa_data = st.text_input("Data de Consulta do Serasa", value=str(meta.get("serasa_data", "")), placeholder="DD/MM/AAAA")
 
     # Normalização
     empresa = empresa.strip()
@@ -72,23 +73,7 @@ def _auto_save_cliente():
     else:
         st.success("Cliente salvo automaticamente.")
 
-def _sec_inicio():
-    st.header("Bem-vindo ao FinScore")
-    st.markdown(
-        """
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-        Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. 
-        Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum.
-        """,
-        unsafe_allow_html=True,
-    )
-    st.write("")
 
-    # Botão "Iniciar": muda a aba para Cliente e sinaliza navegação interna
-    if st.button("Iniciar"):
-        st.session_state["novo_tab"] = "Cliente"
-        st.session_state["_internal_nav"] = True
-        st.rerun()
 
 def _sec_cliente():
     st.header("Dados do Cliente")
@@ -224,11 +209,9 @@ def render():
     tab_dict = {name: tab for name, tab in zip(TAB_ORDER, tabs)}
 
     # Seleção visual (sem reordenar)
-    _js_select_tab(TAB_LABELS.get(ss["novo_tab"], TAB_LABELS["Início"]))
+    _js_select_tab(TAB_LABELS.get(ss["novo_tab"], TAB_LABELS["Cliente"]))
 
     # Render do conteúdo
-    with tab_dict["Início"]:
-        _sec_inicio()
     with tab_dict["Cliente"]:
         _sec_cliente()
     with tab_dict["Dados"]:
