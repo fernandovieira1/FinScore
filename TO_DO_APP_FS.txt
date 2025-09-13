@@ -246,10 +246,12 @@ Até aqui:
 [v. 0.7.20, de 13/09/2025]
 ---
 
-=====Novidades=====
-* ( ) Travar acesso seções/views Análise e Parecer se não clicar no botão 'Calcular FinScore' em Lançamentos/Dados.
-* ( ) Reescrita de Lançamentos/Início.
-* ( ) Criar footer no estilo da topbar.
+=====Ajustes=====
+* (x) Reescrita de Lançamentos/Início.
+---
+Até aqui:
+[v. 0.7.20a, de 13/09/2025]
+---
 
 ......................................................................................................................
 
@@ -274,6 +276,7 @@ Ideias
     \ Botão refresh
 
 - Ano ser apenas o inicial (contas +3 automaticamente)
+- Criar footer no estilo da topbar.
 
 - Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores

@@ -40,7 +40,7 @@ Tudo isso é acessível através das seguintes opções:
 A seção **"Lançamentos"** fica disponível após clicar no botão **[Iniciar]**, na seção **"Novo"**. Igualmente, as 
 seções **"Análise"** e **"Parecer"** ficam disponíveis após o cálculo do FinScore na seção **"Lançamentos"**.
 
-Para mais detalhes, consulte o guia completo na seção **"Sobre"**.
+Para maiores detalhes sobre a metodologia e a interpretação dos resultados, consulte o guia completo na seção **"Sobre"**.
 
 Dúvidas ou sugestões? Utilize o formulário na seção **"Contato"**.
  """,
