@@ -105,13 +105,13 @@ def render_topbar(current_page: str | None = None) -> None:
               <a class="pill-btn {is_active('Guia Rápido')}" href="?p=guia" target="_self">Guia Rápido</a>
             </nav>
             <div class="right">
-              <a href="#" class="social-btn" title="Facebook">
+              <a href="https://www.facebook.com/assertif/about/" class="social-btn" title="Facebook" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-facebook-f"></i>
               </a>
-              <a href="#" class="social-btn" title="YouTube">
+              <a href="https://www.youtube.com/@grupoassertif" class="social-btn" title="YouTube" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-youtube"></i>
               </a>
-              <a href="#" class="social-btn" title="LinkedIn">
+              <a href="https://www.linkedin.com/company/grupoassertif" class="social-btn" title="LinkedIn" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-linkedin-in"></i>
               </a>
               <button class="theme-btn" title="Alternar tema">
