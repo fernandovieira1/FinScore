@@ -251,6 +251,12 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.7.20a, de 13/09/2025]
+
+=====Ajustes=====
+* (x) Reescrita de Lançamentos/Início.
+---
+Até aqui:
+[v. 0.7.20b, de 13/09/2025]
 ---
 
 =====Novidades=====
@@ -258,7 +264,13 @@ Até aqui:
 * (x) Arquivo LICENSE.md
 ---
 Até aqui:
-[v. 0.7.20b, de 13/09/2025]
+[v. 0.7.20c, de 13/09/2025]
+
+=====Ajustes=====
+* (x) Pasta 'suporte', englobando os arquivos de notas e controle (TO_DO_APP.txt etc)
+---
+Até aqui:
+[v. 0.7.20d, de 13/09/2025]
 ---
 
 ......................................................................................................................
