@@ -364,21 +364,10 @@ em 'Enviar Dados' se alguma informação faltar.
 ====================================
 Ideias
 ====================================
-- Criar página inicial, como painel:
-    \ Breve texto sobre o FINSCORE
-    \ Total de cálculos
-    \ Botão Login
-    \ Botão Novo
-    \ Botão refresh
-
-- Ano ser apenas o inicial (contas +3 automaticamente)
-- Criar footer no estilo da topbar.
-
-- Harmonia final de cores (tons de cinza, branco, preto, azul e verde?)
 - Campos 'Dados do Cliente' com crítica de valores
-- Botões e subseções da rádio 'Dados' em azul, não verde
 - No dropdown da sidebar, inserir o menu/view 'Consultar', mas só depois de criar o backend com do banco de dados
 
+BACKEND
 - API REST para integração externa
 - Dashboard administrativo
 - Relatórios em PDF
