@@ -337,6 +337,13 @@ Até aqui:
 [v. 0.7.25a, de 14/09/2025]
 ---
 
+=====Ajustes=====
+* (x) Aviso de versão e preferência por tema claro em Home (após tentar consertar inconsistêncis em lancamentos.py).
+---
+Até aqui:
+[v. 0.7.25b, de 14/09/2025]
+---
+
  =====Novidades=====
 * ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
 em 'Enviar Dados' se alguma informação faltar.

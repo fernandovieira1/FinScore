@@ -71,6 +71,16 @@ def _auto_save_cliente():
     # Ano Final é calculado automaticamente
     af = ai + 2 if ai else None
     af_str = str(af) if af else ""
+    st.markdown("""
+    <style>
+    /* Força fundo branco e texto escuro no campo desabilitado, igual aos outros campos */
+    input[disabled], input:disabled, .stTextInput input:disabled {
+        color: #222 !important;
+        background: #fff !important;
+        opacity: 1 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.text_input("Ano Final", value=af_str, placeholder="YYYY", max_chars=4, disabled=True)
     # Serasa Score como float
     serasa_val = meta.get("serasa", "")
