@@ -119,53 +119,159 @@ def _sec_metodologia():
 
 def _sec_glossario():
     st.subheader("Glossário")
+    # Dicionário do glossário (A-Z)
+    glossario = {
+        "A": [
+            ("Alavancagem", "Relação entre o capital de terceiros (dívidas) e o capital próprio da empresa. Alta alavancagem pode indicar maior risco financeiro, mas também potencial de retorno."),
+        ],
+        "B": [],
+        "C": [
+            ("CCL/Ativo Total", "Índice que mede a proporção do Capital Circulante Líquido em relação ao Ativo Total, indicando folga financeira de curto prazo."),
+            ("Cobertura de Juros", "Capacidade da empresa de pagar suas despesas financeiras com o resultado operacional (EBIT). Valores baixos sugerem risco de inadimplência."),
+        ],
+        "D": [],
+        "E": [
+            ("Eficiência Operacional", "Grau de aproveitamento dos ativos e da gestão dos ciclos financeiros (ex: Giro do Ativo, PMR, PMP) para geração de receita."),
+            ("Endividamento", "Proporção do passivo total em relação ao ativo total, indicando o grau de dependência de capital de terceiros."),
+            ("Escalonamento", "Processo de transformação do escore bruto para uma escala padronizada (0–1000), facilitando a comparação e interpretação dos resultados."),
+            ("Estrutura de Capital", "Composição do financiamento da empresa entre capital próprio e de terceiros, incluindo o peso do ativo imobilizado."),
+        ],
+        "F": [
+            ("Faixas de Risco", "Categorias interpretativas do FinScore, que agrupam empresas conforme o perfil de risco de crédito."),
+        ],
+        "G": [
+            ("Giro do Ativo", "Mede a eficiência da empresa em gerar receita a partir de seus ativos totais."),
+        ],
+        "H": [],
+        "I": [
+            ("Imobilizado/Ativo", "Proporção do ativo imobilizado em relação ao ativo total, indicando o grau de investimento em ativos fixos."),
+            ("Índices Contábeis", "Indicadores extraídos das demonstrações financeiras que refletem diferentes dimensões da saúde econômico-financeira da empresa."),
+        ],
+        "J": [],
+        "K": [],
+        "L": [
+            ("Liquidez Corrente", "Capacidade de a empresa honrar obrigações de curto prazo com seus ativos circulantes."),
+            ("Liquidez Seca", "Similar à liquidez corrente, mas desconsidera estoques, oferecendo visão mais conservadora da liquidez."),
+        ],
+        "M": [
+            ("Margem EBITDA", "Percentual da receita operacional que sobra após despesas operacionais, antes de juros, impostos, depreciação e amortização."),
+            ("Margem Líquida", "Percentual do lucro líquido em relação à receita total, indicando rentabilidade final da empresa."),
+        ],
+        "N": [],
+        "O": [],
+        "P": [
+            ("Padronização (z-score)", "Transformação dos índices para uma escala comum (média zero, desvio-padrão um), permitindo comparabilidade entre diferentes indicadores."),
+            ("Período Médio de Pagamento (PMP)", "Tempo médio (em dias) que a empresa leva para pagar seus fornecedores."),
+            ("Período Médio de Recebimento (PMR)", "Tempo médio (em dias) que a empresa leva para receber de seus clientes."),
+            ("Ponderação Temporal", "Processo de atribuir pesos diferentes aos anos analisados, valorizando mais o desempenho recente na composição do FinScore."),
+        ],
+        "Q": [],
+        "R": [
+            ("Rentabilidade", "Capacidade da empresa de gerar lucro a partir de suas receitas e ativos (ex: Margem Líquida, ROA, ROE)."),
+            ("ROA (Return on Assets)", "Retorno sobre o ativo total, mede a eficiência da empresa em gerar lucro com seus ativos."),
+            ("ROE (Return on Equity)", "Retorno sobre o patrimônio líquido, mede a rentabilidade do capital próprio investido."),
+        ],
+        "S": [],
+        "T": [],
+        "U": [],
+        "V": [],
+        "W": [],
+        "X": [],
+        "Y": [],
+        "Z": [],
+    }
+
+    letras = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
+
     st.markdown("""
-* **Alavancagem:** Relação entre o capital de terceiros (dívidas) e o capital próprio da empresa. Alta alavancagem pode indicar maior risco financeiro, mas também potencial de retorno.
+    <style>
+    .glossario-barra {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin: 0 auto 18px auto;
+        padding: 8px 0 4px 0;
+        max-width: 700px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    .glossario-letra {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 5px;
+        background: #eaf7f1;
+        color: #5ea68d !important;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 1rem;
+        transition: background 0.2s, color 0.2s;
+        line-height: 1.6;
+        margin: 0;
+        font-family: inherit;
+        border: 1px solid #5ea68d22;
+        box-shadow: none;
+    }
+    .glossario-letra:hover {
+        background: #5ea68d;
+        color: #fff !important;
+    }
+    .glossario-letra.desabilitada {
+        background: #f2f2f2;
+        color: #bdbdbd;
+        pointer-events: none;
+        cursor: default;
+        border: 1px solid #e0e0e0;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    .glossario-voltar {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 0.95em;
+        color: #5ea68d;
+        text-decoration: underline;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .glossario-voltar:hover {
+        color: #388e6c;
+    }
+    .glossario-letra-titulo {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-top: 32px;
+        margin-bottom: 10px;
+        color: #5ea68d;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-* **Análise de Componentes Principais (PCA):** Técnica estatística de redução de dimensionalidade que transforma um conjunto de variáveis correlacionadas em um conjunto menor de fatores independentes (componentes principais), preservando a maior parte da variância dos dados.
+    # Barra de letras A–Z
+    barra_html = '<div class="glossario-barra" id="topo">'
+    for letra in letras:
+        if glossario.get(letra) and len(glossario[letra]) > 0:
+            barra_html += f'<a class="glossario-letra" href="#{letra}">{letra}</a>'
+        else:
+            barra_html += f'<span class="glossario-letra desabilitada">{letra}</span>'
+    barra_html += '</div>'
+    st.markdown(barra_html, unsafe_allow_html=True)
 
-* **CCL/Ativo Total:** Índice que mede a proporção do Capital Circulante Líquido em relação ao Ativo Total, indicando folga financeira de curto prazo.
-
-* **Cobertura de Juros:** Capacidade da empresa de pagar suas despesas financeiras com o resultado operacional (EBIT). Valores baixos sugerem risco de inadimplência.
-
-* **Eficiência Operacional:** Grau de aproveitamento dos ativos e da gestão dos ciclos financeiros (ex: Giro do Ativo, PMR, PMP) para geração de receita.
-
-* **Endividamento:** Proporção do passivo total em relação ao ativo total, indicando o grau de dependência de capital de terceiros.
-
-* **Escalonamento:** Processo de transformação do escore bruto para uma escala padronizada (0–1000), facilitando a comparação e interpretação dos resultados.
-
-* **Estrutura de Capital:** Composição do financiamento da empresa entre capital próprio e de terceiros, incluindo o peso do ativo imobilizado.
-
-* **Faixas de Risco:** Categorias interpretativas do FinScore, que agrupam empresas conforme o perfil de risco de crédito.
-
-* **Giro do Ativo:** Mede a eficiência da empresa em gerar receita a partir de seus ativos totais.
-
-* **Imobilizado/Ativo:** Proporção do ativo imobilizado em relação ao ativo total, indicando o grau de investimento em ativos fixos.
-
-* **Índices Contábeis:** Indicadores extraídos das demonstrações financeiras que refletem diferentes dimensões da saúde econômico-financeira da empresa.
-
-* **Liquidez Corrente:** Capacidade de a empresa honrar obrigações de curto prazo com seus ativos circulantes.
-
-* **Liquidez Seca:** Similar à liquidez corrente, mas desconsidera estoques, oferecendo visão mais conservadora da liquidez.
-
-* **Margem EBITDA:** Percentual da receita operacional que sobra após despesas operacionais, antes de juros, impostos, depreciação e amortização.
-
-* **Margem Líquida:** Percentual do lucro líquido em relação à receita total, indicando rentabilidade final da empresa.
-
-* **Padronização (z-score):** Transformação dos índices para uma escala comum (média zero, desvio-padrão um), permitindo comparabilidade entre diferentes indicadores.
-
-* **Período Médio de Pagamento (PMP):** Tempo médio (em dias) que a empresa leva para pagar seus fornecedores.
-
-* **Período Médio de Recebimento (PMR):** Tempo médio (em dias) que a empresa leva para receber de seus clientes.
-
-* **Ponderação Temporal:** Processo de atribuir pesos diferentes aos anos analisados, valorizando mais o desempenho recente na composição do FinScore.
-
-* **Rentabilidade:** Capacidade da empresa de gerar lucro a partir de suas receitas e ativos (ex: Margem Líquida, ROA, ROE).
-
-* **ROA (Return on Assets):** Retorno sobre o ativo total, mede a eficiência da empresa em gerar lucro com seus ativos.
-
-* **ROE (Return on Equity):** Retorno sobre o patrimônio líquido, mede a rentabilidade do capital próprio investido.
-    """)
+    # Seções do glossário
+    for letra in letras:
+        termos = glossario.get(letra, [])
+        if termos:
+            st.markdown(f'<div id="{letra}"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="glossario-letra-titulo">{letra}</div>', unsafe_allow_html=True)
+            for termo, definicao in termos:
+                st.markdown(f'**{termo}**<br><span style="color:#444;">{definicao}</span>', unsafe_allow_html=True)
+            st.markdown(
+                '<a href="#topo" class="glossario-voltar">↑ voltar ao topo</a>',
+                unsafe_allow_html=True
+            )
 
 def _sec_faq():
     st.subheader("FAQ")

@@ -310,14 +310,20 @@ Até aqui:
 [v. 0.7.23b, de 13/09/2025] (config codespaces linux)
 ---
  
- =====Novidades=====
+=====Novidades=====
 * (x) Seção Sobre/FAQ em formato accordion;
 =====Ajustes=====
 * (x) Consistência visual temas claro ou escuro dos sistemas operacionais ou navegadores;
 ---
 Até aqui:
-[v. 0.7.24, de 13/09/2025]
+[v. 0.7.24, de 14/09/2025]
 ---
+
+=====Novidades=====
+* (x) Seção Sobre/Glossárionavegável em ordem alfabética (A–Z);
+---
+Até aqui:
+[v. 0.7.25, de 14/09/2025]
 
  =====Novidades=====
 * ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
