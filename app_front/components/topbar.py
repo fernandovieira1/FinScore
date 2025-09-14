@@ -3,6 +3,15 @@ import streamlit as st
 import base64
 from pathlib import Path
 from components.config import TOPBAR_PAGES
+from components.state_manager import AppState
+
+def show_topbar_calculo_popup(target_page: str):
+    """
+    Mostra popup de aviso quando usuário tenta navegar na topbar durante cálculo ativo
+    """
+    # Armazena a página de destino no session_state
+    st.session_state.popup_target_page = target_page
+    st.session_state.show_popup = True
 
 def render_topbar(current_page: str | None = None) -> None:
     """Renderiza a barra superior de navegação"""

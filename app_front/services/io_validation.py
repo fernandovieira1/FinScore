@@ -2,6 +2,7 @@
 from typing import Any, Dict, Tuple, Optional
 import pandas as pd
 import streamlit as st
+from io import BytesIO
 
 def validar_cliente(meta: Dict[str, Any]) -> Dict[str, str]:
     e: Dict[str, str] = {}
@@ -26,13 +27,40 @@ def _sheet_name_case_insensitive(xls: pd.ExcelFile, wanted: str) -> Optional[str
     return None
 
 def ler_planilha(upload_or_url) -> Tuple[Optional[pd.DataFrame], Optional[str], Optional[str]]:
+    """
+    Lê uma planilha Excel, priorizando o engine 'openpyxl' (xlsx).
+    Retorna (df, aba_lida, erro_str)
+    """
     try:
-        xls = pd.ExcelFile(upload_or_url)
+        # Aceita tanto bytes (upload do Streamlit) quanto caminho/arquivo.
+        src = upload_or_url
+        if hasattr(upload_or_url, "getvalue"):
+            # st.file_uploader retorna um UploadedFile -> usar bytes
+            src = BytesIO(upload_or_url.getvalue())
+
+        # Força engine 'openpyxl' para .xlsx
+        xls = pd.ExcelFile(src, engine="openpyxl")
         aba = _sheet_name_case_insensitive(xls, "lancamentos") or xls.sheet_names[0]
-        df = pd.read_excel(xls, sheet_name=aba)
+        df = pd.read_excel(xls, sheet_name=aba, engine="openpyxl")
         return df, aba, None
+    except ImportError as e:
+        # Dependência não encontrada no ambiente em execução
+        msg = (
+            "Dependência 'openpyxl' não encontrada no ambiente ativo. "
+            "Certifique-se de executar o app com o Python da sua venv e que o pacote esteja instalado.\n"
+            "Dica: ative a venv e rode: python -m pip install openpyxl"
+        )
+        return None, None, msg
     except Exception as e:
-        return None, None, str(e)
+        # Erros genéricos de leitura
+        est = str(e)
+        if "Missing optional dependency 'openpyxl'" in est:
+            msg = (
+                "Dependência 'openpyxl' ausente. Instale-a e execute o app pelo mesmo ambiente Python.\n"
+                "Ex.: ativar venv e rodar: python -m streamlit run app_front/app.py"
+            )
+            return None, None, msg
+        return None, None, est
 
 def check_minimo(df: pd.DataFrame) -> Dict[str, list]:
     req_bp = ["p_Ativo_Total", "p_Patrimonio_Liquido"]

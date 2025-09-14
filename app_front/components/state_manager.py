@@ -29,12 +29,20 @@ class AppState:
             st.session_state.last_navigation_time = 0
             st.session_state.navigation_source = None
             
+            # Modo de cálculo ativo - bloqueio retroativo
+            st.session_state.calculo_ativo = False
+            
             st.session_state.app_initialized = True
     
     @staticmethod
     def get_current_page() -> str:
         """Retorna a página atual"""
         return st.session_state.get('current_page', 'Home')
+    
+    @staticmethod
+    def get_previous_page() -> Optional[str]:
+        """Retorna a página anterior"""
+        return st.session_state.get('previous_page')
     
     @staticmethod
     def set_current_page(page_name: str, source: str = 'unknown'):
@@ -78,6 +86,10 @@ class AppState:
             
             if target_page and target_page != AppState.get_current_page():
                 if not AppState.should_ignore_navigation('url'):
+                    # Verifica popup antes de navegar
+                    if AppState.check_calculo_popup(target_page):
+                        # Não muda a página se houver popup
+                        return False
                     AppState.set_current_page(target_page, 'url')
                     return True
         return False
@@ -90,6 +102,35 @@ class AppState:
         
         if st.query_params.get("p") != current_slug:
             st.query_params["p"] = current_slug
+    
+    @staticmethod
+    def ativar_modo_calculo():
+        """Ativa o modo de cálculo ativo (bloqueio retroativo)"""
+        st.session_state.calculo_ativo = True
+        
+    @staticmethod
+    def desativar_modo_calculo():
+        """Desativa o modo de cálculo ativo"""
+        st.session_state.calculo_ativo = False
+        
+    @staticmethod
+    def is_calculo_ativo() -> bool:
+        """Verifica se o modo de cálculo está ativo"""
+        return st.session_state.get('calculo_ativo', False)
+    
+    @staticmethod
+    def check_calculo_popup(target_page: str) -> bool:
+        """
+        Verifica se deve mostrar popup de aviso para mudança de seção
+        durante cálculo ativo. Retorna True se deve mostrar popup.
+        """
+        if not AppState.is_calculo_ativo():
+            return False
+            
+        # Páginas permitidas durante cálculo ativo (sem popup)
+        paginas_permitidas = ["Análise", "Parecer", "Sobre"]
+        
+        return target_page not in paginas_permitidas
     
     @staticmethod
     def is_debug_mode() -> bool:

@@ -80,9 +80,14 @@ if sidebar_page and sidebar_page in ROUTES:
     current_page = AppState.get_current_page()
     if sidebar_page != current_page:
         if not AppState.should_ignore_navigation('sidebar'):
-            AppState.set_current_page(sidebar_page, 'sidebar')
-            AppState.sync_to_query_params()
-            st.rerun()
+            # Verifica popup antes de navegar
+            if AppState.check_calculo_popup(sidebar_page):
+                # Não muda a página se houver popup
+                pass
+            else:
+                AppState.set_current_page(sidebar_page, 'sidebar')
+                AppState.sync_to_query_params()
+                st.rerun()
 
 # 5. Sincroniza para a URL (mantém consistência)
 AppState.sync_to_query_params()
@@ -99,6 +104,40 @@ try {
 """, unsafe_allow_html=True)
 
 # --------------- renderização da página ---------------
+
+# Verifica e renderiza popup se necessário
+if st.session_state.get('show_popup', False):
+    target_page = st.session_state.get('popup_target_page', '')
+    
+    @st.dialog("⚠️ Cálculo FinScore em Andamento")
+    def popup_dialog():
+        st.markdown(f"""
+        **Um cálculo FinScore está em andamento.**
+        
+        Se você prosseguir para a seção "{target_page}", os dados serão perdidos e o cálculo e análise deverão ser refeitos.
+        
+        Deseja continuar mesmo assim?
+        """)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Cancelar", use_container_width=True):
+                st.session_state.show_popup = False
+                if 'popup_target_page' in st.session_state:
+                    del st.session_state.popup_target_page
+                st.rerun()
+        with col2:
+            if st.button("Prosseguir mesmo assim", use_container_width=True, type="primary"):
+                AppState.desativar_modo_calculo()
+                st.session_state.show_popup = False
+                AppState.set_current_page(target_page, 'popup_override')
+                if 'popup_target_page' in st.session_state:
+                    del st.session_state.popup_target_page
+                AppState.sync_to_query_params()
+                st.rerun()
+    
+    popup_dialog()
+
 try:
     current_page = AppState.get_current_page()
     render_function = ROUTES.get(current_page, view_home.render)
@@ -118,3 +157,7 @@ if DEBUG_MODE:
         st.write(f"**Última navegação:** {st.session_state.get('last_navigation_time')}")
         st.write(f"**Fonte:** {st.session_state.get('navigation_source')}")
         st.write(f"**Mudança por URL:** {url_changed}")
+        # Ambiente Python e dependências
+        import sys, importlib.util as _u
+        st.write(f"**Python exec:** {sys.executable}")
+        st.write(f"**openpyxl disponível:** {_u.find_spec('openpyxl') is not None}")

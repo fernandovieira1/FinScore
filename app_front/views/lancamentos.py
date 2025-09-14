@@ -153,10 +153,14 @@ def _sec_cliente():
     }
     </style>
     """, unsafe_allow_html=True)
-    if st.button("Enviar Dados"):
-        st.session_state["novo_tab"] = "Dados"
-        st.session_state["_internal_nav"] = True
-        st.rerun()
+    
+    # Centralizar o botão
+    col = st.columns([3, 2, 3])[1]
+    with col:
+        if st.button("Enviar Dados"):
+            st.session_state["novo_tab"] = "Dados"
+            st.session_state["_internal_nav"] = True
+            st.rerun()
 
 def _sec_dados():
     # DEBUG: Verificar se há referências a _navigate_to
@@ -223,32 +227,39 @@ def _sec_dados():
     }
     </style>
     """, unsafe_allow_html=True)
-    if st.button("Calcular FinScore"):
-        ss = st.session_state
-        pend = validar_cliente(ss.meta)
-        if pend:
-            st.error(pend)
-        elif ss.df is None:
-            st.error("Envie os dados contábeis acima antes de calcular.")
-        else:
-            try:
-                with st.spinner("Calculando FinScore…"):
-                    res = run_finscore(ss.df, ss.meta)
-                # Aceita dict ou tupla/lista
-                out = res[0] if isinstance(res, (list, tuple)) else res
-                if not isinstance(out, dict):
-                    raise ValueError("Formato de retorno inesperado do run_finscore.")
-                ss.out = out
-                ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
-                ss["liberar_analise"] = True
-                ss["liberar_parecer"] = True
-                st.success("✅ Processamento concluído.")
-                # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
-                ss.page = "Análise"
-                st.query_params["p"] = "analise"
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erro no processamento: {e}")
+    
+    # Centralizar o botão
+    col = st.columns([3, 2, 3])[1]
+    with col:
+        if st.button("Calcular FinScore"):
+            ss = st.session_state
+            pend = validar_cliente(ss.meta)
+            if pend:
+                st.error(pend)
+            elif ss.df is None:
+                st.error("Envie os dados contábeis acima antes de calcular.")
+            else:
+                try:
+                    with st.spinner("Calculando FinScore…"):
+                        res = run_finscore(ss.df, ss.meta)
+                    # Aceita dict ou tupla/lista
+                    out = res[0] if isinstance(res, (list, tuple)) else res
+                    if not isinstance(out, dict):
+                        raise ValueError("Formato de retorno inesperado do run_finscore.")
+                    ss.out = out
+                    ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
+                    ss["liberar_analise"] = True
+                    ss["liberar_parecer"] = True
+                    # Ativa modo de cálculo (bloqueio retroativo)
+                    from components.state_manager import AppState
+                    AppState.ativar_modo_calculo()
+                    st.success("✅ Processamento concluído.")
+                    # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
+                    ss.page = "Análise"
+                    st.query_params["p"] = "analise"
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro no processamento: {e}")
 
 def render():
     ss = st.session_state

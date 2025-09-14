@@ -1,6 +1,7 @@
 # app_front/views/novo.py
 
 import streamlit as st
+import streamlit.components.v1 as components
 from components.state_manager import AppState
 
 def render():
@@ -31,29 +32,71 @@ A análise será detalhada na seção **"Análise"** e você poderá visualizar 
     )
 
     st.write("")
-    # Botão Streamlit centralizado, azul, estilo consistente
+    # Botão centralizado com o mesmo estilo do "Calcular FinScore" (verde)
     col = st.columns([3, 2, 3])[1]
     with col:
-        btn_style = """
-        <style>
-        div[data-testid='column'] button[kind='secondary'] {
-            background: var(--primary-btn, #0074d9) !important;
-            color: #fff !important;
-            font-weight: 600;
-            font-size: 1.1rem;
-            border-radius: 6px !important;
-            padding: 0.7rem 2.5rem !important;
-            border: none !important;
-            box-shadow: 0 2px 8px rgba(16,24,40,0.08);
-            transition: background 0.2s;
-        }
-        div[data-testid='column'] button[kind='secondary']:hover {
-            background: #005fa3 !important;
-        }
-        </style>
-        """
-        st.markdown(btn_style, unsafe_allow_html=True)
+        # Container com ID próprio para CSS de alta especificidade
+        st.markdown('<div id="novo-iniciar-btn">', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <style>
+            /* CSS super específico para o botão Iniciar */
+            #novo-iniciar-btn .stButton > button,
+            #novo-iniciar-btn .stButton > button[data-testid="baseButton-secondary"],
+            #novo-iniciar-btn .stButton > button[kind="secondary"],
+            #novo-iniciar-btn .stButton > button[data-testid="baseButton-primary"],
+            #novo-iniciar-btn .stButton > button[kind="primary"] {
+                background: #43866b !important;
+                color: #fff !important;
+                font-weight: 600;
+                font-size: 1.05rem;
+                border-radius: 6px !important;
+                padding: 0.7rem 2.2rem !important;
+                border: none !important;
+                box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+                transition: background 0.2s;
+            }
+            #novo-iniciar-btn .stButton > button:hover {
+                background: #37745c !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button("Iniciar", key="btn_iniciar", help="Ir para lançamentos"):
             st.session_state["liberar_lancamentos"] = True
             AppState.set_current_page("Lançamentos", source="novo_iniciar_btn")
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        # Fallback robusto: força a cor via JS se algum tema ainda sobrescrever o CSS
+        components.html(
+                """
+                <script>
+                (function(){
+                    function paint(){
+                        try{
+                            const btns = window.parent.document.querySelectorAll('button');
+                            for (const b of btns){
+                                const t = (b.innerText || b.textContent || '').trim();
+                                if (t === 'Iniciar'){
+                                    b.style.background = '#43866b';
+                                    b.style.color = '#ffffff';
+                                    b.style.border = 'none';
+                                    b.style.borderRadius = '6px';
+                                    b.style.boxShadow = '0 2px 8px rgba(16,24,40,0.08)';
+                                    b.onmouseenter = () => b.style.background = '#37745c';
+                                    b.onmouseleave = () => b.style.background = '#43866b';
+                                    return true;
+                                }
+                            }
+                        } catch(e){}
+                        return false;
+                    }
+                    let tries = 0;
+                    const iv = setInterval(()=>{ if(paint() || tries++ > 25){ clearInterval(iv); } }, 120);
+                    setTimeout(paint, 0);
+                })();
+                </script>
+                """,
+                height=0,
+        )

@@ -353,12 +353,23 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.7.25c, de 14/09/2025]
+[v. 0.7.25d, de 14/09/2025] (testes 0.7.26, mas não funcionando as novas funções)
+---
+
+ =====Novidades=====
+* ( ) Após clicar no botão 'Calcular FinScore', se não prosseguir nas seções 'Análise' e 'Parecer'. ao tentar clicar em outra seção (exceto 'Sobre'),
+um popup avisa que os dados serão perdidos e dá a opção de prosseguir com o cálculo ou perdê-los.
+---
+Até aqui:
+[v. 0.7.26, de 14/09/2025]
 ---
 
  =====Novidades=====
 * ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
 em 'Enviar Dados' se alguma informação faltar.
-* ( ) PENSAR NOS COMPORTAMENTOS, REGRAS E TRAVAS DO FORMULÁRIO
+Até aqui:
+[v. 0.7.27, de 14/09/2025]
+---
 
 ......................................................................................................................
 
