@@ -1,4 +1,5 @@
 # WINDOWS
+====================================
 # (I) Criar um venv com Python 3.11
 # **apenas a primeira vez
 py -3.11 -m venv .venv
@@ -33,8 +34,11 @@ streamlit run .\\app_front\\app.py
 # Com log
 streamlit run .\\app_front\\app.py --logger.level=debug
 
--------------------
+-------------------***-------------------***-------------------***-------------------
+
+====================================
 # LINUX
+====================================
 # (I) Criar um venv com Python 3.11
 # **apenas a primeira vez
 python3 -m venv .venv
@@ -42,27 +46,27 @@ python3 -m venv .venv
 # sudo apt-get update && sudo apt-get install -y python3-venv   # ou python3.12-venv dependendo da sua versão
 
 -------------------
-# (II) ATIVAR
+# (II) ATIVAR (Linux)
 source .venv/bin/activate
 
 -------------------
-# (III) Atualizar instaladores (SE PRECISAR)
+# (III) Atualizar instaladores (SE PRECISAR) (Linux)
 # **apenas a primeira vez
 # **geralmente não precisa
 python -m pip install -U pip setuptools wheel
 pip install --upgrade pip
 
 -------------------
-# (IV) Instalar as dependências
+# (IV) Instalar as dependências (Linux)
 # **apenas a primeira vez
 pip install -r requirements.txt
 
 -------------------
-# (V) Passos I, II e IV
+# (V) Passos I, II e IV (Linux)
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 
 -------------------
-# (VI) RODAR O APP
+# (VI) RODAR O APP (Linux)
 # Normal
 streamlit run ./app_front/app.py
 

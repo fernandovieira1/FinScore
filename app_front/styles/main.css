@@ -1,3 +1,44 @@
+/* --- Fix: Forçar aparência consistente em inputs, selects, textareas e tabelas (compatível com temas escuros/claro do SO) --- */
+input, select, textarea {
+    background-color: #fff !important;
+    color: var(--text) !important;
+    border: 1px solid #bdbdbd !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    outline: none !important;
+    font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2) !important;
+    box-shadow: 0 0 0 2px #1976d233 !important;
+}
+
+table, th, td {
+    background-color: #fff !important;
+    color: var(--text) !important;
+    border: 1px solid #bdbdbd !important;
+    border-collapse: collapse !important;
+}
+
+th, td {
+    padding: 8px 12px !important;
+}
+
+table {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    input, select, textarea, table, th, td {
+        background-color: #fff !important;
+        color: var(--text) !important;
+        border-color: #bdbdbd !important;
+    }
+}
 /* Botão fake visual para instrução */
 .fake-button {
     background-color: #006fbe58;

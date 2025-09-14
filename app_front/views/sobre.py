@@ -169,69 +169,54 @@ def _sec_glossario():
 
 def _sec_faq():
     st.subheader("FAQ")
-    st.markdown("""
-*Perguntas Frequentes sobre o FinScore e sua aplicação na análise de crédito*
+    st.markdown("*Perguntas Frequentes sobre o FinScore e sua aplicação na análise de crédito*")
 
-**1. O que é o FinScore e como ele difere de outros escores de crédito?**
-O FinScore é um índice sintético (0–1000) que resume a saúde econômico-financeira da empresa a partir de suas demonstrações contábeis recentes, utilizando técnicas estatísticas avançadas (padronização, PCA e ponderação temporal). Diferente de escores tradicionais, como o Serasa, que se baseiam em histórico de pagamentos e informações cadastrais, o FinScore foca na estrutura e performance financeira real da empresa, permitindo uma análise complementar e mais profunda do risco de crédito.
+    faqs = [
+        ("O que é o FinScore e como ele difere de outros escores de crédito?",
+         "O FinScore é um índice sintético (0–1000) que resume a saúde econômico-financeira da empresa a partir de suas demonstrações contábeis recentes, utilizando técnicas estatísticas avançadas (padronização, PCA e ponderação temporal). Diferente de escores tradicionais, como o Serasa, que se baseiam em histórico de pagamentos e informações cadastrais, o FinScore foca na estrutura e performance financeira real da empresa, permitindo uma análise complementar e mais profunda do risco de crédito."),
+        ("Como a metodologia do FinScore transforma dados contábeis em um escore objetivo?",
+         "Os dados contábeis são convertidos em diversos índices financeiros, que são padronizados e sintetizados por meio de PCA, reduzindo a complexidade e destacando os fatores mais relevantes. O resultado é consolidado ao longo de até três anos, com maior peso para o desempenho recente, e escalonado para a faixa 0–1000, facilitando a comparação entre empresas e períodos."),
+        ("Por que usar padronização e PCA?",
+         "A padronização garante que todos os índices tenham o mesmo peso inicial, evitando distorções por escalas diferentes. O PCA permite identificar padrões e fatores-chave, reduzindo o risco de interpretações equivocadas por correlações ocultas entre os índices."),
+        ("Como interpretar as faixas de risco do FinScore?",
+         "As faixas vão de 'Muito Abaixo do Risco' (excelente robustez financeira) até 'Muito Acima do Risco' (alto risco). Empresas nas faixas mais baixas devem ser analisadas com cautela, pois podem apresentar fragilidades estruturais ou conjunturais. A classificação serve como um alerta, mas deve ser sempre contextualizada com os índices detalhados e o setor de atuação."),
+        ("Como o FinScore pode ser usado junto ao escore Serasa?",
+         "O FinScore e o Serasa são complementares: enquanto o Serasa reflete o histórico de crédito e comportamento de pagamentos, o FinScore revela a real capacidade financeira da empresa. Divergências entre eles podem indicar situações de risco oculto (ex: bom Serasa, mas FinScore baixo) ou oportunidades (ex: FinScore alto, mas histórico de crédito ruim por eventos pontuais)."),
+        ("Como um analista deve usar o FinScore na concessão de crédito?",
+         "O analista deve considerar o FinScore como um filtro inicial e um guia para aprofundar a análise. Empresas com FinScore baixo exigem investigação detalhada dos índices que puxaram o resultado para baixo. Já empresas com FinScore alto, mas Serasa baixo, podem merecer uma análise qualitativa para identificar se o risco é conjuntural ou estrutural. O cruzamento dos dois escores, aliado ao contexto do setor e à experiência do analista, permite decisões mais seguras e fundamentadas."),
+        ("Quais oportunidades de negócio podem ser identificadas com o FinScore?",
+         "Além de mitigar riscos, o FinScore pode revelar empresas subavaliadas pelo mercado tradicional, mas com fundamentos sólidos, abrindo espaço para concessão de crédito diferenciada, renegociação de condições ou oferta de produtos financeiros customizados."),
+        ("O que fazer se os índices contábeis apresentarem sinais contraditórios?",
+         "O FinScore sintetiza múltiplos índices, mas o analista deve sempre investigar casos de divergência (ex: alta liquidez, mas baixa rentabilidade). A análise detalhada dos componentes principais e dos índices individuais é fundamental para entender a real situação da empresa."),
+        ("O FinScore pode ser usado para monitoramento contínuo?",
+         "Sim. O acompanhamento periódico do FinScore permite identificar tendências de melhora ou deterioração, antecipando riscos e oportunidades antes que se reflitam no histórico de crédito tradicional."),
+        ("Como justificar uma decisão de crédito baseada no FinScore?",
+         "O FinScore oferece transparência metodológica: cada resultado pode ser decomposto nos índices e fatores que o compõem, permitindo justificar decisões com base em dados objetivos e rastreáveis, o que é fundamental para governança e compliance."),
+        ("O FinScore pode ser aplicado a empresas de todos os portes e setores?",
+         "Sim, desde que as demonstrações contábeis estejam disponíveis e minimamente padronizadas. Recomenda-se, porém, considerar particularidades setoriais e adaptar a análise qualitativa conforme o contexto."),
+        ("Quais são as limitações do FinScore?",
+         "O FinScore depende da qualidade e integridade das informações contábeis. Empresas com dados inconsistentes, defasados ou manipulados podem ter escores distorcidos. Além disso, eventos extraordinários recentes podem não ser totalmente captados."),
+        ("Como o FinScore lida com empresas em crescimento acelerado ou em crise?",
+         "O uso de múltiplos anos e a ponderação temporal ajudam a suavizar efeitos de anos atípicos, mas o analista deve sempre investigar variações abruptas e buscar explicações qualitativas para mudanças bruscas no escore."),
+        ("O FinScore pode ser auditado ou validado externamente?",
+         "Sim. Toda a metodologia é transparente e os cálculos podem ser reproduzidos a partir dos dados e fórmulas apresentados, facilitando auditorias e validações por terceiros."),
+        ("Como o FinScore pode apoiar políticas de crédito mais justas e inclusivas?",
+         "Ao focar em fundamentos financeiros e não apenas em histórico de crédito, o FinScore pode identificar empresas com potencial, mas que foram penalizadas por eventos pontuais ou falta de histórico, promovendo inclusão financeira responsável."),
+        ("O FinScore pode ser integrado a sistemas automatizados de decisão de crédito?",
+         "Sim, a estrutura do FinScore permite integração via API ou processamento em lote, facilitando a automação de políticas de crédito e monitoramento de carteiras."),
+        ("Como o FinScore trata empresas com poucos anos de histórico contábil?",
+         "O cálculo se adapta ao número de anos disponíveis (até três), ajustando os pesos conforme a quantidade de períodos informados, sem comprometer a comparabilidade."),
+        ("O FinScore pode ser manipulado por práticas contábeis agressivas?",
+         "Embora a metodologia seja robusta, práticas contábeis agressivas ou criativas podem distorcer os índices. Por isso, recomenda-se sempre análise crítica dos dados e, se necessário, ajustes qualitativos."),
+        ("Como o FinScore pode ser usado em conjunto com análise qualitativa?",
+         "O FinScore deve ser visto como ponto de partida. A análise qualitativa (governança, mercado, gestão, eventos recentes) complementa e enriquece a avaliação, reduzindo riscos de decisões baseadas apenas em números."),
+        ("O FinScore pode ser utilizado para renegociação de dívidas ou revisão de limites de crédito?",
+         "Sim. Mudanças positivas no FinScore podem embasar renegociações, concessão de melhores condições ou revisão de limites, enquanto deteriorações sinalizam necessidade de revisão de exposição e acompanhamento mais próximo."),
+    ]
 
-**2. Como a metodologia do FinScore transforma dados contábeis em um escore objetivo?**
-Os dados contábeis são convertidos em diversos índices financeiros, que são padronizados e sintetizados por meio de PCA, reduzindo a complexidade e destacando os fatores mais relevantes. O resultado é consolidado ao longo de até três anos, com maior peso para o desempenho recente, e escalonado para a faixa 0–1000, facilitando a comparação entre empresas e períodos.
-
-**3. Por que usar padronização e PCA?**
-A padronização garante que todos os índices tenham o mesmo peso inicial, evitando distorções por escalas diferentes. O PCA permite identificar padrões e fatores-chave, reduzindo o risco de interpretações equivocadas por correlações ocultas entre os índices.
-
-**4. Como interpretar as faixas de risco do FinScore?**
-As faixas vão de "Muito Abaixo do Risco" (excelente robustez financeira) até "Muito Acima do Risco" (alto risco). Empresas nas faixas mais baixas devem ser analisadas com cautela, pois podem apresentar fragilidades estruturais ou conjunturais. A classificação serve como um alerta, mas deve ser sempre contextualizada com os índices detalhados e o setor de atuação.
-
-**5. Como o FinScore pode ser usado junto ao escore Serasa?**
-O FinScore e o Serasa são complementares: enquanto o Serasa reflete o histórico de crédito e comportamento de pagamentos, o FinScore revela a real capacidade financeira da empresa. Divergências entre eles podem indicar situações de risco oculto (ex: bom Serasa, mas FinScore baixo) ou oportunidades (ex: FinScore alto, mas histórico de crédito ruim por eventos pontuais).
-
-**6. Como um analista deve usar o FinScore na concessão de crédito?**
-O analista deve considerar o FinScore como um filtro inicial e um guia para aprofundar a análise. Empresas com FinScore baixo exigem investigação detalhada dos índices que puxaram o resultado para baixo. Já empresas com FinScore alto, mas Serasa baixo, podem merecer uma análise qualitativa para identificar se o risco é conjuntural ou estrutural. O cruzamento dos dois escores, aliado ao contexto do setor e à experiência do analista, permite decisões mais seguras e fundamentadas.
-
-**7. Quais oportunidades de negócio podem ser identificadas com o FinScore?**
-Além de mitigar riscos, o FinScore pode revelar empresas subavaliadas pelo mercado tradicional, mas com fundamentos sólidos, abrindo espaço para concessão de crédito diferenciada, renegociação de condições ou oferta de produtos financeiros customizados.
-
-**8. O que fazer se os índices contábeis apresentarem sinais contraditórios?**
-O FinScore sintetiza múltiplos índices, mas o analista deve sempre investigar casos de divergência (ex: alta liquidez, mas baixa rentabilidade). A análise detalhada dos componentes principais e dos índices individuais é fundamental para entender a real situação da empresa.
-
-**9. O FinScore pode ser usado para monitoramento contínuo?**
-Sim. O acompanhamento periódico do FinScore permite identificar tendências de melhora ou deterioração, antecipando riscos e oportunidades antes que se reflitam no histórico de crédito tradicional.
-
-**10. Como justificar uma decisão de crédito baseada no FinScore?**
-O FinScore oferece transparência metodológica: cada resultado pode ser decomposto nos índices e fatores que o compõem, permitindo justificar decisões com base em dados objetivos e rastreáveis, o que é fundamental para governança e compliance.
-
-**11. O FinScore pode ser aplicado a empresas de todos os portes e setores?**
-Sim, desde que as demonstrações contábeis estejam disponíveis e minimamente padronizadas. Recomenda-se, porém, considerar particularidades setoriais e adaptar a análise qualitativa conforme o contexto.
-
-**12. Quais são as limitações do FinScore?**
-O FinScore depende da qualidade e integridade das informações contábeis. Empresas com dados inconsistentes, defasados ou manipulados podem ter escores distorcidos. Além disso, eventos extraordinários recentes podem não ser totalmente captados.
-
-**13. Como o FinScore lida com empresas em crescimento acelerado ou em crise?**
-O uso de múltiplos anos e a ponderação temporal ajudam a suavizar efeitos de anos atípicos, mas o analista deve sempre investigar variações abruptas e buscar explicações qualitativas para mudanças bruscas no escore.
-
-**14. O FinScore pode ser auditado ou validado externamente?**
-Sim. Toda a metodologia é transparente e os cálculos podem ser reproduzidos a partir dos dados e fórmulas apresentados, facilitando auditorias e validações por terceiros.
-
-**15. Como o FinScore pode apoiar políticas de crédito mais justas e inclusivas?**
-Ao focar em fundamentos financeiros e não apenas em histórico de crédito, o FinScore pode identificar empresas com potencial, mas que foram penalizadas por eventos pontuais ou falta de histórico, promovendo inclusão financeira responsável.
-
-**16. O FinScore pode ser integrado a sistemas automatizados de decisão de crédito?**
-Sim, a estrutura do FinScore permite integração via API ou processamento em lote, facilitando a automação de políticas de crédito e monitoramento de carteiras.
-
-**17. Como o FinScore trata empresas com poucos anos de histórico contábil?**
-O cálculo se adapta ao número de anos disponíveis (até três), ajustando os pesos conforme a quantidade de períodos informados, sem comprometer a comparabilidade.
-
-**18. O FinScore pode ser manipulado por práticas contábeis agressivas?**
-Embora a metodologia seja robusta, práticas contábeis agressivas ou criativas podem distorcer os índices. Por isso, recomenda-se sempre análise crítica dos dados e, se necessário, ajustes qualitativos.
-
-**19. Como o FinScore pode ser usado em conjunto com análise qualitativa?**
-O FinScore deve ser visto como ponto de partida. A análise qualitativa (governança, mercado, gestão, eventos recentes) complementa e enriquece a avaliação, reduzindo riscos de decisões baseadas apenas em números.
-
-**20. O FinScore pode ser utilizado para renegociação de dívidas ou revisão de limites de crédito?**
-Sim. Mudanças positivas no FinScore podem embasar renegociações, concessão de melhores condições ou revisão de limites, enquanto deteriorações sinalizam necessidade de revisão de exposição e acompanhamento mais próximo.
-    """)
+    for i, (pergunta, resposta) in enumerate(faqs, 1):
+        with st.expander(f"**{i}. {pergunta}**"):
+            st.markdown(resposta)
 
 def render():
     # --- CSS desta view: CENTRALIZAR A BARRA DE ABAS ---
