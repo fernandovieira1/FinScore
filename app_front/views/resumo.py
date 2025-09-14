@@ -7,14 +7,14 @@ def _empresa(ss):
     with col1:
         st.caption("Nome da Empresa")
         st.markdown(
-            f"<h3 style='text-align:left;margin:0;'>{ss.meta.get('empresa','-')}</h3>",
+            f"<h3 style='text-align:left;margin:0;font-size: 140%;'>{ss.meta.get('empresa','-')}</h3>",
             unsafe_allow_html=True,
         )
 
     with col2:
         st.caption("CNPJ")
         st.markdown(
-            f"<h3 style='text-align:left;margin:0;'>{ss.meta.get('cnpj','-') or '-'}</h3>",
+            f"<h3 style='text-align:left;margin:0;font-size: 140%;'>{ss.meta.get('cnpj','-') or '-'}</h3>",
             unsafe_allow_html=True,
         )
 
@@ -23,7 +23,7 @@ def _empresa(ss):
         ai, af = ss.meta.get("ano_inicial"), ss.meta.get("ano_final")
         periodo = f"{ai} – {af}" if ai and af else "-"
         st.markdown(
-            f"<h3 style='text-align:left;margin:0;'>{periodo}</h3>",
+            f"<h3 style='text-align:left;margin:0;font-size: 140%;'>{periodo}</h3>",
             unsafe_allow_html=True,
         )
 
@@ -38,7 +38,7 @@ def _metricas(ss):
     with col1:
         st.markdown("<p style='margin-bottom:.25rem;'>FinScore Bruto</p>", unsafe_allow_html=True)
         st.markdown(
-            f"<h2 style='margin:.15rem 0 0 0;'>{ss.out.get('finscore_bruto','-')}</h2>",
+            f"<h2 style='margin:.15rem 0 0 0;font-size:140%;'>{ss.out.get('finscore_bruto','-')}</h2>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -49,7 +49,7 @@ def _metricas(ss):
     with col2:
         st.markdown("<p style='margin-bottom:.25rem;'>FinScore Ajustado</p>", unsafe_allow_html=True)
         st.markdown(
-            f"<h2 style='margin:.15rem 0 0 0;'>{ss.out.get('finscore_ajustado','-')}</h2>",
+            f"<h2 style='margin:.15rem 0 0 0;font-size:140%;'>{ss.out.get('finscore_ajustado','-')}</h2>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -60,7 +60,7 @@ def _metricas(ss):
     with col3:
         st.markdown("<p style='margin-bottom:.25rem;'>Serasa Score</p>", unsafe_allow_html=True)
         st.markdown(
-            f"<h2 style='margin:.15rem 0 0 0;'>{ss.out.get('serasa','-')}</h2>",
+            f"<h2 style='margin:.15rem 0 0 0;font-size:140%;'>{ss.out.get('serasa','-')}</h2>",
             unsafe_allow_html=True,
         )
         st.markdown(

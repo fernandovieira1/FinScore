@@ -359,12 +359,23 @@ Até aqui:
  =====Novidades=====
 * ( ) Após clicar no botão 'Calcular FinScore', se não prosseguir nas seções 'Análise' e 'Parecer'. ao tentar 
 clicar em outra seção (exceto 'Sobre'), um popup avisa que os dados serão perdidos e dá a opção de prosseguir 
-com o cálculo ou perdê-los.
+com o cálculo ou perdê-los. (DESISTI)
 - Desistência, pois os elementos HTML que decoram a navbar impedem o popup de funcionar. A solução seria usar 
 objetos Streamlit nativos, mas a estética seria comprometida. Procurar outra solução quando fizer o backend.
 ---
 Até aqui:
 [v. 0.7.25e, de 14/09/2025]
+---
+
+
+=====Ajustes=====
+* (x) Limpeza do código com as regras de v. 0.7.25e
+* (x) Obrigatoriedade de todos os campos de Novo/Cliente estarem preenchidos para que o cálculo de FinScore
+prossiga.
+* (x) Formatação de fontes em Análise/Resumo
+---
+Até aqui:
+[v. 0.7.26, de 14/09/2025]
 ---
 
  =====Novidades=====

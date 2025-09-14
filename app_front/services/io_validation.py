@@ -6,18 +6,32 @@ from io import BytesIO
 
 def validar_cliente(meta: Dict[str, Any]) -> Dict[str, str]:
     e: Dict[str, str] = {}
-    if not meta.get("empresa"): e["empresa"] = "Informe o nome da empresa."
+    if not meta.get("empresa") or not str(meta.get("empresa")).strip():
+        e["empresa"] = "Informe o nome da empresa."
+    if not meta.get("cnpj") or not str(meta.get("cnpj")).strip():
+        e["cnpj"] = "Informe o CNPJ."
+    ai_raw = meta.get("ano_inicial")
+    af_raw = meta.get("ano_final")
     try:
-        ai, af = int(meta.get("ano_inicial")), int(meta.get("ano_final"))
-        if ai > af: e["anos"] = "Ano Inicial não pode ser maior que Ano Final."
-        if ai < 2000 or af > 2100: e["faixa"] = "Anos entre 2000 e 2100."
+        ai = int(ai_raw) if ai_raw is not None and str(ai_raw).isdigit() else None
+        af = int(af_raw) if af_raw is not None and str(af_raw).isdigit() else None
+        if ai is None or af is None:
+            raise ValueError
+        if ai > af:
+            e["anos"] = "Ano Inicial não pode ser maior que Ano Final."
+        if ai < 2000 or af > 2100:
+            e["faixa"] = "Anos entre 2000 e 2100."
     except Exception:
         e["anos"] = "Anos inválidos."
+    s_raw = meta.get("serasa")
     try:
-        s = int(meta.get("serasa"))
-        if not (0 <= s <= 1000): raise ValueError
+        s = int(s_raw) if s_raw is not None and str(s_raw).strip().isdigit() else None
+        if s is None or not (0 <= s <= 1000):
+            raise ValueError
     except Exception:
         e["serasa"] = "Serasa deve estar entre 0 e 1000."
+    if not meta.get("serasa_data") or not str(meta.get("serasa_data")).strip():
+        e["serasa_data"] = "Informe a data de consulta ao Serasa."
     return e
 
 def _sheet_name_case_insensitive(xls: pd.ExcelFile, wanted: str) -> Optional[str]:

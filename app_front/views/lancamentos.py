@@ -66,7 +66,13 @@ def _auto_save_cliente():
     cnpj_input = st.text_input("CNPJ", value=cnpj_default, placeholder="00.000.000/0000-00", max_chars=18, key="cnpj_input")
     cnpj = mascara_cnpj(cnpj_input)
     # Aceita apenas 4 dígitos para campo ano
-    ai_str = st.text_input("Ano Inicial", value=str(meta.get("ano_inicial", "")), placeholder="YYYY", max_chars=4)
+    ai_val = meta.get("ano_inicial", "")
+    ai_str = st.text_input(
+        "Ano Inicial",
+        value=str(ai_val) if ai_val not in (None, "None") and str(ai_val).isdigit() else "",
+        placeholder="YYYY",
+        max_chars=4
+    )
     ai = int(ai_str) if ai_str.isdigit() and len(ai_str) == 4 else None
     # Ano Final é calculado automaticamente
     af = ai + 2 if ai else None
@@ -87,10 +93,16 @@ def _auto_save_cliente():
     serasa_str = st.text_input(
         "Serasa Score (0–1000)",
         value=str(int(float(serasa_val))) if str(serasa_val).replace(",", ".").replace(" ", "").replace(".0", "").isdigit() else "",
-        placeholder="Ex.: 550"
+        placeholder="Ex.: 550",
+        key="serasa_score_input"
     )
+    # Só aceita número inteiro entre 0 e 1000
     try:
-        serasa = float(int(float(serasa_str.replace(",", ".")))) if serasa_str.strip() else None
+        serasa_int = int(serasa_str.strip())
+        if 0 <= serasa_int <= 1000:
+            serasa = serasa_int
+        else:
+            serasa = None
     except Exception:
         serasa = None
     # Data de Consulta como DD/MM/YYYY
@@ -118,9 +130,7 @@ def _auto_save_cliente():
     cnpj = mascara_cnpj(cnpj.strip()) if cnpj else ""
 
     new_meta = {"empresa": empresa, "cnpj": cnpj, "ano_inicial": ai, "ano_final": af, "serasa": serasa, "serasa_data": serasa_data}
-    for k, v in list(new_meta.items()):
-        if v is None or v == "":
-            new_meta.pop(k)
+    # Não remove campos vazios, para garantir que a validação capture todos
     ss.meta.update(new_meta)
 
     pend = validar_cliente(ss.meta)
