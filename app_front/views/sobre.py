@@ -116,62 +116,106 @@ def _sec_glossario():
     glossario = {
         "A": [
             ("Alavancagem", "Relação entre o capital de terceiros (dívidas) e o capital próprio da empresa. Alta alavancagem pode indicar maior risco financeiro, mas também potencial de retorno."),
+            ("Ativo Circulante", "Recursos que a empresa espera converter em dinheiro ou consumir no prazo de um ano (caixa, contas a receber, estoques)."),
+            ("Ativo Imobilizado", "Bens tangíveis de longo prazo da empresa, como máquinas, equipamentos, veículos e imóveis."),
+            ("Ativo Total", "Conjunto de todos os recursos controlados pela empresa, incluindo circulante, realizável a longo prazo e permanente."),
         ],
-        "B": [],
+        "B": [
+            ("BNDES", "Banco Nacional de Desenvolvimento Econômico e Social, instituição financeira pública brasileira de fomento."),
+        ],
         "C": [
+            ("Capital Circulante Líquido (CCL)", "Diferença entre o ativo circulante e o passivo circulante, indicando a folga financeira de curto prazo."),
             ("CCL/Ativo Total", "Índice que mede a proporção do Capital Circulante Líquido em relação ao Ativo Total, indicando folga financeira de curto prazo."),
             ("Cobertura de Juros", "Capacidade da empresa de pagar suas despesas financeiras com o resultado operacional (EBIT). Valores baixos sugerem risco de inadimplência."),
+            ("Componentes Principais", "Fatores estatísticos derivados do PCA que representam combinações lineares das variáveis originais, ordenados por importância."),
+            ("Contas a Pagar", "Obrigações da empresa com fornecedores e credores, registradas no passivo circulante."),
+            ("Contas a Receber", "Valores que a empresa tem a receber de clientes por vendas realizadas a prazo."),
+            ("Custos", "Gastos diretamente relacionados à produção de bens ou prestação de serviços (matéria-prima, mão de obra, etc.)."),
         ],
-        "D": [],
+        "D": [
+            ("Demonstrações Contábeis", "Relatórios financeiros obrigatórios que evidenciam a situação patrimonial e financeira da empresa."),
+            ("Desvio-padrão", "Medida estatística de dispersão que indica quão distantes os valores estão da média."),
+            ("Despesas Financeiras", "Custos relacionados a empréstimos, financiamentos e outras operações de crédito."),
+        ],
         "E": [
+            ("EBIT", "Earnings Before Interest and Taxes - Lucro antes de juros e impostos, medindo a performance operacional."),
+            ("EBITDA", "Earnings Before Interest, Taxes, Depreciation and Amortization - Lucro operacional antes de juros, impostos, depreciação e amortização."),
             ("Eficiência Operacional", "Grau de aproveitamento dos ativos e da gestão dos ciclos financeiros (ex: Giro do Ativo, PMR, PMP) para geração de receita."),
             ("Endividamento", "Proporção do passivo total em relação ao ativo total, indicando o grau de dependência de capital de terceiros."),
             ("Escalonamento", "Processo de transformação do escore bruto para uma escala padronizada (0–1000), facilitando a comparação e interpretação dos resultados."),
+            ("Escore", "O mesmo que Score, mas em português."),
+            ("Estoques", "Mercadorias, produtos acabados, matérias-primas e produtos em elaboração mantidos pela empresa."),
             ("Estrutura de Capital", "Composição do financiamento da empresa entre capital próprio e de terceiros, incluindo o peso do ativo imobilizado."),
         ],
         "F": [
             ("Faixas de Risco", "Categorias interpretativas do FinScore, que agrupam empresas conforme o perfil de risco de crédito."),
+            ("Fornecedores", "Empresas que vendem bens ou serviços à organização, gerando contas a pagar."),
         ],
         "G": [
             ("Giro do Ativo", "Mede a eficiência da empresa em gerar receita a partir de seus ativos totais."),
+            ("Governança", "Conjunto de práticas e controles para direção e monitoramento de uma empresa."),
         ],
-        "H": [],
+        "H": [
+            ("Histórico de Crédito", "Registro do comportamento de pagamento de uma empresa ao longo do tempo."),
+        ],
         "I": [
             ("Imobilizado/Ativo", "Proporção do ativo imobilizado em relação ao ativo total, indicando o grau de investimento em ativos fixos."),
+            ("Inadimplência", "Situação de não cumprimento de obrigações financeiras dentro do prazo estabelecido."),
             ("Índices Contábeis", "Indicadores extraídos das demonstrações financeiras que refletem diferentes dimensões da saúde econômico-financeira da empresa."),
         ],
-        "J": [],
+        "J": [
+            ("Juros", "Remuneração cobrada pelo uso de capital de terceiros em empréstimos e financiamentos."),
+        ],
         "K": [],
         "L": [
             ("Liquidez Corrente", "Capacidade de a empresa honrar obrigações de curto prazo com seus ativos circulantes."),
             ("Liquidez Seca", "Similar à liquidez corrente, mas desconsidera estoques, oferecendo visão mais conservadora da liquidez."),
+            ("Loadings", "Coeficientes que indicam o peso de cada variável original nos componentes principais do PCA."),
+            ("Lucro Líquido", "Resultado final da empresa após deduzir todos os custos, despesas e impostos da receita."),
         ],
         "M": [
             ("Margem EBITDA", "Percentual da receita operacional que sobra após despesas operacionais, antes de juros, impostos, depreciação e amortização."),
             ("Margem Líquida", "Percentual do lucro líquido em relação à receita total, indicando rentabilidade final da empresa."),
+            ("Média", "Valor central de um conjunto de dados, calculado pela soma dividida pelo número de observações."),
         ],
         "N": [],
-        "O": [],
+        "O": [
+            ("Obrigações", "Compromissos financeiros que a empresa deve cumprir, registrados no passivo."),
+        ],
         "P": [
             ("Padronização (z-score)", "Transformação dos índices para uma escala comum (média zero, desvio-padrão um), permitindo comparabilidade entre diferentes indicadores."),
+            ("Passivo Circulante", "Obrigações da empresa que devem ser pagas no prazo de um ano (fornecedores, empréstimos de curto prazo, impostos)."),
+            ("Passivo Total", "Conjunto de todas as obrigações da empresa, incluindo circulante e não circulante."),
+            ("Patrimônio Líquido", "Recursos próprios da empresa, representando a diferença entre ativo total e passivo total."),
             ("Período Médio de Pagamento (PMP)", "Tempo médio (em dias) que a empresa leva para pagar seus fornecedores."),
             ("Período Médio de Recebimento (PMR)", "Tempo médio (em dias) que a empresa leva para receber de seus clientes."),
             ("Ponderação Temporal", "Processo de atribuir pesos diferentes aos anos analisados, valorizando mais o desempenho recente na composição do FinScore."),
         ],
         "Q": [],
         "R": [
+            ("Receita", "Valor total das vendas ou prestação de serviços da empresa em determinado período."),
             ("Rentabilidade", "Capacidade da empresa de gerar lucro a partir de suas receitas e ativos (ex: Margem Líquida, ROA, ROE)."),
+            ("Resultado Operacional", "Lucro ou prejuízo gerado pelas atividades principais da empresa, antes de considerar aspectos financeiros."),
             ("ROA (Return on Assets)", "Retorno sobre o ativo total, mede a eficiência da empresa em gerar lucro com seus ativos."),
             ("ROE (Return on Equity)", "Retorno sobre o patrimônio líquido, mede a rentabilidade do capital próprio investido."),
         ],
-        "S": [],
+        "S": [
+            ("Serasa", "Empresa brasileira de análise e informações para decisões de crédito e apoio a negócios; Escore de crédito amplamente utilizado no Brasil para avaliar o risco de inadimplência de empresas e indivíduos."),
+            ("Score", "Índice numérico que representa a avaliação de risco de crédito de uma empresa ou indivíduo. Raiz inglesa da palavra Escore."),
+            ("Setor de Atuação", "Segmento econômico em que a empresa opera, influenciando seus riscos e oportunidades."),
+            ("Soluções Financeiras", "Produtos e serviços oferecidos por instituições financeiras para atender às necessidades das empresas."),
+        ],
         "T": [],
         "U": [],
-        "V": [],
+        "V": [
+            ("Variância Explicada", "Medida estatística que indica quanto da variabilidade dos dados é capturada por cada componente principal."),
+        ],
         "W": [],
         "X": [],
         "Y": [],
-        "Z": [],
+        "Z": [
+            ("Z-Score", "Medida estatística que indica quantos desvios-padrão um valor está distante da média, usado na padronização."),
+        ],
     }
 
     letras = [chr(i) for i in range(ord("A"), ord("Z") + 1)]

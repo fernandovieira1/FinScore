@@ -45,6 +45,10 @@ Até aqui:
 [v. 0.1, de 19/08/2025]
 ---
 
+// Entre o dia 20/08 e 01/09/2025 fiquei tentando codificar o promtp do LangChain para padronizar as saídas do 
+Parecer com base nos resultados da IA, utilizando o arquivo ipynb. Decidi voltar para a construção do app e deixar 
+isso para o final. 
+
 ====================================
 1. CONFIGURAÇÃO DE VISUAL
 ====================================
@@ -344,6 +348,13 @@ Até aqui:
 [v. 0.7.25b, de 14/09/2025]
 ---
 
+=====Ajustes=====
+* (x) Aumento dos termos do glossário
+---
+Até aqui:
+[v. 0.7.25c, de 14/09/2025]
+---
+
  =====Novidades=====
 * ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
 em 'Enviar Dados' se alguma informação faltar.
@@ -366,6 +377,8 @@ Ideias
 ====================================
 - Campos 'Dados do Cliente' com crítica de valores
 - No dropdown da sidebar, inserir o menu/view 'Consultar', mas só depois de criar o backend com do banco de dados
+- Para burlar o desbloqueio dos campos em Processo, basta saber os links dos submenus. Mascarar barra de endereços ou
+alguma outra solução para dar mais segurança.
 
 BACKEND
 - API REST para integração externa
