@@ -7,14 +7,6 @@ from components.state_manager import AppState
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 LOGO = ASSETS / "logo5.png"
 
-def show_calculo_popup(target_page: str):
-    """
-    Mostra popup de aviso quando usuário tenta navegar durante cálculo ativo
-    """
-    # Armazena a página de destino no session_state
-    st.session_state.popup_target_page = target_page
-    st.session_state.show_popup = True
-
 def render_sidebar(current_page: str = "Home"):
     """
     Renderiza a barra lateral com dropdown e submenu (HTML <details>/<summary>).
@@ -102,7 +94,6 @@ def render_sidebar(current_page: str = "Home"):
                     for c in children:
                         c_label, c_slug = c["label"], c["slug"]
                         c_active = " active" if current_slug == c_slug else ""
-                        # Lógica de bloqueio
                         disabled = False
                         if c_label == "Lançamentos" and not lanc_enabled:
                             disabled = True
@@ -110,12 +101,6 @@ def render_sidebar(current_page: str = "Home"):
                             disabled = True
                         if c_label == "Parecer" and not parecer_enabled:
                             disabled = True
-                        # Bloqueio retroativo durante cálculo ativo
-                        if c_label == "Lançamentos" and AppState.is_calculo_ativo():
-                            disabled = True
-                        # Garante que Análise e Parecer nunca sejam bloqueadas durante cálculo ativo
-                        if AppState.is_calculo_ativo() and c_label in ["Análise", "Parecer"]:
-                            disabled = False
                         if disabled:
                             html.append(f'<div class="submenu"><a class="item disabled" tabindex="-1" style="pointer-events:none;opacity:.5;cursor:not-allowed;" href="#">{c_label}</a></div>')
                         else:
@@ -135,14 +120,11 @@ def render_sidebar(current_page: str = "Home"):
         if qp:
             qp = qp[0] if isinstance(qp, list) else qp
             target_label = SLUG_MAP.get(qp)
+            print(f"[DEBUG] Sidebar detectou navegação para: {target_label} (current={current_page})")
             if target_label and target_label != current_page:
-                # Verifica se deve mostrar popup durante cálculo ativo
-                if AppState.check_calculo_popup(target_label):
-                    show_calculo_popup(target_label)
-                    return None
+                print(f"[DEBUG] Navegação permitida para: {target_label}")
                 return target_label
         return None
-            
     return None
 
 # Mantém compatibilidade com imports existentes (evite usar)

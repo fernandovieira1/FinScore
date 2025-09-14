@@ -46,7 +46,7 @@ A análise será detalhada na seção **"Análise"** e você poderá visualizar 
             #novo-iniciar-btn .stButton > button[kind="secondary"],
             #novo-iniciar-btn .stButton > button[data-testid="baseButton-primary"],
             #novo-iniciar-btn .stButton > button[kind="primary"] {
-                background: #43866b !important;
+                background: #5ea68d !important;
                 color: #fff !important;
                 font-weight: 600;
                 font-size: 1.05rem;
@@ -57,7 +57,7 @@ A análise será detalhada na seção **"Análise"** e você poderá visualizar 
                 transition: background 0.2s;
             }
             #novo-iniciar-btn .stButton > button:hover {
-                background: #37745c !important;
+                background: #43866b !important;
             }
             </style>
             """,
@@ -79,13 +79,13 @@ A análise será detalhada na seção **"Análise"** e você poderá visualizar 
                             for (const b of btns){
                                 const t = (b.innerText || b.textContent || '').trim();
                                 if (t === 'Iniciar'){
-                                    b.style.background = '#43866b';
+                                    b.style.background = '#5ea68d';
                                     b.style.color = '#ffffff';
                                     b.style.border = 'none';
                                     b.style.borderRadius = '6px';
                                     b.style.boxShadow = '0 2px 8px rgba(16,24,40,0.08)';
-                                    b.onmouseenter = () => b.style.background = '#37745c';
-                                    b.onmouseleave = () => b.style.background = '#43866b';
+                                    b.onmouseenter = () => b.style.background = '#43866b';
+                                    b.onmouseleave = () => b.style.background = '#5ea68d';
                                     return true;
                                 }
                             }

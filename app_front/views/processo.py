@@ -20,19 +20,20 @@ def _default_index():
     return 0
 
 def render():
-    # Se o dropdown JÁ foi desenhado na sidebar, só segue a escolha.
-    if st.session_state.get("processo_dropdown_rendered"):
-        choice = st.session_state.get("processo_choice", list(PAGES.keys())[0])
-        PAGES[choice]()
-        return
+    choice = st.session_state.get("processo_choice")
+    if choice is None or choice not in PAGES:
+        choice = list(PAGES.keys())[0]
 
-    # Fallback: só mostra aqui se a sidebar não montou o dropdown.
-    with st.sidebar:
-        choice = st.selectbox(
-            "Etapa do processo",                # label real para evitar warning
-            list(PAGES.keys()),
-            index=_default_index(),
-            key="processo_choice",
-            label_visibility="collapsed",       # continua invisível
-        )
+    if not st.session_state.get("processo_dropdown_rendered"):
+        with st.sidebar:
+            st.selectbox(
+                "Etapa do processo",                # label real para evitar warning
+                list(PAGES.keys()),
+                index=_default_index(),
+                key="processo_choice",
+                label_visibility="collapsed",       # continua invisível
+            )
+        print(f"[DEBUG processo.py] Dropdown desenhado na sidebar.")
+
+    print(f"[DEBUG processo.py] Navegação permitida para {choice}")
     PAGES[choice]()

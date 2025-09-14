@@ -251,8 +251,8 @@ def _sec_dados():
                     ss["liberar_analise"] = True
                     ss["liberar_parecer"] = True
                     # Ativa modo de cálculo (bloqueio retroativo)
-                    from components.state_manager import AppState
-                    AppState.ativar_modo_calculo()
+                    # from components.state_manager import AppState
+                    # Bloqueio retroativo removido: não é mais necessário ativar modo cálculo
                     st.success("✅ Processamento concluído.")
                     # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
                     ss.page = "Análise"
