@@ -378,13 +378,6 @@ Até aqui:
 [v. 0.7.26, de 14/09/2025]
 ---
 
- =====Novidades=====
-* ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
-em 'Enviar Dados' se alguma informação faltar.
-Até aqui:
-[v. 0.7.27, de 14/09/2025]
----
-
 ......................................................................................................................
 
 ============
