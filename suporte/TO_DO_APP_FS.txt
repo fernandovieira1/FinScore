@@ -10,7 +10,7 @@
 //////////////////////////////////////////////
 Controle de Versões
 //////////////////////////////////////////////
-** Aplha    :  0.x.yy
+** Alpha    :  0.x.yy
 ** Beta     :  1.x.yy
 ** Estáveis :  2+.x.yy (+codinome: pers. lit.)
 * x         : Mudanças significativas
