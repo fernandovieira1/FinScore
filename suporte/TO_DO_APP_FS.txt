@@ -307,6 +307,7 @@ Até aqui:
 Até aqui:
 [v. 0.7.23, de 13/09/2025]
 [v. 0.7.23a, de 13/09/2025] (roadmap FORMULÁRIO)
+[v. 0.7.23b, de 13/09/2025] (config codespaces linux)
 ---
  
 

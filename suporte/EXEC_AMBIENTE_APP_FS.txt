@@ -1,11 +1,14 @@
--------------------
+# WINDOWS
 # (I) Criar um venv com Python 3.11
 # **apenas a primeira vez
 py -3.11 -m venv .venv
 
 -------------------
 # (II) ATIVAR
+# PowerShell
 .\.venv\Scripts\Activate.ps1
+# cmd
+.\.venv\Scripts\activate.bat
 
 -------------------
 # (III) Atualizar instaladores (SE PRECISAR)
@@ -20,12 +23,53 @@ pip install -r requirements.txt
 
 -------------------
 # (V) Passos I, II e IV
-py -3.11 -m venv .venv && .\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt
+py -3.11 -m venv .venv && .\\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt
 
 -------------------
 # (VI) RODAR O APP
 # Normal
-streamlit run .\app_front\app.py
+streamlit run .\\app_front\\app.py
 
 # Com log
-Streamlit run .\app_front\app.py --logger.level=debug
+streamlit run .\\app_front\\app.py --logger.level=debug
+
+-------------------
+# LINUX
+# (I) Criar um venv com Python 3.11
+# **apenas a primeira vez
+python3 -m venv .venv
+# Obs: se aparecer erro sobre "venv"/"ensurepip" ausente, instale o pacote do venv do seu Python (Ubuntu/Debian):
+# sudo apt-get update && sudo apt-get install -y python3-venv   # ou python3.12-venv dependendo da sua versão
+
+-------------------
+# (II) ATIVAR
+source .venv/bin/activate
+
+-------------------
+# (III) Atualizar instaladores (SE PRECISAR)
+# **apenas a primeira vez
+# **geralmente não precisa
+python -m pip install -U pip setuptools wheel
+pip install --upgrade pip
+
+-------------------
+# (IV) Instalar as dependências
+# **apenas a primeira vez
+pip install -r requirements.txt
+
+-------------------
+# (V) Passos I, II e IV
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+
+-------------------
+# (VI) RODAR O APP
+# Normal
+streamlit run ./app_front/app.py
+
+# Com log
+streamlit run ./app_front/app.py --logger.level=debug
+
+-------------------
+# Notas rápidas
+# - Dentro do venv, `python` e `pip` já apontam para o ambiente isolado (Windows e Linux).
+# - Se o pip sugerir atualização, você pode rodar: `python -m pip install --upgrade pip`.
