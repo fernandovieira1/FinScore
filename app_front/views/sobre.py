@@ -8,96 +8,74 @@ TAB_LABELS = ["🧭 Metodologia", "📚 Glossário", "❓ FAQ"]
 def _sec_metodologia():
     import pandas as pd
 
-    st.subheader("FinScore")
-
+    st.header("Metodologia")
     st.markdown("""
-    O **FinScore** é um índice sintético (0–1000) que busca deduzir a higidez patrimonial, econômica, financeira 
-                e o risco de crédito de uma empresa, a partir da análise quantitativa de suas demonstrações 
-                contábeis recentes. O método foi desenhado para ser objetivo, comparável entre empresas e sensível
-                 a mudanças de tendência, consoante a variância temporal dos dados.
+O FinScore é um índice sintético (0–1000) que busca deduzir a higidez patrimonial, econômica, financeira e o risco de crédito de uma empresa, a partir da análise quantitativa de suas demonstrações contábeis recentes. O método foi desenhado para ser objetivo, comparável entre empresas e sensível a mudanças de tendência, consoante a variância temporal dos dados.
+
+O cálculo do FinScore segue uma abordagem inspirada em metodologias consagradas de análise de crédito e avaliação de risco, como Altman Z-Score (Altman, 1968) e modelos de escore estatístico, adaptando-as à realidade brasileira e à disponibilidade de dados contábeis. O processo é dividido em cinco etapas principais, que garantem robustez, comparabilidade e sensibilidade ao contexto econômico das empresas analisadas.
     """)
 
-    st.markdown("#### Metodologia")
+    # 1. Metodologia (5 passos)
+    st.markdown("### 1. Etapas do Cálculo do FinScore")
     st.markdown("""
-    O cálculo do FinScore é composto pelas seguintes etapas:
-
-    **1. Cálculo dos Índices Contábeis**  
-    A partir dos dados brutos das demonstrações, são extraídos indicadores que cobrem dimensões essenciais:
-    - **Rentabilidade** (ex: Margem Líquida, ROA, ROE, Margem EBITDA);
-    - **Alavancagem e Endividamento** (ex: Alavancagem, Endividamento, Cobertura de Juros);
-    - **Estrutura de Capital** (ex: Imobilizado/Ativo);
-    - **Eficiência Operacional** (ex: Giro do Ativo, Períodos Médios de Recebimento e Pagamento);
-    - **Liquidez** (ex: Liquidez Corrente, Liquidez Seca, CCL/Ativo Total).
-    Esses índices são calculados para até três exercícios consecutivos, permitindo captar evolução e consistência.
-
-    **2. Padronização Estatística**  
-    Para garantir comparabilidade, todos os índices são padronizados via z-score (média zero, desvio-padrão um), evitando distorções por escalas distintas.
-
-    **3. Redução de Dimensionalidade (PCA)**  
-    Utiliza-se a Análise de Componentes Principais (PCA) para condensar a informação dos índices em poucos fatores independentes (componentes principais). Cada componente é uma combinação linear dos índices originais, e sua importância é medida pela variância explicada. Os loadings (cargas) indicam o peso de cada índice em cada componente, permitindo interpretar quais fatores mais influenciam o resultado.
-
-    **4. Consolidação Temporal**  
-    O FinScore considera até três anos, atribuindo maior peso ao desempenho mais recente. Os escores anuais (obtidos pela combinação dos componentes principais ponderados pela variância explicada) são agregados de forma decrescente do mais recente ao mais antigo, refletindo tanto a situação atual quanto a tendência histórica.
-
-    **5. Escalonamento e Classificação**  
-    O escore consolidado é transformado para a escala 0–1000, onde valores mais altos indicam menor risco. O resultado é classificado em faixas interpretativas, facilitando a comunicação e a tomada de decisão:
-    - Muito Abaixo do Risco;
-    - Levemente Abaixo do Risco;
-    - Neutro;
-    - Levemente Acima do Risco;
-    - Muito Acima do Risco.
-
-    **Interpretação dos Resultados**  
-    - **FinScore próximo de 1000:** Empresa com perfil financeiro robusto, baixo risco de crédito e boa performance recente.
-    - **FinScore intermediário (250–750):** Situação neutra, sem sinais claros de risco elevado ou excelência.
-    - **FinScore próximo de 0:** Indica fragilidades relevantes, alto risco de crédito ou deterioração recente.
-    A análise dos índices e dos principais componentes permite identificar quais dimensões (liquidez, rentabilidade, endividamento, eficiência) mais impactaram o resultado, apoiando diagnósticos e recomendações.
+O cálculo do FinScore é composto por cinco etapas sequenciais, cada uma com papel fundamental para garantir a qualidade e a utilidade do índice. A seguir, detalhamos cada passo:
     """)
 
-    # 3) Índices considerados (tabela)
-    st.markdown("#### Índices utilizados")
+    st.markdown("**(i) Cálculo dos Índices Contábeis**  ")
     st.markdown("""
-    Os índices abaixo são calculados a partir das demonstrações contábeis e representam diferentes dimensões da saúde financeira da empresa. Cada índice contribui de forma específica para o diagnóstico, permitindo uma análise multifacetada do risco e da performance.
+A partir dos dados brutos das demonstrações, são extraídos indicadores que cobrem dimensões essenciais:
+
+- **Rentabilidade** (ex: Margem Líquida, ROA, ROE, Margem EBITDA);
+- **Alavancagem e Endividamento** (ex: Alavancagem, Endividamento, Cobertura de Juros);
+- **Estrutura de Capital** (ex: Imobilizado/Ativo);
+- **Eficiência Operacional** (ex: Giro do Ativo, Períodos Médios de Recebimento e Pagamento);
+- **Liquidez** (ex: Liquidez Corrente, Liquidez Seca, CCL/Ativo Total).
+
+Esses índices são calculados para até três exercícios consecutivos, permitindo captar evolução e consistência.
+    """)
+
+    st.markdown("**(ii) Padronização Estatística**  ")
+    st.markdown("""
+Para garantir comparabilidade, todos os índices são padronizados via z-score (média zero, desvio-padrão um), evitando distorções por escalas distintas. Essa etapa é fundamental para que indicadores de diferentes naturezas possam ser combinados de forma justa.
+    """)
+
+    st.markdown("**(iii) Redução de Dimensionalidade (PCA)**  ")
+    st.markdown("""
+Utiliza-se a Análise de Componentes Principais (PCA) para condensar a informação dos índices em poucos fatores independentes (componentes principais). Cada componente é uma combinação linear dos índices originais, e sua importância é medida pela variância explicada. Os loadings (cargas) indicam o peso de cada índice em cada componente, permitindo interpretar quais fatores mais influenciam o resultado.
+    """)
+
+    st.markdown("**(iv) Consolidação Temporal**  ")
+    st.markdown("""
+O FinScore considera até três anos, atribuindo maior peso ao desempenho mais recente. Os escores anuais (obtidos pela combinação dos componentes principais ponderados pela variância explicada) são agregados de forma decrescente do mais recente ao mais antigo, refletindo tanto a situação atual quanto a tendência histórica.
+    """)
+
+    st.markdown("**(v) Escalonamento e Classificação**  ")
+    st.markdown("""
+O escore consolidado é transformado para a escala 0–1000, onde valores mais altos indicam menor risco. O resultado é classificado em faixas interpretativas, facilitando a comunicação e a tomada de decisão.
+    """)
+
+    st.markdown("Essas etapas, em conjunto, garantem que o FinScore seja um índice robusto, transparente e adaptável a diferentes contextos empresariais.")
+
+    # 2. Índices utilizados
+    st.markdown("### 2. Índices utilizados")
+    st.markdown("""
+Os índices utilizados no cálculo do FinScore foram selecionados por sua relevância na literatura de análise financeira e sua capacidade de captar diferentes dimensões do risco de crédito. Eles abrangem rentabilidade, liquidez, alavancagem, eficiência operacional e estrutura de capital.
     """)
     ASSETS_PATH = Path(__file__).resolve().parents[1] / "assets"
     tabela_csv = ASSETS_PATH / "finscore_indices_formulas.csv"
     if tabela_csv.exists():
         df = pd.read_csv(tabela_csv)
         st.table(df)
-        st.download_button(
-            "Baixar tabela de índices (CSV)",
-            data=tabela_csv.read_bytes(),
-            file_name="finscore_indices_formulas.csv",
-            mime="text/csv",
-        )
         st.markdown("""
-        **Como interpretar:**
-        - Índices de rentabilidade altos sugerem boa geração de lucro.
-        - Índices de liquidez elevados indicam maior capacidade de honrar compromissos de curto prazo.
-        - Alavancagem e endividamento devem ser analisados em conjunto com a cobertura de juros e a estrutura de capital.
-        - Eficiência operacional e prazos ajudam a entender o ciclo financeiro e a gestão de ativos.
-        A análise integrada desses índices permite identificar pontos fortes e vulnerabilidades específicas da empresa.
+        A análise integrada desses índices permite identificar pontos fortes e vulnerabilidades específicas da empresa, apoiando diagnósticos mais precisos e decisões de crédito fundamentadas.
         """)
     else:
         st.info("Tabela de índices não encontrada em assets. Esperado: `finscore_indices_formulas.csv`.")
 
-    # 4) Ponderação temporal (texto + imagem)
-    st.markdown("#### Ponderação temporal")
+    # 3. Interpretação dos Resultados (faixas de risco)
+    st.markdown("### 3. Interpretação dos Resultados")
     st.markdown("""
-    O FinScore utiliza até três exercícios consecutivos para equilibrar **recência** e **consistência histórica**.
-    A distribuição de pesos é **60%** para o ano mais recente, **25%** para o ano anterior e **15%** para o ano anterior a esse.
-    """)
-    pesos_img = ASSETS_PATH / "finscore_pesos_temporais.png"
-    if pesos_img.exists():
-        st.image(str(pesos_img), use_column_width=False, width=550)
-        st.caption("Ano t: 60% · Ano t−1: 25% · Ano t−2: 15%")
-    else:
-        st.info("Gráfico de pesos não encontrado em assets. Esperado: `finscore_pesos_temporais.png`.")
-
-    # 5) Faixas de risco (tabela explicativa)
-    st.markdown("#### Faixas de risco (FinScore 0–1000)")
-    st.markdown("""
-    Após o cálculo, o FinScore é convertido para a escala de 0 a 1000 e classificado em faixas que facilitam a comunicação do risco de crédito. Cada faixa representa um perfil de risco distinto, auxiliando na tomada de decisão e na comparação entre empresas.
+O FinScore, após ser calculado e escalonado, é classificado em faixas que facilitam a comunicação do risco de crédito. Cada faixa representa um perfil de risco distinto, auxiliando na tomada de decisão e na comparação entre empresas.
     """)
     import pandas as pd
     faixas = [
@@ -109,12 +87,27 @@ def _sec_metodologia():
     ]
     st.table(pd.DataFrame(faixas))
     st.markdown("""
-    **Como interpretar:**
-    - Empresas classificadas como **Muito Abaixo do Risco** apresentam excelente robustez financeira e baixíssima probabilidade de inadimplência.
-    - **Levemente Abaixo do Risco** indica conforto, mas recomenda-se monitoramento.
-    - **Neutro** sugere situação estável, mas sem garantias de excelência ou risco iminente.
-    - **Levemente Acima do Risco** e **Muito Acima do Risco** demandam atenção, podendo indicar problemas estruturais ou conjunturais.
-    A classificação deve ser sempre analisada em conjunto com os índices detalhados e o contexto do setor.
+**Como interpretar:**
+- Empresas classificadas como **Muito Abaixo do Risco** apresentam excelente robustez financeira e baixíssima probabilidade de inadimplência.
+- **Levemente Abaixo do Risco** indica conforto, mas recomenda-se monitoramento.
+- **Neutro** sugere situação estável, mas sem garantias de excelência ou risco iminente.
+- **Levemente Acima do Risco** e **Muito Acima do Risco** demandam atenção, podendo indicar problemas estruturais ou conjunturais.
+A classificação deve ser sempre analisada em conjunto com os índices detalhados e o contexto do setor.
+    """)
+
+    # 4. Ponderação temporal
+    st.markdown("### 4. Ponderação temporal")
+    st.markdown("""
+O FinScore utiliza até três exercícios consecutivos para equilibrar recência e consistência histórica. A distribuição de pesos é 60% para o ano mais recente, 25% para o ano anterior e 15% para o ano anterior a esse.
+    """)
+    pesos_img = ASSETS_PATH / "finscore_pesos_temporais.png"
+    if pesos_img.exists():
+        st.image(str(pesos_img), use_column_width=False, width=550)
+        st.caption("Ano t: 60% · Ano t−1: 25% · Ano t−2: 15%")
+    else:
+        st.info("Gráfico de pesos não encontrado em assets. Esperado: `finscore_pesos_temporais.png`.")
+    st.markdown("""
+Essa ponderação permite que o FinScore seja sensível a mudanças recentes, sem perder de vista a trajetória histórica da empresa.
     """)
 
 def _sec_glossario():
@@ -274,6 +267,21 @@ def _sec_glossario():
             )
 
 def _sec_faq():
+
+    st.markdown("""
+    <style>
+    /* Remove qualquer borda e sombra dos expanders do FAQ em todos os temas */
+    div[data-testid="stExpander"],
+    div[data-testid="stExpander"] *,
+    div[data-testid="stExpander"] > div,
+    div[data-testid="stExpander"] .st-emotion-cache-1v0mbdj,
+    div[data-testid="stExpander"] .st-emotion-cache-1v0mbdj * {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.subheader("FAQ")
     st.markdown("*Perguntas Frequentes sobre o FinScore e sua aplicação na análise de crédito*")
 

@@ -267,7 +267,7 @@ Até aqui:
 [v. 0.7.20c, de 13/09/2025]
 
 =====Ajustes=====
-* (x) Pasta 'suporte', englobando os arquivos de notas e controle (TO_DO_APP.txt etc)
+* (x) Pasta 'suporte', englobando os arquivos de notas e controle (TO_DO_APP.txt etc).
 ---
 Até aqui:
 [v. 0.7.20d, de 13/09/2025]
@@ -295,14 +295,14 @@ Até aqui:
 
 =====Novidades=====
 * (x) Formulário 'Lançamentos/Cliente':
-    - (x) Máscara travando campo 'CNPJ' (formato string), permitindo digitar, colar e corrigir colagens com caracteres 
-    a mais ou a menos, desde que mantenha a quantidade correta de dígitos;
-    - (x) Campo 'Ano Inicial' computado ocmo "YYYY";
-    - (x) Campo 'Ano Final' computado como "YYYY";
-    - (x) Campo 'Ano Final' computado como ('Ano Inicial'+2);
-    - (x) Campo 'Serasa Score' computado como "float";
-    - (x) Campo 'Data de Consulta ao Serasa' computado como 'DD/MM/YYYY', permitindo digitar, colar e corrigir colagens 
-    com caracteres a mais ou a menos, desde que mantenha a quantidade correta de dígitos.
+    - (x) Máscara travando campo 'CNPJ' (formato string), permitindo digitar, colar e corrigir colagens com
+    caracteres a mais ou a menos, desde que mantenha a quantidade correta de dígitos.
+    - (x) Campo 'Ano Inicial' computado ocmo "YYYY".
+    - (x) Campo 'Ano Final' computado como "YYYY".
+    - (x) Campo 'Ano Final' computado como ('Ano Inicial'+2).
+    - (x) Campo 'Serasa Score' computado como "float".
+    - (x) Campo 'Data de Consulta ao Serasa' computado como 'DD/MM/YYYY', permitindo digitar, colar e corrigir.
+    colagens com caracteres a mais ou a menos, desde que mantenha a quantidade correta de dígitos.
 ---
 Até aqui:
 [v. 0.7.23, de 13/09/2025]
@@ -313,17 +313,29 @@ Até aqui:
 =====Novidades=====
 * (x) Seção Sobre/FAQ em formato accordion;
 =====Ajustes=====
-* (x) Consistência visual temas claro ou escuro dos sistemas operacionais ou navegadores;
+* (x) Consistência visual temas claro ou escuro dos sistemas operacionais ou navegadores.
 ---
 Até aqui:
 [v. 0.7.24, de 14/09/2025]
 ---
 
 =====Novidades=====
-* (x) Seção Sobre/Glossárionavegável em ordem alfabética (A–Z);
+* (x) Seção Sobre/Glossárionavegável em ordem alfabética (A–Z).
 ---
 Até aqui:
 [v. 0.7.25, de 14/09/2025]
+---
+
+=====Ajustes=====
+* (x) Consistência visual temas claro ou escuro dos sistemas operacionais ou navegadores com falhas (ainda) em 
+Sobre/Metodologia e Sobre/FAQ.
+* (x) Removi a opção de download da tabela em Sobre/Metodologia.
+* (x) Reorganização e melhoria do texto de Sobre/Metodologia.
+* (x) Revisado st.header como padrão para os títulos
+---
+Até aqui:
+[v. 0.7.25a, de 14/09/2025]
+---
 
  =====Novidades=====
 * ( ) Formulário 'Lançamentos/Cliente' com todos os campos obrigatório, apresentando trava de passar para 'Lançamentos/Cliente'e mensagem de erro ao clicar
