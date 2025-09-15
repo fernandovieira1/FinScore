@@ -406,6 +406,11 @@ Ideias
 - Para burlar o desbloqueio dos campos em Processo, basta saber os links dos submenus. Mascarar barra de endereços ou
 alguma outra solução para dar mais segurança.
 
+MELHORIAS PONTUAIS
+- Criar conteúdo da seção Contato (ex.: https://macmagazine.com.br/contato/). Definir com Assertif para onde 
+isso apontará, se for necessária mesmo.
+- Clique de 'voltar ao topo' em Sobre/Glossário mostrar a topbar.
+
 BACKEND
 - API REST para integração externa
 - Dashboard administrativo
