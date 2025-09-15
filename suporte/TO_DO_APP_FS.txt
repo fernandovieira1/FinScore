@@ -378,6 +378,13 @@ Até aqui:
 [v. 0.7.26, de 14/09/2025]
 ---
 
+=====Ajustes=====
+* (x) Sumir com os ícones de link que aparecem quando o ponteiro do mouse repousa sobre certas áreas, como títulos.
+- Código testado em todas as seções. Estética e funcionalidades aparentemente funcionando.
+---
+Até aqui:
+[v. 0.7.26a, de 14/09/2025]
+---
 ......................................................................................................................
 
 ============

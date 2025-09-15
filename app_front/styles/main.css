@@ -210,3 +210,69 @@ hr {
 }
 
 /* USAR ESTA */
+
+/* Oculta ícones de link (anchor/headerlink) em títulos gerados automaticamente */
+h1 .headerlink,
+h2 .headerlink,
+h3 .headerlink,
+h4 .headerlink,
+h5 .headerlink,
+h6 .headerlink,
+h1 .anchor,
+h2 .anchor,
+h3 .anchor,
+h4 .anchor,
+h5 .anchor,
+h6 .anchor,
+h1 a[aria-hidden="true"],
+h2 a[aria-hidden="true"],
+h3 a[aria-hidden="true"],
+h4 a[aria-hidden="true"],
+h5 a[aria-hidden="true"],
+h6 a[aria-hidden="true"] {
+    display: none !important;
+}
+
+/* Oculta qualquer <a> diretamente dentro de títulos (ícones de link remanescentes) */
+h1 > a,
+h2 > a,
+h3 > a,
+h4 > a,
+h5 > a,
+h6 > a {
+    display: none !important;
+}
+
+/* Esconde o ícone/âncora que o Streamlit adiciona nos headings - Abordagem Agressiva */
+.stMarkdown h1 a, .stMarkdown h2 a, .stMarkdown h3 a,
+.stMarkdown h4 a, .stMarkdown h5 a, .stMarkdown h6 a,
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
+.element-container h1 a, .element-container h2 a, .element-container h3 a,
+.element-container h4 a, .element-container h5 a, .element-container h6 a,
+[data-testid="stMarkdownContainer"] h1 a,
+[data-testid="stMarkdownContainer"] h2 a,
+[data-testid="stMarkdownContainer"] h3 a,
+[data-testid="stMarkdownContainer"] h4 a,
+[data-testid="stMarkdownContainer"] h5 a,
+[data-testid="stMarkdownContainer"] h6 a {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Força cor verde nos botões principais do Streamlit */
+.stButton > button,
+button[kind="primary"],
+.stButton button {
+    background: var(--primary-btn, #5ea68d) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.stButton > button:hover,
+button[kind="primary"]:hover,
+.stButton button:hover {
+    background: #4a8f77 !important;
+    color: white !important;
+}
