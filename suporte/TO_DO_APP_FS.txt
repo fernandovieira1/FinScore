@@ -393,6 +393,13 @@ Até aqui:
 Até aqui:
 [v. 0.7.26b, de 14/09/2025]
 ---
+
+=====Ajustes=====
+* (x) Correção de racional em utils_finscore.py - peso maior estava indo para mais antigo
+---
+Até aqui:
+[v. 0.7.26c, de 15/09/2025]
+---
 ......................................................................................................................
 
 ============

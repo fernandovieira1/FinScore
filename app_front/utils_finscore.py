@@ -7,6 +7,8 @@ import pandas as pd
 """
 Nota: As dependências do scikit-learn são importadas dentro da função executar_finscore
 para evitar falhas na importação do módulo quando o app é iniciado com o Python errado.
+Regra temporal: o ano MAIS RECENTE recebe o MAIOR peso (0.60), decrescendo (0.25, 0.15).
+Quando houver <3 anos, os pesos são truncados e NORMALIZADOS para somar 1.
 """
 
 # ---------------------------
@@ -30,10 +32,10 @@ def calcular_indices_contabeis(df: pd.DataFrame) -> pd.DataFrame:
 
     # Alavancagem / Endividamento
     df = df.copy()
-    df['p_Divida_Bruta']  = df['p_Passivo_Total'] - df['p_Patrimonio_Liquido']
+    df['p_Divida_Bruta']   = df['p_Passivo_Total'] - df['p_Patrimonio_Liquido']
     df['p_Divida_Liquida'] = df['p_Divida_Bruta'] - df['p_Caixa']
-    idx['Alavancagem']   = df['p_Divida_Liquida'] / ebitda
-    idx['Endividamento'] = df['p_Divida_Bruta'] / df['p_Ativo_Total']
+    idx['Alavancagem']     = df['p_Divida_Liquida'] / ebitda
+    idx['Endividamento']   = df['p_Divida_Bruta'] / df['p_Ativo_Total']
 
     # Estrutura de Capital
     df['p_Imobilizado'] = df['p_Ativo_Total'] - df['p_Ativo_Circulante']
@@ -43,9 +45,9 @@ def calcular_indices_contabeis(df: pd.DataFrame) -> pd.DataFrame:
     idx['Cobertura de Juros'] = ebit / df['r_Despesa_de_Juros']
 
     # Eficiência e Ciclo
-    idx['Giro do Ativo']                 = df['r_Receita_Total'] / df['p_Ativo_Total']
-    idx['Período Médio de Recebimento'] = df['p_Contas_a_Receber'] / df['r_Receita_Total'] * 365
-    idx['Período Médio de Pagamento']   = df['p_Contas_a_Pagar']   / df['r_Custos']        * 365
+    idx['Giro do Ativo']                  = df['r_Receita_Total'] / df['p_Ativo_Total']
+    idx['Período Médio de Recebimento']  = df['p_Contas_a_Receber'] / df['r_Receita_Total'] * 365
+    idx['Período Médio de Pagamento']    = df['p_Contas_a_Pagar']   / df['r_Custos']        * 365
 
     # Liquidez
     idx['Liquidez Corrente'] = df['p_Ativo_Circulante'] / df['p_Passivo_Circulante']
@@ -104,17 +106,16 @@ def executar_finscore(
     serasa_score: int
 ) -> dict:
 
-    # (opcional) garantir ordem: mais recente -> mais antigo
+    # Garantir ordem: MAIS RECENTE -> MAIS ANTIGO (para alinhar pesos 0.60, 0.25, 0.15)
     df_dc = df_dados_contabeis.copy()
     if 'ano' in df_dc.columns:
-        # na 9.7 o "0" é o mais recente; manter 0,1,2...
-        df_dc = df_dc.sort_values('ano', ascending=True).reset_index(drop=True)
+        df_dc = df_dc.sort_values('ano', ascending=False).reset_index(drop=True)
 
     # Índices
     df_indices = calcular_indices_contabeis(df_dc)
 
     # Se todos os estoques são 0, remover Liquidez Seca do PCA
-    if (df_dc['p_Estoques'] == 0).all():
+    if 'p_Estoques' in df_dc.columns and (df_dc['p_Estoques'] == 0).all():
         df_indices.drop('Liquidez Seca', axis=1, inplace=True, errors='ignore')
 
     # Padronização e PCA (imports tardios para evitar crash ao iniciar o app sem sklearn)
@@ -129,7 +130,7 @@ def executar_finscore(
         ) from e
 
     scaler = StandardScaler()
-    X = scaler.fit_transform(df_indices.fillna(0))       # robusto a eventuais NaNs
+    X = scaler.fit_transform(df_indices.fillna(0))  # robusto a eventuais NaNs
     pca = PCA()
     Z = pca.fit_transform(X)
 
@@ -155,16 +156,17 @@ def executar_finscore(
         }.items()
     ])
 
-    # === FINSCORE BRUTO (como na 9.7) ===
+    # === FINSCORE BRUTO (como na 9.7, porém garantindo pesos no mais recente) ===
     # 1) um score por ano: combinação dos PCs ponderados pela variância explicada
     scores_por_ano = pca_df.dot(explained)  # shape = (n_anos,)
-    # 2) pesos do mais recente para o mais antigo
-    w = np.array([0.6, 0.25, 0.15], dtype=float)
-    if len(scores_por_ano) < len(w):
-        w = w[:len(scores_por_ano)]
-    elif len(scores_por_ano) > len(w):
-        w = np.pad(w, (0, len(scores_por_ano) - len(w)), constant_values=0.0)
-    finscore_bruto = round(float((scores_por_ano.values * w).sum()), 2)
+    # 2) pesos do mais recente -> mais antigo
+    w_base = np.array([0.60, 0.25, 0.15], dtype=float)
+    n = int(len(scores_por_ano))
+    use_n = min(n, 3)  # janela de até 3 anos
+    w = w_base[:use_n].copy()
+    # normaliza quando usar menos de 3 anos (garante soma 1 e escala estável)
+    w = w / w.sum() if w.sum() > 0 else w
+    finscore_bruto = round(float(np.dot(scores_por_ano.values[:use_n], w)), 2)
 
     # === FINSCORE AJUSTADO (0..1000) ===
     finscore_ajustado = round(min(((finscore_bruto + 2) / 4) * 1000, 1000), 2)
