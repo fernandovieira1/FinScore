@@ -265,6 +265,11 @@ def _sec_glossario():
     html {
         scroll-behavior: smooth;
     }
+    #topo {
+        position: relative;
+        top: -80px;
+        padding-top: 80px;
+    }
     .glossario-voltar {
         display: inline-block;
         margin-top: 8px;

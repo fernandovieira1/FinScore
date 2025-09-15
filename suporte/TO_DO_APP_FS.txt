@@ -386,11 +386,50 @@ Até aqui:
 Até aqui:
 [v. 0.7.26a, de 14/09/2025]
 ---
+
+=====Ajustes=====
+* (x) Organização (Roadmap) da parte 3 (PARECER) deste to do.
+---
+Até aqui:
+[v. 0.7.26b, de 14/09/2025]
+---
 ......................................................................................................................
 
 ============
 3. PARECER
 ============
+
+PRELIMINARES
+-------------------
+* ( ) Anos (2021, 2022 e 2023) substituírem ordem cardinal (0, 1 e 2):
+    - ( ) Planilhas (Excel e Google Sheets)
+    - ( ) Adaptar anos em Análise/Gráficos e Análise/Tabelas
+    - ( ) Criar formulário em Lançamentos/Dados
+
+SUB-SEÇÃO ANÁLISE
+-------------------
+* ( ) Dados Análise/Resumo
+    - ( ) FinScore Bruto
+        + ( ) Número
+        + ( ) Classificação
+    - ( ) FinScore Ajustado
+        + ( ) Número
+        + ( ) Classificação
+    - ( ) Serasa Score
+        + ( ) Número
+        + ( ) Classificação
+* ( ) Gráficos de Análise/Gráficos
+    - ( ) Dados Contábeis brutos
+    - ( ) Índices Contábeis
+* ( ) Tabelas de Análise/Tabelas
+    - ( ) Dados Contábeis brutos
+    - ( ) Índices Contábeis
+    - ( ) Componentes Principais (PCA)
+    - ( ) Top 3 Índices por Componente
+
+
+SUB-SEÇÃO PARECER
+-------------------
 * ( ) Configurar OpenAI e LangChain.
 * ( ) Definir e configurar dados que servirão de parâmetro.
 * ( ) Vincular LangChain no Código.
