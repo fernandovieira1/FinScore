@@ -419,20 +419,33 @@ SUB-SEÇÃO ANÁLISE
     - ( ) FinScore Bruto
         + ( ) Número
         + ( ) Classificação
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
     - ( ) FinScore Ajustado
         + ( ) Número
         + ( ) Classificação
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
     - ( ) Serasa Score
         + ( ) Número
         + ( ) Classificação
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
 * ( ) Gráficos de Análise/Gráficos
     - ( ) Dados Contábeis brutos
+        + ( ) Definir gráficos
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
     - ( ) Índices Contábeis
+        + ( ) Definir gráficos
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
 * ( ) Tabelas de Análise/Tabelas
     - ( ) Dados Contábeis brutos
+        + ( ) Definir tabelas
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
     - ( ) Índices Contábeis
+        + ( ) Definir tabelas
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
     - ( ) Componentes Principais (PCA)
+        + ( ) IA/LLM (prompt IA, sem interação humana)
     - ( ) Top 3 Índices por Componente
+        + ( ) IA/LLM (prompt IA, sem interação humana)
 
 
 SUB-SEÇÃO PARECER
@@ -456,6 +469,7 @@ MELHORIAS PONTUAIS
 - Criar conteúdo da seção Contato (ex.: https://macmagazine.com.br/contato/). Definir com Assertif para onde 
 isso apontará, se for necessária mesmo.
 - Clique de 'voltar ao topo' em Sobre/Glossário mostrar a topbar.
+- Forçar tema claro na versão 1.x.yy (Beta)
 
 BACKEND
 - API REST para integração externa
