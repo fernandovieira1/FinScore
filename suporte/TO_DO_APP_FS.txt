@@ -24,7 +24,8 @@ Links e dicas
 Logo: https://turbologo.com/
 Emojis: https://emojipedia.org/
 Cores hex: https://www.color-hex.com/
-Streamlit: https://docs.streamlit.io/
+Streamlit: https://docs.streamlit.io/ (documentação)
+           https://share.streamlit.io/ (publish)
 Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
 ......................................................................................................................
 

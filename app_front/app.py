@@ -11,7 +11,7 @@ for p in (str(APP_DIR), str(ROOT_DIR)):
         sys.path.insert(0, p)
 
 # --------------- config ---------------
-st.set_page_config(page_title="FinScore Dashboard", layout="wide")
+st.set_page_config(page_title="FinScore", layout="wide")
 
 # --------------- imports ---------------
 from app_front.views import estoque
