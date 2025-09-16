@@ -367,7 +367,6 @@ Até aqui:
 [v. 0.7.25e, de 14/09/2025]
 ---
 
-
 =====Ajustes=====
 * (x) Limpeza do código com as regras de v. 0.7.25e
 * (x) Obrigatoriedade de todos os campos de Novo/Cliente estarem preenchidos para que o cálculo de FinScore
@@ -392,6 +391,7 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.7.26b, de 14/09/2025]
+[v. 0.7.26d, de 16/09/2025]
 ---
 
 =====Ajustes=====
