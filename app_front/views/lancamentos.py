@@ -2,7 +2,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
-from services.finscore_service import run_finscore
+from services.finscore_service import run_finscore, ajustar_coluna_ano
 
 # Rótulos com ícones (ordem fixa na UI)
 TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
@@ -133,6 +133,14 @@ def _auto_save_cliente():
     # Não remove campos vazios, para garantir que a validação capture todos
     ss.meta.update(new_meta)
 
+    if ss.get("df") is not None:
+        df_atualizado, anos_rotulos = ajustar_coluna_ano(ss.df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
+        ss.df = df_atualizado.copy()
+        if anos_rotulos:
+            ss.meta["anos_rotulos"] = anos_rotulos
+        else:
+            ss.meta.pop("anos_rotulos", None)
+
     pend = validar_cliente(ss.meta)
     if pend:
         st.warning(pend)
@@ -173,6 +181,7 @@ def _sec_cliente():
             st.rerun()
 
 def _sec_dados():
+    ss = st.session_state
     # DEBUG: Verificar se há referências a _navigate_to
     if "_navigate_to" in st.session_state:
         st.warning("⚠️ _navigate_to encontrado no session_state. Removendo...")
@@ -206,16 +215,44 @@ def _sec_dados():
         st.error(f"Erro ao ler a planilha: {erro}")
 
     if df is not None:
+        df_exibicao, anos_rotulos = ajustar_coluna_ano(df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
         st.success(f"✅ Dados carregados (aba: {aba}).")
         st.caption("Prévia:")
-        st.dataframe(df.head(), use_container_width=True)
-        st.session_state.df = df.copy()
-        chec = check_minimo(st.session_state.df)
+        df_preview = df_exibicao.copy()
+        if "ano" in df_preview.columns:
+            df_preview = df_preview.sort_values("ano", ascending=True).reset_index(drop=True)
+            def _fmt(valor, fallback):
+                if valor is None:
+                    return fallback
+                try:
+                    return str(int(float(valor)))
+                except (TypeError, ValueError):
+                    return str(valor)
+
+            if anos_rotulos:
+                valores_preview = list(anos_rotulos)
+            elif "ano" in df.columns:
+                valores_preview = df["ano"].tolist()
+            else:
+                valores_preview = []
+            if not valores_preview:
+                valores_preview = list(range(1, len(df_preview) + 1))
+            valores_formatados = [
+                _fmt(valor, str(idx + 1)) for idx, valor in enumerate(valores_preview)
+            ]
+            df_preview["ano"] = valores_formatados
+        st.dataframe(df_preview.head(), use_container_width=True, hide_index=True)
+        ss.df = df_exibicao.copy()
+        if anos_rotulos:
+            ss.meta["anos_rotulos"] = anos_rotulos
+        else:
+            ss.meta.pop("anos_rotulos", None)
+        chec = check_minimo(ss.df)
         if chec["BP_faltando"] or chec["DRE_faltando"]:
             st.warning("🔎 Checagem de campos mínimos (informativa):")
             st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
         st.success("✅ Dados contábeis salvos.")
-        st.session_state.out = None  # Limpa resultados se dados mudaram
+        ss.out = None  # Limpa resultados se dados mudaram
 
     st.write("---")
 

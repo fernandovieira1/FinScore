@@ -374,7 +374,7 @@ Até aqui:
 * (x) Limpeza do código com as regras de v. 0.7.25e
 * (x) Obrigatoriedade de todos os campos de Novo/Cliente estarem preenchidos para que o cálculo de FinScore
 prossiga.
-* (x) Formatação de fontes em Análise/Resumo
+* (x) Formatação de fontes em Análise/Resumo.
 ---
 Até aqui:
 [v. 0.7.26, de 14/09/2025]
@@ -398,7 +398,7 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* (x) Correção de racional em utils_finscore.py - peso maior estava indo para mais antigo
+* (x) Correção de racional em utils_finscore.py - peso maior estava indo para mais antigo.
 ---
 Até aqui:
 [v. 0.7.26c, de 15/09/2025]
@@ -411,10 +411,31 @@ Até aqui:
 
 PRELIMINARES
 -------------------
-* ( ) Anos (2021, 2022 e 2023) substituírem ordem cardinal (0, 1 e 2):
-    - ( ) Planilhas (Excel e Google Sheets)
-    - ( ) Adaptar anos em Análise/Gráficos e Análise/Tabelas
-    - ( ) Criar formulário em Lançamentos/Dados
+
+=====Novidades=====
+* (x) Anos (2021, 2022 e 2023) substituírem ordem cardinal (0, 1 e 2):
+    - (x) Planilhas (Excel e Google Sheets);
+    - (x) Adaptar anos em Análise/Gráficos e Análise/Tabelas;
+* (x) Ordem de apresentação dos anos ajustada nos gráficos.
+=====Ajustes=====
+* (x) Ordem de apresentação dos anos nas linhas da planilha com dados contábeis (mais antigo na primeira linha).
+* (x) Nomenclatura da coluna 'Ano' na planilha alterada de [0, 1, 2] para [1, 2, 3], sendo 1 o mais antigo.
+---
+Até aqui:
+[v. 0.7.27(dev), de 19/09/2025]
+---
+
+=====Novidades=====
+* ( ) Novos gráficos
+    - ( ) Estudar quais
+    - ( ) Codificar
+* ( ) Novas tabelas
+    - ( ) Estudar quais
+    - ( ) Codificar
+---
+Até aqui:
+[v. 0.7.28, de xx/09/2025]
+---
 
 SUB-SEÇÃO ANÁLISE
 -------------------
