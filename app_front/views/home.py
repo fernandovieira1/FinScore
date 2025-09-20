@@ -10,7 +10,7 @@ def render():
         Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.
 
         **IMPORTANTE**: 
-        * Versão atual [v. 0.7.26a, de 14/09/2025]. 
+        * Versão atual [v. 0.7.27a, de 20/09/2025]. 
         * Por ora, dê preferência para o tema claro do sistema operacional ou navegador.
         * Use com cautela e reporte bugs.
         """,
