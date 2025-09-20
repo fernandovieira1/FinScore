@@ -25,6 +25,8 @@ python -m pip install -U pip setuptools wheel
 # **apenas a primeira vez
 pip install -r requirements.txt
 
+pip install -r "C:\Users\ferna\OneDrive\Desktop OneDrive\FinScore\requirements.txt"
+
 -------------------
 # (V) Passos I, II e IV (IGNORAR se fez em separado)
 py -3.11 -m venv .venv && .\\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt

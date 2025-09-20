@@ -445,15 +445,23 @@ Até aqui:
 ---
 
 =====Novidades=====
-* ( ) Novos gráficos
-    - ( ) Estudar quais
-    - ( ) Codificar
-* ( ) Novas tabelas
-    - ( ) Estudar quais
-    - ( ) Codificar
+* (x) Novos gráficos
+    - (x) Estudar quais
+    - (x) Codificar
+* (x) Novas tabelas
+    - (x) Estudar quais
+    - (x) Codificar
 ---
 Até aqui:
-[v. 0.7.29 (dev), de xx/09/2025]
+[v. 0.7.29 (dev), de 20/09/2025]
+---
+
+=====Ajustes=====
+* ( ) Formatar gráficos
+* ( ) Formatar tabelas
+---
+Até aqui:
+[v. 0.7.27a (main), de xx/09/2025]
 ---
 
 SUB-SEÇÃO ANÁLISE
