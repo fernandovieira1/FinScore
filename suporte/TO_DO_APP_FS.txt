@@ -463,7 +463,15 @@ Até aqui:
 * (x) Em /Análise, renomeei a aba 'Graficos' para 'Gráficos'
 ---
 Até aqui:
-[v. 0.7.29a (dev), de xx/09/2025]
+[v. 0.7.29a (dev), de 20/09/2025]
+---
+
+=====deploy=====
+* (x) Colocar no ar em Streamlit a versão mais recente de dev
+    - (x) Git merge
+---
+Até aqui:
+[v. 0.7.29b (main), de 20/09/2025]
 ---
 
 SUB-SEÇÃO ANÁLISE
