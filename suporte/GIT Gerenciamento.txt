@@ -1,3 +1,6 @@
+# 0) Mudar a versão 
+Alterar o conteúdo de home.py
+
 # 1) ir para a main e garantir que está atualizada
 git checkout main
 git pull origin main

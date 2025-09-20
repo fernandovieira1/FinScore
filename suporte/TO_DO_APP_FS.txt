@@ -464,6 +464,7 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.7.29a (dev), de 20/09/2025]
+[v. 0.7.29c (dev), de 20/09/2025] - ajustes pós merge
 ---
 
 =====deploy=====
