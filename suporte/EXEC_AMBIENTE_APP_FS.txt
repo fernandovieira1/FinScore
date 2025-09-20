@@ -25,8 +25,10 @@ python -m pip install -U pip setuptools wheel
 # **apenas a primeira vez
 pip install -r requirements.txt
 
+pip install -r "C:\Users\ferna\OneDrive\Desktop OneDrive\FinScore\requirements.txt"
+
 -------------------
-# (V) Passos I, II e IV
+# (V) Passos I, II e IV (IGNORAR se fez em separado)
 py -3.11 -m venv .venv && .\\.venv\Scripts\Activate.ps1 && pip install -r requirements.txt
 
 -------------------
@@ -79,4 +81,4 @@ streamlit run ./app_front/app.py --logger.level=debug
 -------------------
 # Notas rápidas
 # - Dentro do venv, `python` e `pip` já apontam para o ambiente isolado (Windows e Linux).
-# - Se o pip sugerir atualização, você pode rodar: `python -m pip install --upgrade pip`.
+# - Se o pip sugerir atualização, rodar: `python -m pip install --upgrade pip`.

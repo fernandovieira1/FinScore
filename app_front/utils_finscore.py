@@ -135,6 +135,7 @@ def executar_finscore(
     Z = pca.fit_transform(X)
 
     explained = pca.explained_variance_ratio_
+    explained_cum = explained.cumsum()
     pca_df = pd.DataFrame(Z, columns=[f'PC{i+1}' for i in range(Z.shape[1])])
 
     # Loadings e "top 3"
@@ -184,4 +185,6 @@ def executar_finscore(
         "df_pca": pca_df,
         "top_indices_df": top_indices_df,
         "loadings": loadings,
+        "pca_explained_variance": explained.tolist(),
+        "pca_explained_variance_cum": explained_cum.tolist(),
     }

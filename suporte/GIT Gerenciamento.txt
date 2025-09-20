@@ -1,0 +1,15 @@
+# 1) ir para a main e garantir que está atualizada
+git checkout main
+git pull origin main
+
+# 2) trazer as mudanças da dev
+git merge dev -m "release: promove dev para main"
+
+# (se houver conflitos, resolva no VS Code, git add ., e git commit)
+
+# 3) publicar na main (dispara o deploy)
+git push origin main
+
+# 4) Verificar e Testar
+git checkout dev
+streamlit run .\app_front\app.py
