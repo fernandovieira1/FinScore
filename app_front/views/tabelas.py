@@ -32,20 +32,64 @@ def _formata_ano(df):
     df_display = df_display[cols]
     return df_display
 
+def get_indices_table() -> pd.DataFrame | None:
+    ss = st.session_state
+    out = ss.get("out")
+    if not out:
+        return None
+    df_indices = out.get("df_indices")
+    if df_indices is None:
+        return None
+    return _formata_ano(df_indices)
+
+def get_pca_scores_table() -> pd.DataFrame | None:
+    ss = st.session_state
+    out = ss.get("out")
+    if not out:
+        return None
+    df_pca = out.get("df_pca")
+    if df_pca is None:
+        return None
+    return _formata_ano(df_pca).drop(columns="Ano", errors="ignore")
+
+def get_top_indices_table() -> pd.DataFrame | None:
+    ss = st.session_state
+    out = ss.get("out")
+    if not out:
+        return None
+    return out.get("top_indices_df")
+
+def get_pca_loadings_table() -> pd.DataFrame | None:
+    ss = st.session_state
+    out = ss.get("out")
+    if not out:
+        return None
+    return out.get("loadings")
+
 def render():
     ss = st.session_state
-    st.header("📄 Tabelas")
+    st.header("Tabelas")
     if not ss.out:
         st.info("Calcule o FinScore em **Novo** para visualizar as tabelas.")
         return
 
-    st.subheader("Índices Contábeis Calculados")
-    df_indices = _formata_ano(ss.out["df_indices"])
-    st.dataframe(df_indices, use_container_width=True, hide_index=True)
+    st.subheader("Indices Contabeis Calculados")
+    df_indices = get_indices_table()
+    if df_indices is not None:
+        st.dataframe(df_indices, use_container_width=True, hide_index=True)
+    else:
+        st.info("Sem dados de indices contabeis para exibir.")
 
     st.subheader("Componentes Principais (PCA)")
-    df_pca = _formata_ano(ss.out["df_pca"]).drop(columns="Ano", errors="ignore")
-    st.dataframe(df_pca, use_container_width=True, hide_index=True)
+    df_pca = get_pca_scores_table()
+    if df_pca is not None:
+        st.dataframe(df_pca, use_container_width=True, hide_index=True)
+    else:
+        st.info("Sem dados de scores de PCA para exibir.")
 
-    st.subheader("Top 3 Índices por Componente")
-    st.dataframe(ss.out["top_indices_df"], use_container_width=True, hide_index=True)
+    st.subheader("Top 3 Indices por Componente")
+    top_indices_df = get_top_indices_table()
+    if top_indices_df is not None:
+        st.dataframe(top_indices_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("Sem destaques de PCA para exibir.")
