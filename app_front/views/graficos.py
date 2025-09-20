@@ -68,6 +68,34 @@ def _safe_div(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
     denominator = denominator.replace(0, np.nan)
     return numerator.divide(denominator)
 
+
+
+def _apply_year_axis(fig, labels, axis="x"):
+    if labels is None:
+        return
+    ordered = [str(value) for value in dict.fromkeys(labels)]
+    if not ordered:
+        return
+    if axis == "x":
+        fig.update_xaxes(
+            type="category",
+            categoryorder="array",
+            categoryarray=ordered,
+            tickmode="array",
+            tickvals=ordered,
+            ticktext=ordered,
+        )
+    else:
+        fig.update_yaxes(
+            type="category",
+            categoryorder="array",
+            categoryarray=ordered,
+            tickmode="array",
+            tickvals=ordered,
+            ticktext=ordered,
+        )
+
+
 def render_ativos(df: pd.DataFrame) -> bool:
     required = [
         "p_Ativo_Circulante",
@@ -76,7 +104,7 @@ def render_ativos(df: pd.DataFrame) -> bool:
         "p_Estoques",
         "p_Contas_a_Receber",
     ]
-    if not _ensure_columns(df, required, "Evolucao dos Ativos"):
+    if not _ensure_columns(df, required, "Evolução dos Ativos"):
         return False
 
     data = df[["ano_label", *required]].copy()
@@ -87,7 +115,7 @@ def render_ativos(df: pd.DataFrame) -> bool:
     area_map = {
         "p_Caixa": ("Caixa", "#4cb2a0"),
         "p_Estoques": ("Estoques", "#7cd1b8"),
-        "p_Contas_a_Receber": ("Contas a Receber", "#a6e3ce"),
+        "p_Contas_a_Receber": ("Contas a Receber", "#a2d35e"),
     }
     for col, (name, color) in area_map.items():
         fig.add_trace(
@@ -126,20 +154,21 @@ def render_ativos(df: pd.DataFrame) -> bool:
     )
 
     fig.update_layout(
-        title={"text": "Evolucao dos Ativos", **TITLE_STYLE},
+        title={"text": "Evolução dos Ativos", **TITLE_STYLE},
         xaxis_title="Ano",
-        yaxis_title="R$ milhoes",
+        yaxis_title="R$ milhões",
         legend=LEGEND_STYLE,
         margin=dict(l=10, r=10, t=60, b=10),
         height=420,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
 
 def render_passivos(df: pd.DataFrame) -> bool:
     required = ["p_Contas_a_Pagar", "p_Passivo_Circulante", "p_Passivo_Total"]
-    if not _ensure_columns(df, required, "Evolucao dos Passivos"):
+    if not _ensure_columns(df, required, "Evolução dos Passivos"):
         return False
 
     data = df[["ano_label", *required]].copy()
@@ -182,20 +211,21 @@ def render_passivos(df: pd.DataFrame) -> bool:
     )
 
     fig.update_layout(
-        title={"text": "Evolucao dos Passivos", **TITLE_STYLE},
+        title={"text": "Evolução dos Passivos", **TITLE_STYLE},
         xaxis_title="Ano",
-        yaxis_title="R$ milhoes",
+        yaxis_title="R$ milhões",
         legend=LEGEND_STYLE,
         margin=dict(l=10, r=10, t=60, b=10),
         height=400,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
 
 def render_pl(df: pd.DataFrame) -> bool:
     required = ["p_Patrimonio_Liquido"]
-    if not _ensure_columns(df, required, "Evolucao do Patrimonio Liquido"):
+    if not _ensure_columns(df, required, "Evolução do Patrimônio Líquido"):
         return False
 
     data = df[["ano_label", "p_Patrimonio_Liquido"]].copy()
@@ -215,13 +245,14 @@ def render_pl(df: pd.DataFrame) -> bool:
         ]
     )
     fig.update_layout(
-        title={"text": "Evolucao do Patrimonio Liquido", **TITLE_STYLE},
+        title={"text": "Evolução do Patrimônio Líquido", **TITLE_STYLE},
         xaxis_title="Ano",
-        yaxis_title="R$ milhoes",
+        yaxis_title="R$ milhões",
         legend=LEGEND_STYLE,
         margin=dict(l=10, r=10, t=60, b=10),
         height=360,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -278,6 +309,7 @@ def render_ativo_passivo_circulante(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=420,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -346,6 +378,7 @@ def render_receita_total(df: pd.DataFrame) -> bool:
         height=420,
         barmode="relative",
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -390,6 +423,7 @@ def render_juros_lucro_receita(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=380,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -431,13 +465,14 @@ def render_impostos(df: pd.DataFrame) -> bool:
         secondary_y=True,
     )
     fig.update_layout(
-        title={"text": "Despesa de Impostos e Efetividade Tributaria", **TITLE_STYLE},
+        title={"text": "Despesa de Impostos e Efetividade Tributária", **TITLE_STYLE},
         xaxis_title="Ano",
         legend=LEGEND_STYLE,
         margin=dict(l=10, r=10, t=60, b=10),
         height=400,
     )
-    fig.update_yaxes(title_text="R$ milhoes", secondary_y=False)
+    _apply_year_axis(fig, df["ano_label"])
+    fig.update_yaxes(title_text="R$ milhões", secondary_y=False)
     fig.update_yaxes(title_text="% da Receita", secondary_y=True)
     st.plotly_chart(fig, use_container_width=True)
     return True
@@ -469,6 +504,7 @@ def render_lucro_liquido(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=360,
     )
+    _apply_year_axis(fig, df["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -515,13 +551,14 @@ def render_liquidez_indices(df: pd.DataFrame) -> bool:
             )
         )
     fig.update_layout(
-        title={"text": "Indices de Liquidez", **TITLE_STYLE},
+        title={"text": "Indicadores de Liquidez", **TITLE_STYLE},
         xaxis_title="Ano",
         yaxis_title="Vezes",
         legend=LEGEND_STYLE,
         margin=dict(l=10, r=10, t=60, b=10),
         height=390,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -579,6 +616,7 @@ def render_endividamento_indices(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=390,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -629,6 +667,7 @@ def render_rentabilidade_indices(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=410,
     )
+    _apply_year_axis(fig, data["ano_label"])
     st.plotly_chart(fig, use_container_width=True)
     return True
 
@@ -693,6 +732,7 @@ def render_eficiencia_indices(df: pd.DataFrame) -> bool:
         margin=dict(l=10, r=10, t=60, b=10),
         height=420,
     )
+    _apply_year_axis(fig, tidy["Ano"], axis="y")
     st.plotly_chart(fig, use_container_width=True)
     return True
 

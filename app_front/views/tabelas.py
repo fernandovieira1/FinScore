@@ -156,6 +156,15 @@ def _compute_eficiencia_metricas(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _finalize_table(table: pd.DataFrame | None) -> pd.DataFrame | None:
+    if table is None:
+        return None
+    table = table.copy()
+    if "Ano" in table.columns:
+        table["Ano"] = table["Ano"].astype(str)
+    return table
+
+
 
 def _formata_ano(df):
     if df is None:
@@ -211,7 +220,7 @@ def table_ativos() -> pd.DataFrame | None:
     for col, label in mapping:
         table[f"{label} (R$ mi)"] = _currency(data[col])
         table[f"{label} YoY (%)"] = _yoy(data[col])
-    return table
+    return _finalize_table(table)
 
 
 def table_passivos() -> pd.DataFrame | None:
@@ -230,7 +239,7 @@ def table_passivos() -> pd.DataFrame | None:
     for col, label in mapping:
         table[f"{label} (R$ mi)"] = _currency(data[col])
         table[f"{label} YoY (%)"] = _yoy(data[col])
-    return table
+    return _finalize_table(table)
 
 
 def table_pl() -> pd.DataFrame | None:
@@ -247,7 +256,7 @@ def table_pl() -> pd.DataFrame | None:
     cagr = _cagr(valores)
     cagr_pct = round(cagr * 100, 2) if not np.isnan(cagr) else np.nan
     table["CAGR do periodo (%)"] = [cagr_pct] * len(table)
-    return table
+    return _finalize_table(table)
 
 
 def table_capital_giro() -> pd.DataFrame | None:
@@ -268,7 +277,7 @@ def table_capital_giro() -> pd.DataFrame | None:
     table["CCL (R$ mi)"] = _currency(ccl)
     table["CCL YoY (%)"] = _yoy(ccl)
     table["AC/PC (x)"] = _percent(_safe_div(ativo, passivo))
-    return table
+    return _finalize_table(table)
 
 
 def table_operacional() -> pd.DataFrame | None:
@@ -288,7 +297,7 @@ def table_operacional() -> pd.DataFrame | None:
     table["EBITDA (R$ mi)"] = _currency(ebitda)
     table["EBITDA YoY (%)"] = _yoy(ebitda)
     table["Margem EBITDA (%)"] = _percent(_safe_div(ebitda, receita) * 100)
-    return table
+    return _finalize_table(table)
 
 
 def table_financeiro() -> pd.DataFrame | None:
@@ -305,7 +314,7 @@ def table_financeiro() -> pd.DataFrame | None:
     table["Despesa de Juros YoY (%)"] = _yoy(juros)
     table["Juros/Receita (%)"] = _percent(_safe_div(juros, receita) * 100)
     table["Cobertura de Juros (x)"] = _percent(_safe_div(ebit, juros))
-    return table
+    return _finalize_table(table)
 
 
 def table_impostos() -> pd.DataFrame | None:
@@ -320,7 +329,7 @@ def table_impostos() -> pd.DataFrame | None:
     table["Despesa de Impostos (R$ mi)"] = _currency(impostos)
     table["Despesa de Impostos YoY (%)"] = _yoy(impostos)
     table["Carga Tributaria (%)"] = _percent(_safe_div(impostos, receita) * 100)
-    return table
+    return _finalize_table(table)
 
 
 def table_resultado() -> pd.DataFrame | None:
@@ -336,7 +345,7 @@ def table_resultado() -> pd.DataFrame | None:
     cagr = _cagr(lucro)
     cagr_pct = round(cagr * 100, 2) if not np.isnan(cagr) else np.nan
     table["CAGR do periodo (%)"] = [cagr_pct] * len(table)
-    return table
+    return _finalize_table(table)
 
 
 def table_liquidez_indices() -> pd.DataFrame | None:
@@ -349,7 +358,7 @@ def table_liquidez_indices() -> pd.DataFrame | None:
     media = metrics.tail(min(len(metrics), 5)).mean(numeric_only=True)
     media["Ano"] = "Media 5 anos"
     table = pd.concat([metrics, pd.DataFrame([media])], ignore_index=True)
-    return table
+    return _finalize_table(table)
 
 
 def table_endividamento_indices() -> pd.DataFrame | None:
@@ -364,7 +373,7 @@ def table_endividamento_indices() -> pd.DataFrame | None:
     metrics["Benchmark"] = np.nan
     media["Benchmark"] = np.nan
     table = pd.concat([metrics, pd.DataFrame([media])], ignore_index=True)
-    return table
+    return _finalize_table(table)
 
 
 def table_rentabilidade_indices() -> pd.DataFrame | None:
@@ -391,7 +400,7 @@ def table_rentabilidade_indices() -> pd.DataFrame | None:
     for _, label in mapping:
         media_row[f"{label} Δ YoY (p.p.)"] = np.nan
     table = pd.concat([table, pd.DataFrame([media_row])], ignore_index=True)
-    return table
+    return _finalize_table(table)
 
 
 def table_eficiencia_indices() -> pd.DataFrame | None:
@@ -421,7 +430,7 @@ def table_eficiencia_indices() -> pd.DataFrame | None:
         media_row[col] = round(val, 2) if not np.isnan(val) else np.nan
         media_row[f"{col} Δ YoY"] = np.nan
     table = pd.concat([table, pd.DataFrame([media_row])], ignore_index=True)
-    return table
+    return _finalize_table(table)
 
 
 def get_pca_variance_table() -> pd.DataFrame | None:
@@ -505,3 +514,4 @@ def render():
         st.dataframe(top_indices_df, use_container_width=True, hide_index=True)
     else:
         st.info("Sem destaques de PCA para exibir.")
+

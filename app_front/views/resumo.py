@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import date
 
 def _empresa(ss):
     st.markdown("### 🏢 Empresa")
@@ -71,6 +72,30 @@ def _metricas(ss):
     # (sem divider aqui para ficar idêntico ao seu print “certo”)
 
 
+
+
+
+def _datas(ss):
+    st.markdown("<div style='margin-top:2.5rem;'></div>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    hoje = date.today().strftime("%d/%m/%Y")
+    meta = getattr(ss, "meta", {}) or {}
+    serasa_data = meta.get("serasa_data")
+    serasa_label = serasa_data if serasa_data else "-"
+    with col1:
+        st.caption("Data da Analise")
+        st.markdown(
+            f"<p style='margin:0;font-size:1.25rem;font-weight:600;'>{hoje}</p>",
+            unsafe_allow_html=True,
+        )
+    with col3:
+        st.caption("Data de Consulta ao Serasa")
+        st.markdown(
+            f"<p style='margin:0;font-size:1.25rem;font-weight:600;'>{serasa_label}</p>",
+            unsafe_allow_html=True,
+        )
+
+
 def render():
     ss = st.session_state
 
@@ -83,3 +108,4 @@ def render():
     # Bloco Empresa + Bloco de Métricas (mesmo desenho do print “certo”)
     _empresa(ss)
     _metricas(ss)
+    _datas(ss)

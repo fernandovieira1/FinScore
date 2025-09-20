@@ -457,11 +457,13 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Formatar gráficos
-* ( ) Formatar tabelas
+* (x) Formatar gráficos
+* (x) Formatar tabelas
+* (x) Campos 'Data da Análise' e 'Data de Consulta ao Serasa' em /Análise/Resumo
+* (x) Em /Análise, renomeei a aba 'Graficos' para 'Gráficos'
 ---
 Até aqui:
-[v. 0.7.27a (main), de xx/09/2025]
+[v. 0.7.29a (dev), de xx/09/2025]
 ---
 
 SUB-SEÇÃO ANÁLISE

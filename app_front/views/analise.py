@@ -243,12 +243,12 @@ def _render_graficos_tab_content():
     st.markdown("### • Patrimônio Líquido")
     if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
         _todo_placeholder("Patrimônio Líquido")
-    st.markdown("### • Capital de Giro / Liquidez")
+    st.markdown("### • Capital de Giro e Liquidez")
     capital_rendered = render_ativo_passivo_circulante(df)
     if not capital_rendered:
         capital_rendered = _try_call_plot(df, ["render_capital_giro", "render_liquidez_corrente"])
     if not capital_rendered:
-        _todo_placeholder("Capital de Giro / Liquidez")
+        _todo_placeholder("Capital de Giro e Liquidez")
 
     st.divider()
 
@@ -413,7 +413,7 @@ def render():
         unsafe_allow_html=True,
     )
 
-    tab_resumo, tab_graficos, tab_tabelas = st.tabs(["Resumo", "Graficos", "Tabelas"])
+    tab_resumo, tab_graficos, tab_tabelas = st.tabs(["Resumo", "Gráficos", "Tabelas"])
 
     with tab_resumo:
         render_resumo()

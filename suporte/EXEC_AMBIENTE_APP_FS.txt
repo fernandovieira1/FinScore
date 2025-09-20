@@ -81,4 +81,4 @@ streamlit run ./app_front/app.py --logger.level=debug
 -------------------
 # Notas rápidas
 # - Dentro do venv, `python` e `pip` já apontam para o ambiente isolado (Windows e Linux).
-# - Se o pip sugerir atualização, você pode rodar: `python -m pip install --upgrade pip`.
+# - Se o pip sugerir atualização, rodar: `python -m pip install --upgrade pip`.
