@@ -29,6 +29,7 @@ Cores hex: https://www.color-hex.com/
 Streamlit: https://docs.streamlit.io/ (documentação)
            https://share.streamlit.io/ (publish)
 Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
+Streamlit deploy: https://finscore-alpha.streamlit.app/?p=lanc
 ......................................................................................................................
 
 ====================================
