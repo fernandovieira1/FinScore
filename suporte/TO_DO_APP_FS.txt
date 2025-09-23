@@ -511,7 +511,7 @@ Até aqui:
 os resultados dos prompts na seção /Análise.
 ---
 Até aqui:
-[v. 0.8.xx (dev), de xx/09/2025]
+[v. 0.8.01 (ia), de 23/09/2025]
 ---
 
 =====Novidades=====
@@ -548,7 +548,15 @@ Até aqui:
         + ( ) IA/LLM (prompt IA, sem interação humana).
 ---
 Até aqui:
-[v. 0.8.xx (dev), de xx/09/2025]
+[v. 0.8.02 (ia), de 23/09/2025]
+---
+
+=====Ajustes=====
+* ( ) Testes [v. 0.8.01 (ia)]
+* ( ) Testes [v. 0.8.02 (ia)]
+---
+Até aqui:
+[v. 0.8.03 (ia), de xx/09/2025]
 ---
 
 ......................................................................................................................
