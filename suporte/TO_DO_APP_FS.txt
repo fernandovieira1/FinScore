@@ -21,7 +21,7 @@ Controle de Versões
 ......................................................................................................................
 
 ====================================
-Links e dicas''''
+Links e dicas
 ====================================
 Logo: https://turbologo.com/
 Emojis: https://emojipedia.org/
@@ -120,8 +120,12 @@ Até aqui:
 ---
 
 ===============================================
-2. SEÇÕES (topbar e sidebar) E FUNCIONALIDADES
+2. ORGANIZAÇÃO E FUNCIONALIDADES
 ===============================================
+
+---------------------------------
+2.1 Estrutura da página
+---------------------------------
 
 =====Novidades=====
 * (x) Seção Metodologia iniciada.
@@ -173,6 +177,10 @@ Até aqui:
 Até aqui:
 [v. 0.7.14, de 08/09/2025]
 ---
+
+---------------------------------
+2.2 Funcionalidades
+---------------------------------
 
 =====Ajustes=====
 * (x) Resolvendo de vez conflitos entre topbar e sidebar:
@@ -245,6 +253,10 @@ Até aqui:
 [v. 0.7.19a, de 13/09/2025]
 ---
 
+---------------------------------
+2.3 Aperfeiçoamentos
+---------------------------------
+
 =====Novidades=====
 * (x) Seção Lançamentos só fica clicável/destravado após o usuário clicar no botão 'Iniciar' da seção Novo.
 * (x) Seções Análise e Parecer só ficam clicáveis/destravadas após o usuário clicar no botão 'Calcular FinScore'
@@ -291,6 +303,10 @@ Até aqui:
 [v. 0.7.21, de 13/09/2025]
 ---
 
+---------------------------------
+2.4 Aperfeiçoamentos II
+---------------------------------
+
 =====Novidades=====
 * (x) Links vinculados aos botões de redes sociais:
     - (x) Facebook;
@@ -333,6 +349,10 @@ Até aqui:
 Até aqui:
 [v. 0.7.25, de 14/09/2025]
 ---
+
+---------------------------------
+2.5 Preparação próximas etapas
+---------------------------------
 
 =====Ajustes=====
 * (x) Consistência visual temas claro ou escuro dos sistemas operacionais ou navegadores com falhas (ainda) em 
@@ -407,11 +427,12 @@ Até aqui:
 ......................................................................................................................
 
 ============
-3. PARECER
+3. ANÁLISE
 ============
 
-PRELIMINARES
--------------------
+---------------------------------
+3.1 PRELIMINARES
+---------------------------------
 
 =====Novidades=====
 * (x) Anos (2021, 2022 e 2023) substituírem ordem cardinal (0, 1 e 2):
@@ -427,19 +448,19 @@ Até aqui:
 ---
 
 =====deploy=====
-* (x) Colocar no ar em Streamlit a versão mais recente de dev
-    - (x) Git merge
+* (x) Colocar no ar em Streamlit a versão mais recente de dev:
+    - (x) Git merge.
 ---
 Até aqui:
 [v. 0.7.27a (main), de 20/09/2025]
 ---
 
 =====Novidades=====
-* (x) Novos gráficos
-    - (x) Criar Classificação
-    - (x) Organizar aba conforme Classificação feita
-* (x) Novas tabelas
-    - (x) Criar Classificação
+* (x) Novos gráficos:
+    - (x) Criar Classificação;
+    - (x) Organizar aba conforme Classificação feita.
+* (x) Novas tabelas:
+    - (x) Criar Classificação.
 ---
 Até aqui:
 [v. 0.7.28 (dev), de 20/09/2025]
@@ -447,21 +468,21 @@ Até aqui:
 
 =====Novidades=====
 * (x) Novos gráficos
-    - (x) Estudar quais
-    - (x) Codificar
+    - (x) Estudar quais;
+    - (x) Codificar.
 * (x) Novas tabelas
-    - (x) Estudar quais
-    - (x) Codificar
+    - (x) Estudar quais;
+    - (x) Codificar.
 ---
 Até aqui:
 [v. 0.7.29 (dev), de 20/09/2025]
 ---
 
 =====Ajustes=====
-* (x) Formatar gráficos
-* (x) Formatar tabelas
-* (x) Campos 'Data da Análise' e 'Data de Consulta ao Serasa' em /Análise/Resumo
-* (x) Em /Análise, renomeei a aba 'Graficos' para 'Gráficos'
+* (x) Formatar gráficos.
+* (x) Formatar tabelas.
+* (x) Campos 'Data da Análise' e 'Data de Consulta ao Serasa' em /Análise/Resumo.
+* (x) Em /Análise, renomeei a aba 'Graficos' para 'Gráficos'.
 ---
 Até aqui:
 [v. 0.7.29a (dev), de 20/09/2025]
@@ -476,53 +497,79 @@ Até aqui:
 [v. 0.7.29b (main), de 20/09/2025]
 ---
 
-SUB-SEÇÃO ANÁLISE
--------------------
-* ( ) Dados Análise/Resumo
-    - ( ) FinScore Bruto
-        + ( ) Número
-        + ( ) Classificação
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-    - ( ) FinScore Ajustado
-        + ( ) Número
-        + ( ) Classificação
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-    - ( ) Serasa Score
-        + ( ) Número
-        + ( ) Classificação
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-* ( ) Gráficos de Análise/Gráficos
-    - ( ) Dados Contábeis brutos
-        + ( ) Definir gráficos
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-    - ( ) Índices Contábeis
-        + ( ) Definir gráficos
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-* ( ) Tabelas de Análise/Tabelas
-    - ( ) Dados Contábeis brutos
-        + ( ) Definir tabelas
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-    - ( ) Índices Contábeis
-        + ( ) Definir tabelas
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-    - ( ) Componentes Principais (PCA)
-        + ( ) IA/LLM (prompt IA, sem interação humana)
-    - ( ) Top 3 Índices por Componente
-        + ( ) IA/LLM (prompt IA, sem interação humana)
+---------------------------------
+3.2 IA (preparação Parecer)
+---------------------------------
 
+=====Ajustes=====
+* ( ) Configurar Langchain:
+    * ( ) Importar bibliotecas (definir quais e momento);
+    * ( ) Credenciais OpenAI.
+* ( ) Estudar onde o prompt será inserido no projeto.
+* ( ) Testar prompts aleatórios (resultados finscore, gráficos ou tabelas).
+* ( ) Definir layout de onde serão inseridos os marcadores/caixinhas que apresentarão.
+os resultados dos prompts na seção /Análise.
+---
+Até aqui:
+[v. 0.8.xx (dev), de xx/09/2025]
+---
 
-SUB-SEÇÃO PARECER
--------------------
-* ( ) Configurar OpenAI e LangChain.
+=====Novidades=====
+* ( ) Dados Análise/Resumo:
+    - ( ) FinScore Bruto:
+        + ( ) Número;
+        + ( ) Classificação:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - ( ) FinScore Ajustado:
+        + ( ) Número;
+        + ( ) Classificação:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - ( ) Serasa Score:
+        + ( ) Número;
+        + ( ) Classificação:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+* ( ) Gráficos de Análise/Gráficos:
+    - ( ) Dados Contábeis brutos:
+        + ( ) Definir gráficos:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - ( ) Índices Contábeis:
+        + ( ) Definir gráficos:.
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
+* ( ) Tabelas de Análise/Tabelas:
+    - ( ) Dados Contábeis brutos:
+        + ( ) Definir tabelas:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - ( ) Índices Contábeis:
+        + ( ) Definir tabelas:
+            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - ( ) Componentes Principais (PCA):
+        + ( ) IA/LLM (prompt IA, sem interação humana).
+    - ( ) Top 3 Índices por Componente:
+        + ( ) IA/LLM (prompt IA, sem interação humana).
+---
+Até aqui:
+[v. 0.8.xx (dev), de xx/09/2025]
+---
+
+......................................................................................................................
+============
+4. PARECER
+============
 * ( ) Definir e configurar dados que servirão de parâmetro.
-* ( ) Vincular LangChain no Código.
 * ( ) Configurar modelo padrão.
 * ( ) Testar diferentes resultados/cenários.
-......................................................................................................................
 
-====================================
+......................................................................................................................
+============
+5. LOGIN
+============
+* ( ) Estudar bibliotecas
+* ( ) Codificar
+
+......................................................................................................................
+============
 Ideias
-====================================
+============
 - Campos 'Dados do Cliente' com crítica de valores
 - No dropdown da sidebar, inserir o menu/view 'Consultar', mas só depois de criar o backend com do banco de dados
 - Para burlar o desbloqueio dos campos em Processo, basta saber os links dos submenus. Mascarar barra de endereços ou
