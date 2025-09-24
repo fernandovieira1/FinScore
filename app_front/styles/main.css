@@ -191,8 +191,7 @@ section[data-testid="stSidebar"] .nav-link-selected {
 section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
 section[data-testid="stSidebar"] [data-testid="baseButton-header"],
 section[data-testid="stSidebar"] button[aria-label="Close"],
-section[data-testid="stSidebar"] button[aria-label="Fechar"],
-section[data-testid="stSidebar"]>div:first-child button {
+section[data-testid="stSidebar"] button[aria-label="Fechar"] {
     display: none !important;
 }
 

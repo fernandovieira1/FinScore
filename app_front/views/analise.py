@@ -14,10 +14,10 @@ from components.config import SLUG_MAP
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
-    from .resumo import render as render_resumo
+    from .scores import render as render_scores
 except Exception as e:
-    def render_resumo():
-        st.error(f"Nao foi possivel importar 'resumo.py' (render). Detalhe: {e}")
+    def render_scores():
+        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {e}")
 
 try:
     from .graficos import (
@@ -349,9 +349,10 @@ def _summarize_metrics(
             key = str(year if year is not None else idx)
             series_data[key] = _format_metric(value, divisor)
 
-        latest = points[-1][1]
-        first = points[0][1]
-        mean_value = statistics.fmean([value for _, value in points])
+        values_raw = [value for _, value in points]
+        latest = values_raw[-1]
+        first = values_raw[0]
+        mean_value = statistics.fmean(values_raw)
         variation = latest - first
         percentual = 0.0
         if first != 0:
@@ -363,6 +364,29 @@ def _summarize_metrics(
         elif percentual < -5:
             trend = "queda"
 
+        try:
+            scaled_values = [value / divisor for value in values_raw]
+        except Exception:
+            scaled_values = values_raw
+        min_scaled = min(scaled_values) if scaled_values else 0.0
+        max_scaled = max(scaled_values) if scaled_values else 0.0
+        amplitude_scaled = max_scaled - min_scaled
+        if len(scaled_values) >= 2:
+            std_dev_scaled = statistics.pstdev(scaled_values)
+            variance_scaled = statistics.pvariance(scaled_values)
+        else:
+            std_dev_scaled = 0.0
+            variance_scaled = 0.0
+
+        stats_block = {
+            "media": round(statistics.fmean(scaled_values), 2) if scaled_values else None,
+            "min": round(min_scaled, 2) if scaled_values else None,
+            "max": round(max_scaled, 2) if scaled_values else None,
+            "amplitude": round(amplitude_scaled, 2) if scaled_values else None,
+            "desvio_padrao": round(std_dev_scaled, 2),
+            "variancia": round(variance_scaled, 4),
+        }
+
         summary[label] = {
             "serie": series_data,
             "ultimo": _format_metric(latest, divisor),
@@ -371,6 +395,7 @@ def _summarize_metrics(
             "variacao_percentual": round(percentual, 2),
             "tendencia": trend,
             "anos": [p[0] for p in points if p[0] is not None],
+            "estatisticas": stats_block,
         }
     return summary
 
@@ -394,10 +419,25 @@ def _build_mini_context(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any
     meta = ss.get("meta") or {}
     ctx = {
         "empresa": meta.get("empresa"),
-        "finscore": out.get("finscore_ajustado"),
-        "serasa": out.get("serasa"),
-        "rating": out.get("classificacao_finscore"),
     }
+    # Inclui anos disponíveis quando presentes para dar contexto temporal básico
+    df_state = ss.get("df")
+    if df_state is not None and getattr(df_state, "empty", False) is False and "ano" in df_state.columns:
+        try:
+            anos = sorted(set(int(a) for a in df_state["ano"].dropna()))
+            if anos:
+                ctx["anos_disponiveis"] = anos
+        except Exception:
+            pass
+    else:
+        df_raw = out.get("df_raw")
+        if df_raw is not None and getattr(df_raw, "empty", False) is False and "ano" in getattr(df_raw, "columns", []):
+            try:
+                anos = sorted(set(int(a) for a in df_raw["ano"].dropna()))
+                if anos:
+                    ctx["anos_disponiveis"] = anos
+            except Exception:
+                pass
     if extra:
         ctx.update(extra)
     return {k: v for k, v in ctx.items() if v is not None}
@@ -405,6 +445,195 @@ def _build_mini_context(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any
 
 
 
+
+
+
+def _filter_existing_columns(df, columns: list[str]) -> list[str]:
+    if df is None or getattr(df, "empty", False):
+        return []
+    return [col for col in columns if col in df.columns]
+
+
+def _build_tax_summary(df) -> Dict[str, Any]:
+    columns = _filter_existing_columns(df, ["r_Despesa_de_Impostos", "r_Receita_Total"])
+    summary = _summarize_metrics(
+        df,
+        columns,
+        rename={
+            "r_Despesa_de_Impostos": "Despesa de Impostos (mi)",
+            "r_Receita_Total": "Receita (mi)",
+        },
+        divisors={
+            "r_Despesa_de_Impostos": 1_000_000,
+            "r_Receita_Total": 1_000_000,
+        },
+    )
+    row = _latest_row_dict(df)
+    impostos = _to_float(row.get("r_Despesa_de_Impostos")) if row else None
+    receita = _to_float(row.get("r_Receita_Total")) if row else None
+    if receita not in (None, 0) and impostos is not None:
+        summary["Carga Tributaria (%)"] = round((impostos / receita) * 100, 2)
+    if not summary:
+        summary = {"nota": "Despesa de impostos e efetividade tributaria"}
+    else:
+        summary.setdefault("nota", "Despesa de impostos e efetividade tributaria")
+    return summary
+
+
+def _build_profit_summary(df) -> Dict[str, Any]:
+    columns = _filter_existing_columns(df, ["r_Lucro_Liquido", "r_Receita_Total"])
+    summary = _summarize_metrics(
+        df,
+        columns,
+        rename={
+            "r_Lucro_Liquido": "Lucro Liquido (mi)",
+            "r_Receita_Total": "Receita (mi)",
+        },
+        divisors={
+            "r_Lucro_Liquido": 1_000_000,
+            "r_Receita_Total": 1_000_000,
+        },
+    )
+    row = _latest_row_dict(df)
+    lucro = _to_float(row.get("r_Lucro_Liquido")) if row else None
+    receita = _to_float(row.get("r_Receita_Total")) if row else None
+    if receita not in (None, 0) and lucro is not None:
+        summary["Margem Liquida (%)"] = round((lucro / receita) * 100, 2)
+    if not summary:
+        summary = {"nota": "Desempenho do lucro liquido"}
+    else:
+        summary.setdefault("nota", "Desempenho do lucro liquido")
+    return summary
+
+
+def _collect_indices_summary(indices_df, category: str, note: str) -> Dict[str, Any]:
+    if indices_df is None or getattr(indices_df, "empty", False):
+        return {"nota": note}
+    categories = _split_indices_columns(indices_df)
+    columns = categories.get(category)
+    if columns is None:
+        target = _normalize_label(category)
+        for key, values in categories.items():
+            if _normalize_label(str(key)) == target:
+                columns = values
+                break
+    if columns is None:
+        columns = []
+    summary = _summarize_metrics(indices_df, columns)
+    if not summary:
+        summary = {"nota": note}
+    else:
+        summary.setdefault("nota", note)
+    return summary
+
+
+def _build_pca_loadings_summary(loadings_df, top_components: int = 3, top_variables: int = 3) -> Dict[str, Any]:
+    if loadings_df is None or getattr(loadings_df, "empty", False):
+        return {}
+    summary: Dict[str, Any] = {}
+    try:
+        components = list(loadings_df.columns)
+    except Exception:
+        return summary
+    for comp in components[:top_components]:
+        try:
+            series = loadings_df[comp].abs().sort_values(ascending=False)
+        except Exception:
+            continue
+        entries = []
+        for variable in series.index[:top_variables]:
+            try:
+                raw_value = loadings_df.loc[variable, comp]
+                value = _to_float(raw_value)
+            except Exception:
+                value = None
+            entries.append({
+                "variavel": str(variable),
+                "peso": round(value, 3) if value is not None else value,
+            })
+        summary[str(comp)] = {"principais": entries}
+    if summary:
+        summary.setdefault("nota", "Variaveis com maior carga absoluta por componente")
+    return summary
+
+
+def _build_pca_scores_summary(scores_df, max_components: int = 3) -> Dict[str, Any]:
+    if scores_df is None or getattr(scores_df, "empty", False):
+        return {}
+    columns = [col for col in scores_df.columns if str(col).upper().startswith("PC")]
+    if not columns:
+        return {}
+    summary = _summarize_metrics(scores_df, columns[:max_components])
+    if summary:
+        summary.setdefault("nota", "Scores por componente principal")
+    return summary
+
+def _unwrap_table_dataframe(value):
+    if value is None:
+        return None
+    if hasattr(value, "empty") and hasattr(value, "columns"):
+        if getattr(value, "empty", False):
+            return None
+        return value
+    if isinstance(value, dict):
+        for key in ("df", "dataframe", "data", "table"):
+            if key in value:
+                df = _unwrap_table_dataframe(value.get(key))
+                if df is not None:
+                    return df
+        return None
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            df = _unwrap_table_dataframe(item)
+            if df is not None:
+                return df
+    return None
+
+
+def _get_table_dataframe(name_list) -> Optional[Any]:
+    if not name_list or _tabelas_module is None:
+        return None
+    for name in name_list:
+        func = getattr(_tabelas_module, name, None)
+        if not callable(func):
+            continue
+        try:
+            result = func()
+        except Exception:
+            continue
+        df = _unwrap_table_dataframe(result)
+        if df is not None:
+            return df
+    return None
+
+
+def _register_table_section(
+    artifact_id: str,
+    title: str,
+    name_list,
+    note: Optional[str] = None,
+    column_filter: Optional[Any] = None,
+    rename: Optional[Dict[str, str]] = None,
+):
+    table_df = _get_table_dataframe(name_list)
+    if table_df is None:
+        return
+    if callable(column_filter):
+        columns = column_filter(table_df)
+    elif isinstance(column_filter, (list, tuple)):
+        columns = list(column_filter)
+    else:
+        columns = [col for col in table_df.columns if str(col).lower() not in {"ano", "periodo"}]
+    if not columns:
+        columns = _infer_numeric_columns(table_df)
+    _register_artifact(
+        artifact_id,
+        title,
+        df=table_df,
+        columns=columns,
+        rename=rename,
+        note=note or title,
+    )
 
 
 def _register_artifact(
@@ -417,6 +646,7 @@ def _register_artifact(
     note: Optional[str] = None,
     extra_ctx: Optional[Dict[str, Any]] = None,
     summary_override: Optional[Dict[str, Any]] = None,
+    review_kind: Optional[str] = None,
 ) -> None:
     summary: Dict[str, Any] = summary_override.copy() if summary_override else {}
     if not summary and df is not None:
@@ -427,10 +657,22 @@ def _register_artifact(
     else:
         summary.setdefault("nota", note or title or title)
     mini_ctx = _build_mini_context(extra_ctx)
-    _artifact_box(artifact_id, title, mini_ctx, summary)
+    lowered_id = artifact_id.lower()
+    if review_kind is None:
+        if "indice" in lowered_id or "pca" in lowered_id:
+            review_kind = "indices"
+        else:
+            review_kind = "raw"
+    _artifact_box(artifact_id, title, mini_ctx, summary, review_kind)
 
 
-def _artifact_box(artifact_id: str, title: str, mini_ctx: Dict[str, Any], dados_resumo: Dict[str, Any]):
+def _artifact_box(
+    artifact_id: str,
+    title: str,
+    mini_ctx: Dict[str, Any],
+    dados_resumo: Dict[str, Any],
+    review_kind: str,
+) -> None:
     ss = st.session_state
     meta = ss.setdefault("artifacts_meta", {})
     reviews = ss.setdefault("reviews", {})
@@ -438,16 +680,23 @@ def _artifact_box(artifact_id: str, title: str, mini_ctx: Dict[str, Any], dados_
         "title": title,
         "mini_ctx": dict(mini_ctx),
         "dados_resumo": dict(dados_resumo),
+        "review_kind": review_kind,
+        "artifact_id": artifact_id,
     }
-    st.markdown(f"#### 💬 Critica da IA — {title}")
     col_a, col_b = st.columns([1, 1])
     with col_a:
         if st.button("Gerar critica da IA", key=f"btn_{artifact_id}"):
-            review: ReviewSchema = call_review_llm(title, mini_ctx, dados_resumo)
+            with st.spinner("Gerando critica da IA..."):
+                artifact_meta = meta[artifact_id]
+                review: ReviewSchema = call_review_llm(artifact_id, artifact_meta)
             reviews[artifact_id] = review.model_dump()
-            AppState.set_current_page(SLUG_MAP.get("analise", "Análise"), "analise_artifact", slug="analise")
+            AppState.set_current_page(
+                SLUG_MAP.get("analise", "Análise"),
+                "analise_artifact",
+                slug="analise",
+            )
             AppState.sync_to_query_params()
-            st.experimental_rerun()
+            st.success("Critica gerada com sucesso.")
     with col_b:
         if artifact_id in reviews:
             rev = reviews[artifact_id]
@@ -455,13 +704,13 @@ def _artifact_box(artifact_id: str, title: str, mini_ctx: Dict[str, Any], dados_
             c1, c2, c3 = st.columns(3)
             if c1.button("Aceitar", key=f"ok_{artifact_id}"):
                 rev["status"] = "accepted"
-                st.experimental_rerun()
+                st.rerun()
             if c2.button("Revisar", key=f"rev_{artifact_id}"):
                 rev["status"] = "needs_revision"
-                st.experimental_rerun()
+                st.rerun()
             if c3.button("Descartar", key=f"del_{artifact_id}"):
                 del reviews[artifact_id]
-                st.experimental_rerun()
+                st.rerun()
             note_key = f"obs_{artifact_id}"
             obs_value = st.text_area(
                 "Observacao do analista",
@@ -599,6 +848,7 @@ def _render_graficos_tab_content():
             "Receita, Custos e EBITDA",
             _build_mini_context(),
             dados_resumo,
+            "raw",
         )
     st.markdown("### - Financeiro")
     financeiro_rendered = render_juros_lucro_receita(df)
@@ -632,13 +882,34 @@ def _render_graficos_tab_content():
             "Fluxo Financeiro e Cobertura",
             _build_mini_context(),
             dados_resumo,
+            "raw",
         )
     st.markdown("### - Tributos")
-    if not _try_call_plot(df, ["render_impostos", "render_despesa_impostos"]):
+    impostos_rendered = _try_call_plot(df, ["render_impostos", "render_despesa_impostos"])
+    if not impostos_rendered:
         _todo_placeholder("Tributos")
+    else:
+        dados_resumo = _build_tax_summary(df)
+        _artifact_box(
+            "grafico_impostos",
+            "Despesa de Impostos e Efetividade Tributaria",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
     st.markdown("### - Resultado")
-    if not _try_call_plot(df, ["render_lucro_liquido", "render_resultado_liquido"]):
+    resultado_rendered = _try_call_plot(df, ["render_lucro_liquido", "render_resultado_liquido"])
+    if not resultado_rendered:
         _todo_placeholder("Resultado")
+    else:
+        dados_resumo = _build_profit_summary(df)
+        _artifact_box(
+            "grafico_lucro_liquido",
+            "Lucro Liquido",
+            _build_mini_context(),
+            dados_resumo,
+            "raw",
+        )
 
     st.divider()
 
@@ -663,6 +934,7 @@ def _render_graficos_tab_content():
             "Indicadores de Liquidez",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
     st.markdown("### - Endividamento/Estrutura")
     endividamento_rendered = _try_call_plot(df, ["render_endividamento_indices"])
@@ -684,20 +956,58 @@ def _render_graficos_tab_content():
             "Estrutura de Capital e Alavancagem",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
     st.markdown("### - Rentabilidade")
-    if not _try_call_plot(df, ["render_rentabilidade_indices"]):
+    rentabilidade_rendered = _try_call_plot(df, ["render_rentabilidade_indices"])
+    if not rentabilidade_rendered:
         _todo_placeholder("Rentabilidade")
+    else:
+        dados_resumo = _collect_indices_summary(indices_df, "Rentabilidade", "Indicadores de rentabilidade")
+        _artifact_box(
+            "grafico_rentabilidade_indices",
+            "Indicadores de Rentabilidade",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
     st.markdown("### - Eficiencia Operacional / Ciclo")
-    if not _try_call_plot(df, ["render_eficiencia_indices"]):
+    eficiencia_rendered = _try_call_plot(df, ["render_eficiencia_indices"])
+    if not eficiencia_rendered:
         _todo_placeholder("Eficiencia Operacional / Ciclo")
+    else:
+        dados_resumo = _collect_indices_summary(
+            indices_df,
+            "Eficiencia Operacional / Ciclo",
+            "Indicadores de eficiencia operacional",
+        )
+        _artifact_box(
+            "grafico_eficiencia_indices",
+            "Eficiencia e Ciclo Operacional",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
 
     st.divider()
 
     st.header("3. PCA")
     st.markdown("### - Cargas (loadings)")
-    if not _try_call_plot(df, ["render_pca_loadings"]):
+    loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
+    if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
+    else:
+        loadings_df = (out or {}).get("loadings") if isinstance(out, dict) else None
+        dados_resumo = _build_pca_loadings_summary(loadings_df)
+        if not dados_resumo:
+            dados_resumo = {"nota": "Resumo das cargas nao disponivel"}
+        _artifact_box(
+            "grafico_pca_loadings",
+            "PCA - Cargas (Loadings)",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
     st.markdown("### - Variancia explicada (explained variance)")
     variancia_rendered = _try_call_plot(df, ["render_pca_variancia"])
     if not variancia_rendered:
@@ -711,10 +1021,24 @@ def _render_graficos_tab_content():
             "PCA - Variancia Explicada",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
     st.markdown("### - Projecoes (scores) por periodo/empresa")
-    if not _try_call_plot(df, ["render_pca_scores"]):
+    scores_rendered = _try_call_plot(df, ["render_pca_scores"])
+    if not scores_rendered:
         _todo_placeholder("Projecoes (scores) por periodo/empresa")
+    else:
+        scores_df = (out or {}).get("df_pca") if isinstance(out, dict) else None
+        dados_resumo = _build_pca_scores_summary(scores_df)
+        if not dados_resumo:
+            dados_resumo = {"nota": "Resumo dos scores nao disponivel"}
+        _artifact_box(
+            "grafico_pca_scores",
+            "PCA - Projecoes (Scores)",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
 
 def _render_indices_tables(df):
     categories = _split_indices_columns(df)
@@ -746,15 +1070,43 @@ def _render_tabelas_tab_content():
     st.markdown("### - Ativos")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")
+    else:
+        _register_table_section(
+            "tabela_ativos",
+            "Tabela - Ativos",
+            ["table_ativos", "get_ativos_table"],
+            note="Evolucao dos ativos (R$ mi) e variacao anual",
+        )
     st.markdown("### - Passivos")
     if not _try_show_table(["table_passivos", "get_passivos_table"]):
         _todo_placeholder("Passivos")
+    else:
+        _register_table_section(
+            "tabela_passivos",
+            "Tabela - Passivos",
+            ["table_passivos", "get_passivos_table"],
+            note="Evolucao dos passivos (R$ mi) e variacao anual",
+        )
     st.markdown("### - Patrimonio Liquido")
     if not _try_show_table(["table_pl", "get_pl_table", "get_patrimonio_liquido_table"]):
         _todo_placeholder("Patrimonio Liquido")
+    else:
+        _register_table_section(
+            "tabela_pl",
+            "Tabela - Patrimonio Liquido",
+            ["table_pl", "get_pl_table", "get_patrimonio_liquido_table"],
+            note="Patrimonio liquido e variacoes anuais",
+        )
     st.markdown("### - Capital de Giro / Liquidez")
     if not _try_show_table(["table_capital_giro", "get_ccl_table", "get_liquidez_table"]):
         _todo_placeholder("Capital de Giro / Liquidez")
+    else:
+        _register_table_section(
+            "tabela_capital_giro_base",
+            "Tabela - Capital de Giro / Liquidez",
+            ["table_capital_giro", "get_ccl_table", "get_liquidez_table"],
+            note="Capital de giro, CCL e liquidez",
+        )
 
     st.divider()
 
@@ -769,15 +1121,50 @@ def _render_tabelas_tab_content():
         "get_amortizacao_table",
     ]):
         _todo_placeholder("Operacional")
+    else:
+        _register_table_section(
+            "tabela_operacional",
+            "Tabela - Operacional",
+            [
+                "table_operacional",
+                "get_operacional_table",
+                "get_receita_table",
+                "get_custos_table",
+                "get_depreciacao_table",
+                "get_amortizacao_table",
+            ],
+            note="Receita, custos e itens operacionais",
+        )
     st.markdown("### - Financeiro")
     if not _try_show_table(["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"]):
         _todo_placeholder("Financeiro")
+    else:
+        _register_table_section(
+            "tabela_financeiro",
+            "Tabela - Financeiro",
+            ["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"],
+            note="Fluxo financeiro e despesas de juros",
+        )
     st.markdown("### - Tributos")
     if not _try_show_table(["table_impostos", "get_impostos_table", "get_despesa_impostos_table"]):
         _todo_placeholder("Tributos")
+    else:
+        _register_table_section(
+            "tabela_tributos",
+            "Tabela - Tributos",
+            ["table_impostos", "get_impostos_table", "get_despesa_impostos_table"],
+            note="Despesa de impostos e efetividade",
+        )
     st.markdown("### - Resultado")
     if not _try_show_table(["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"]):
         _todo_placeholder("Resultado")
+    else:
+        _register_table_section(
+            "tabela_resultado",
+            "Tabela - Resultado",
+            ["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"],
+            note="Indicadores de resultado e lucro",
+        )
 
     st.divider()
 
@@ -802,6 +1189,7 @@ def _render_tabelas_tab_content():
             "Tabela - Indicadores de Liquidez",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
     st.markdown("### - Endividamento/Estrutura")
     endividamento_table = _try_show_table(["table_endividamento_indices"])
@@ -823,28 +1211,83 @@ def _render_tabelas_tab_content():
             "Tabela - Estrutura de Capital",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
     st.markdown("### - Rentabilidade")
-    if not _try_show_table(["table_rentabilidade_indices"]):
+    rent_table = _try_show_table(["table_rentabilidade_indices"])
+    if not rent_table:
         _todo_placeholder("Rentabilidade")
+    else:
+        dados_resumo = _collect_indices_summary(
+            indices_df,
+            "Rentabilidade",
+            "Tabela de indicadores de rentabilidade",
+        )
+        _artifact_box(
+            "tabela_rentabilidade_indices",
+            "Tabela - Indicadores de Rentabilidade",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
     st.markdown("### - Eficiencia Operacional / Ciclo")
-    if not _try_show_table(["table_eficiencia_indices"]):
+    eficiencia_table = _try_show_table(["table_eficiencia_indices"])
+    if not eficiencia_table:
         _todo_placeholder("Eficiencia Operacional / Ciclo")
+    else:
+        dados_resumo = _collect_indices_summary(
+            indices_df,
+            "Eficiencia Operacional / Ciclo",
+            "Tabela de eficiencia operacional",
+        )
+        _artifact_box(
+            "tabela_eficiencia_indices",
+            "Tabela - Eficiencia Operacional",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
 
     st.divider()
 
     st.header("3. PCA")
     st.markdown("### - Cargas (loadings)")
-    if not _try_show_table(["get_pca_loadings_table"]):
+    pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
+    if not pca_loadings_table:
         _todo_placeholder("Cargas (loadings)")
+    else:
+        loadings_df = out.get("loadings") if isinstance(out, dict) else None
+        dados_resumo = _build_pca_loadings_summary(loadings_df)
+        if not dados_resumo:
+            dados_resumo = {"nota": "Resumo das cargas nao disponivel"}
+        _artifact_box(
+            "tabela_pca_loadings",
+            "Tabela - PCA Loadings",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
 
     st.markdown("### - Variancia explicada (explained variance)")
     if not _try_show_table(["get_pca_variance_table"]):
         _todo_placeholder("Variancia explicada (explained variance)")
 
     st.markdown("### - Projecoes (scores) por periodo/empresa")
-    if not _try_show_table(["get_pca_scores_table"]):
+    pca_scores_table = _try_show_table(["get_pca_scores_table"])
+    if not pca_scores_table:
         _todo_placeholder("Projecoes (scores) por periodo/empresa")
+    else:
+        scores_df = out.get("df_pca") if isinstance(out, dict) else None
+        dados_resumo = _build_pca_scores_summary(scores_df)
+        if not dados_resumo:
+            dados_resumo = {"nota": "Resumo dos scores nao disponivel"}
+        _artifact_box(
+            "tabela_pca_scores",
+            "Tabela - PCA Scores",
+            _build_mini_context(),
+            dados_resumo,
+            "indices",
+        )
 
     st.markdown("### - Destaques de componentes (top indices)")
     top_table = _try_show_table(["get_top_indices_table"])
@@ -868,6 +1311,7 @@ def _render_tabelas_tab_content():
             "Tabela - PCA Top Indices",
             _build_mini_context(),
             dados_resumo,
+            "indices",
         )
 
 
@@ -875,7 +1319,7 @@ def _render_tabelas_tab_content():
 
 def render():
     ss = st.session_state
-    ss.setdefault("analise_tab", "Resumo")
+    ss.setdefault("analise_tab", "Scores")
     ss.setdefault("reviews", {})
     ss.setdefault("artifacts_meta", {})
 
@@ -899,10 +1343,10 @@ def render():
         unsafe_allow_html=True,
     )
 
-    tab_resumo, tab_graficos, tab_tabelas = st.tabs(["Resumo", "Gráficos", "Tabelas"])
+    tab_scores, tab_graficos, tab_tabelas = st.tabs(["Scores", "Gráficos", "Tabelas"])
 
-    with tab_resumo:
-        render_resumo()
+    with tab_scores:
+        render_scores()
     with tab_graficos:
         _render_graficos_tab_content()
     with tab_tabelas:
