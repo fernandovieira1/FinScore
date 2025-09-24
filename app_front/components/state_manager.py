@@ -1,106 +1,149 @@
 # components/state_manager.py
-import streamlit as st
-from typing import Optional
+"""Centralized state manager for the FinScore Streamlit app."""
+
+from __future__ import annotations
+
 import time
+from typing import Optional
+
+import streamlit as st
+
 from components.config import SLUG_MAP, DEBUG_MODE
 
+_REVERSE_SLUG_MAP = {label: slug for slug, label in SLUG_MAP.items()}
+_DEFAULT_SLUG = "home"
+_DEFAULT_PAGE = SLUG_MAP.get(_DEFAULT_SLUG, "Home")
+
+
 class AppState:
-    """Gerenciador centralizado de estado para o aplicativo FinScore"""
-    
+    """Utility helpers to manage shared Streamlit session state."""
+
     @staticmethod
-    def initialize():
-        """Inicializa todos os estados necessários"""
-        if 'app_initialized' not in st.session_state:
-            # Estado de navegação
-            st.session_state.current_page = "Home"
-            st.session_state.previous_page = None
-            
-            # Estado de dados
-            st.session_state.df = None
-            st.session_state.out = None
-            st.session_state.erros = {}
-            st.session_state.meta = {}
-            
-            # Estado de abas
-            st.session_state.novo_tab = "Início"
-            st.session_state.analise_tab = "Resumo"
-            
-            # Controle de navegação
-            st.session_state.last_navigation_time = 0
-            st.session_state.navigation_source = None
-            
-            # Modo de cálculo ativo - bloqueio retroativo
-            st.session_state.calculo_ativo = False
-            
-            st.session_state.app_initialized = True
-    
+    def initialize() -> None:
+        """Populate default keys the first time the app runs."""
+        if "app_initialized" in st.session_state:
+            return
+
+        # Navigation
+        st.session_state.current_page = _DEFAULT_PAGE
+        st.session_state.current_slug = _DEFAULT_SLUG
+        st.session_state.previous_page = None
+        st.session_state.last_navigation_time = 0.0
+        st.session_state.navigation_source = None
+
+        # Process data
+        st.session_state.df = None
+        st.session_state.out = None
+        st.session_state.erros = {}
+        st.session_state.meta = {}
+
+        # Tabs and feature flags
+        st.session_state.novo_tab = "Cliente"
+        st.session_state.analise_tab = "Resumo"
+        st.session_state.calculo_ativo = False
+        st.session_state.liberar_lancamentos = False
+        st.session_state.liberar_analise = False
+        st.session_state.liberar_parecer = False
+
+        st.session_state.app_initialized = True
+
     @staticmethod
     def get_current_page() -> str:
-        """Retorna a página atual"""
-        return st.session_state.get('current_page', 'Home')
-    
+        """Return the current logical page."""
+        return st.session_state.get("current_page", _DEFAULT_PAGE)
+
     @staticmethod
     def get_previous_page() -> Optional[str]:
-        """Retorna a página anterior"""
-        return st.session_state.get('previous_page')
-    
+        """Return the previously selected page, if any."""
+        return st.session_state.get("previous_page")
+
     @staticmethod
-    def set_current_page(page_name: str, source: str = 'unknown'):
-        """
-        Define a página atual com controle de origem
-        """
-        previous = st.session_state.get('current_page')
+    def set_current_page(page_name: str, source: str = "unknown", slug: Optional[str] = None) -> None:
+        """Update navigation state, keeping track of the trigger source."""
+        previous = st.session_state.get("current_page")
+        if slug is None:
+            slug = _REVERSE_SLUG_MAP.get(page_name, st.session_state.get("current_slug", _DEFAULT_SLUG))
+
         st.session_state.previous_page = previous
         st.session_state.current_page = page_name
+        st.session_state.current_slug = slug
         st.session_state.navigation_source = source
         st.session_state.last_navigation_time = time.time()
-        
+
         if DEBUG_MODE:
-            print(f"Página alterada: {previous} -> {page_name} (fonte: {source})")
-    
+            print(f"[AppState] page change: {previous} -> {page_name} (source={source}, slug={slug})")
+
     @staticmethod
     def should_ignore_navigation(source: str) -> bool:
-        """
-        Verifica se deve ignorar navegação baseado no tempo
-        para prevenir conflitos entre sidebar, topbar and URL
-        """
+        """Throttle competing navigation events triggered in quick succession."""
         current_time = time.time()
-        last_time = st.session_state.get('last_navigation_time', 0)
-        last_source = st.session_state.get('navigation_source')
-        
-        # Ignora navegações muito rápidas de fontes diferentes
-        if (current_time - last_time < 0.3 and 
-            last_source and last_source != source):
-            return True
-        return False
-    
+        last_time = st.session_state.get("last_navigation_time", 0.0)
+        last_source = st.session_state.get("navigation_source")
+        return current_time - last_time < 0.3 and last_source and last_source != source
+
     @staticmethod
     def sync_from_query_params() -> bool:
-        """Sincroniza o estado a partir dos query parameters"""
-        query_params = st.query_params
-        page_param = query_params.get("p")
-        
-        if page_param:
-            page_param = page_param[0] if isinstance(page_param, list) else page_param
-            target_page = SLUG_MAP.get(page_param)
-            
-            if target_page and target_page != AppState.get_current_page():
-                if not AppState.should_ignore_navigation('url'):
-                    AppState.set_current_page(target_page, 'url')
-                    return True
-        return False
-    
+        """Copy navigation state from the URL query parameters."""
+        page_param = st.query_params.get("p")
+        if not page_param:
+            return False
+
+        slug = page_param[0] if isinstance(page_param, list) else page_param
+        target_page = SLUG_MAP.get(slug)
+        if not target_page:
+            return False
+        if target_page == AppState.get_current_page() and slug == st.session_state.get("current_slug"):
+            return False
+        if AppState.should_ignore_navigation("url"):
+            return False
+
+        AppState.set_current_page(target_page, "url", slug=slug)
+        return True
+
     @staticmethod
-    def sync_to_query_params():
-        """Sincroniza os query parameters com o estado atual"""
-        reverse_slug_map = {v: k for k, v in SLUG_MAP.items()}
-        current_slug = reverse_slug_map.get(AppState.get_current_page(), "home")
-        
-        if st.query_params.get("p") != current_slug:
-            st.query_params["p"] = current_slug
-    
-    
+    def sync_to_query_params() -> None:
+        """Ensure the URL reflects the current navigation state."""
+        slug = st.session_state.get("current_slug")
+        if not slug:
+            slug = _REVERSE_SLUG_MAP.get(AppState.get_current_page(), _DEFAULT_SLUG)
+            st.session_state.current_slug = slug
+        if st.query_params.get("p") != slug:
+            st.query_params["p"] = slug
+
     @staticmethod
     def is_debug_mode() -> bool:
-        """Verifica modo debug"""
+        """Expose the global debug flag."""
         return DEBUG_MODE
+
+    @staticmethod
+    def has_active_process() -> bool:
+        """Return True when there is data already loaded in this session."""
+        ss = st.session_state
+        if ss.get("df") is not None:
+            return True
+        if ss.get("out"):
+            return True
+        meta = ss.get("meta")
+        if isinstance(meta, dict) and any(value not in (None, "", [], {}, False) for value in meta.values()):
+            return True
+        return False
+
+    @staticmethod
+    def reset_process_data() -> None:
+        """Clear cached data and LLM artefacts, keeping navigation intact."""
+        defaults = {
+            "df": None,
+            "out": None,
+            "erros": {},
+            "meta": {},
+            "liberar_analise": False,
+            "liberar_parecer": False,
+            "liberar_lancamentos": False,
+            "policy_inputs": None,
+            "analise_tab": "Resumo",
+            "novo_tab": "Cliente",
+        }
+        for key, value in defaults.items():
+            st.session_state[key] = value
+        for transient_key in ("reviews", "artifacts_meta"):
+            st.session_state.pop(transient_key, None)

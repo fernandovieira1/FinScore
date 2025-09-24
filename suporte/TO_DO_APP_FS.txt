@@ -30,6 +30,7 @@ Streamlit: https://docs.streamlit.io/ (documentação)
            https://share.streamlit.io/ (publish)
 Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
 Streamlit deploy: https://finscore-alpha.streamlit.app/?p=lanc
+OpenAI: https://platform.openai.com/api-keys
 ......................................................................................................................
 
 ====================================
@@ -502,12 +503,12 @@ Até aqui:
 ---------------------------------
 
 =====Ajustes=====
-* ( ) Configurar Langchain:
-    * ( ) Importar bibliotecas (definir quais e momento);
-    * ( ) Credenciais OpenAI.
-* ( ) Estudar onde o prompt será inserido no projeto.
-* ( ) Testar prompts aleatórios (resultados finscore, gráficos ou tabelas).
-* ( ) Definir layout de onde serão inseridos os marcadores/caixinhas que apresentarão.
+* (x) Configurar Langchain:
+    * (x) Importar bibliotecas (definir quais e momento);
+    * (x) Credenciais OpenAI.
+* (x) Estudar onde o prompt será inserido no projeto.
+* (x) Testar prompts aleatórios (resultados finscore, gráficos ou tabelas).
+* (x) Definir layout de onde serão inseridos os marcadores/caixinhas que apresentarão.
 os resultados dos prompts na seção /Análise.
 ---
 Até aqui:
@@ -551,12 +552,15 @@ Até aqui:
 [v. 0.8.02 (ia), de 23/09/2025]
 ---
 
+=====Novidades=====
+* ( ) Salvar cache dados exceto se clicar em /Novo.
 =====Ajustes=====
-* ( ) Testes [v. 0.8.01 (ia)]
-* ( ) Testes [v. 0.8.02 (ia)]
+* (x) Testes [v. 0.8.01 (ia)].
+* ( ) Testes [v. 0.8.02 (ia)].
+* ( ) Prompts gráficos e tabelas a aperfeiçoar (análise com crítica mais objetiva, apresentando os nrs).
 ---
 Até aqui:
-[v. 0.8.03 (ia), de xx/09/2025]
+[v. 0.8.03 (ia), de 24/09/2025]
 ---
 
 ......................................................................................................................

@@ -2,12 +2,15 @@
 # coding: utf-8
 import unicodedata
 import math
+import statistics
 from typing import Any, Dict, Optional
 
 import streamlit as st
 
 from components.llm_client import call_review_llm
 from components.schemas import ReviewSchema
+from components.state_manager import AppState
+from components.config import SLUG_MAP
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
@@ -279,6 +282,45 @@ def _latest_row_dict(df) -> Optional[Dict[str, Any]]:
 
 
 
+
+
+def _series_points(df, column: str) -> list[tuple[Any, float]]:
+    if df is None or getattr(df, "empty", False):
+        return []
+    points: list[tuple[Any, float]] = []
+    for _, row in df.iterrows():
+        raw_value = row.get(column)
+        value = _to_float(raw_value)
+        if value is None:
+            continue
+        year = row.get("Ano") or row.get("ano") or row.get("ano_label")
+        if isinstance(year, str):
+            digits = ''.join(ch for ch in year if ch.isdigit())
+            year = int(digits) if digits else year.strip() or None
+        points.append((year, value))
+    return points
+
+
+def _infer_numeric_columns(df, limit: int = 4) -> list[str]:
+    if df is None or getattr(df, "empty", False):
+        return []
+    columns: list[str] = []
+    for col in df.columns:
+        col_lower = str(col).lower()
+        if col_lower in {"ano", "ano_label", "periodo"}:
+            continue
+        values = []
+        for value in df[col]:
+            converted = _to_float(value)
+            if converted is not None:
+                values.append(converted)
+        if values:
+            columns.append(col)
+        if len(columns) >= limit:
+            break
+    return columns
+
+
 def _summarize_metrics(
     df,
     columns: list[str],
@@ -287,18 +329,49 @@ def _summarize_metrics(
 ) -> Dict[str, Any]:
     rename = rename or {}
     summary: Dict[str, Any] = {}
-    row = _latest_row_dict(df)
-    if not row:
+    if df is None or getattr(df, "empty", False):
         return summary
+    if not columns:
+        return summary
+
     for col in columns:
-        if col not in row:
+        points = _series_points(df, col)
+        if not points:
             continue
         divisor = 1.0
         if isinstance(divisors, dict):
             divisor = divisors.get(col, 1.0)
         elif isinstance(divisors, (int, float)) and divisors:
             divisor = float(divisors)
-        summary[rename.get(col, col)] = _format_metric(row[col], divisor)
+        label = rename.get(col, col)
+        series_data: Dict[str, Any] = {}
+        for idx, (year, value) in enumerate(points):
+            key = str(year if year is not None else idx)
+            series_data[key] = _format_metric(value, divisor)
+
+        latest = points[-1][1]
+        first = points[0][1]
+        mean_value = statistics.fmean([value for _, value in points])
+        variation = latest - first
+        percentual = 0.0
+        if first != 0:
+            percentual = (variation / abs(first)) * 100.0
+
+        trend = "estavel"
+        if percentual > 5:
+            trend = "alta"
+        elif percentual < -5:
+            trend = "queda"
+
+        summary[label] = {
+            "serie": series_data,
+            "ultimo": _format_metric(latest, divisor),
+            "media": _format_metric(mean_value, divisor),
+            "variacao_absoluta": _format_metric(variation, divisor),
+            "variacao_percentual": round(percentual, 2),
+            "tendencia": trend,
+            "anos": [p[0] for p in points if p[0] is not None],
+        }
     return summary
 
 
@@ -331,6 +404,32 @@ def _build_mini_context(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any
 
 
 
+
+
+
+def _register_artifact(
+    artifact_id: str,
+    title: str,
+    df=None,
+    columns: Optional[list[str]] = None,
+    rename: Optional[Dict[str, str]] = None,
+    divisors: Optional[Dict[str, float] | float] = None,
+    note: Optional[str] = None,
+    extra_ctx: Optional[Dict[str, Any]] = None,
+    summary_override: Optional[Dict[str, Any]] = None,
+) -> None:
+    summary: Dict[str, Any] = summary_override.copy() if summary_override else {}
+    if not summary and df is not None:
+        target_columns = columns or _infer_numeric_columns(df)
+        summary = _summarize_metrics(df, target_columns, rename=rename, divisors=divisors)
+    if not summary:
+        summary = {"nota": note or title}
+    else:
+        summary.setdefault("nota", note or title or title)
+    mini_ctx = _build_mini_context(extra_ctx)
+    _artifact_box(artifact_id, title, mini_ctx, summary)
+
+
 def _artifact_box(artifact_id: str, title: str, mini_ctx: Dict[str, Any], dados_resumo: Dict[str, Any]):
     ss = st.session_state
     meta = ss.setdefault("artifacts_meta", {})
@@ -346,6 +445,8 @@ def _artifact_box(artifact_id: str, title: str, mini_ctx: Dict[str, Any], dados_
         if st.button("Gerar critica da IA", key=f"btn_{artifact_id}"):
             review: ReviewSchema = call_review_llm(title, mini_ctx, dados_resumo)
             reviews[artifact_id] = review.model_dump()
+            AppState.set_current_page(SLUG_MAP.get("analise", "Análise"), "analise_artifact", slug="analise")
+            AppState.sync_to_query_params()
             st.experimental_rerun()
     with col_b:
         if artifact_id in reviews:
@@ -379,6 +480,7 @@ def _render_graficos_tab_content():
     ss = st.session_state
     out = ss.get("out") or {}
     indices_df = out.get("df_indices")
+    row = _latest_row_dict(df)
 
     st.header("1. Dados Contabeis (brutos)")
     st.subheader("1.1 Contas Patrimoniais (Balanco Patrimonial)")
@@ -394,18 +496,75 @@ def _render_graficos_tab_content():
         ],
     ):
         _todo_placeholder("Ativos")
+    else:
+        _register_artifact(
+            "grafico_ativos",
+            "Grafico - Ativos",
+            df=df,
+            columns=[
+                "p_Ativo_Circulante",
+                "p_Ativo_Total",
+                "p_Caixa",
+                "p_Estoques",
+                "p_Contas_a_Receber",
+            ],
+            divisors={
+                "p_Ativo_Circulante": 1_000_000,
+                "p_Ativo_Total": 1_000_000,
+                "p_Caixa": 1_000_000,
+                "p_Estoques": 1_000_000,
+                "p_Contas_a_Receber": 1_000_000,
+            },
+            note="Evolucao dos ativos (R$ mi)",
+        )
     st.markdown("### - Passivos")
     if not _try_call_plot(df, ["render_passivos", "render_passivo_total", "render_contas_a_pagar"]):
         _todo_placeholder("Passivos")
+    else:
+        _register_artifact(
+            "grafico_passivos",
+            "Grafico - Passivos",
+            df=df,
+            columns=["p_Contas_a_Pagar", "p_Passivo_Circulante", "p_Passivo_Total"],
+            divisors={
+                "p_Contas_a_Pagar": 1_000_000,
+                "p_Passivo_Circulante": 1_000_000,
+                "p_Passivo_Total": 1_000_000,
+            },
+            note="Evolucao dos passivos (R$ mi)",
+        )
     st.markdown("### - Patrimonio Liquido")
     if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
         _todo_placeholder("Patrimonio Liquido")
+    else:
+        _register_artifact(
+            "grafico_patrimonio_liquido",
+            "Grafico - Patrimonio Liquido",
+            df=df,
+            columns=["p_Patrimonio_Liquido"],
+            divisors={"p_Patrimonio_Liquido": 1_000_000},
+            note="Patrimonio liquido em R$ mi",
+        )
     st.markdown("### - Capital de Giro e Liquidez")
     capital_rendered = render_ativo_passivo_circulante(df)
     if not capital_rendered:
         capital_rendered = _try_call_plot(df, ["render_capital_giro", "render_liquidez_corrente"])
     if not capital_rendered:
         _todo_placeholder("Capital de Giro e Liquidez")
+    else:
+        _register_artifact(
+            "grafico_capital_giro",
+            "Grafico - Capital de Giro e Liquidez",
+            df=df,
+            columns=["p_Ativo_Circulante", "p_Passivo_Circulante", "p_Estoques", "p_Ativo_Total"],
+            divisors={
+                "p_Ativo_Circulante": 1_000_000,
+                "p_Passivo_Circulante": 1_000_000,
+                "p_Estoques": 1_000_000,
+                "p_Ativo_Total": 1_000_000,
+            },
+            note="Capital de giro e liquidez (R$ mi)",
+        )
 
     st.divider()
 

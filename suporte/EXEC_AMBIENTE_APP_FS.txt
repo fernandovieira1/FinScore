@@ -16,9 +16,7 @@ py -3.11 -m venv .venv
 
 -------------------
 # (III) Atualizar instaladores (SE PRECISAR)
-# **apenas a primeira vez
-# **geralmente não precisa
-python -m pip install -U pip setuptools wheel
+python.exe -m pip install --upgrade pip
 
 -------------------
 # (IV) Instalar as dependências
@@ -56,9 +54,6 @@ source .venv/bin/activate
 
 -------------------
 # (III) Atualizar instaladores (SE PRECISAR) (Linux)
-# **apenas a primeira vez
-# **geralmente não precisa
-python -m pip install -U pip setuptools wheel
 pip install --upgrade pip
 
 -------------------
