@@ -676,6 +676,8 @@ def _artifact_box(
     ss = st.session_state
     meta = ss.setdefault("artifacts_meta", {})
     reviews = ss.setdefault("reviews", {})
+    flash_id = ss.get("_analise_flash_id")
+    flash_msg = ss.get("_analise_flash_msg", "Critica gerada com sucesso.")
     meta[artifact_id] = {
         "title": title,
         "mini_ctx": dict(mini_ctx),
@@ -685,18 +687,26 @@ def _artifact_box(
     }
     col_a, col_b = st.columns([1, 1])
     with col_a:
+        if flash_id == artifact_id:
+            st.success(flash_msg)
+            ss.pop("_analise_flash_id", None)
+            ss.pop("_analise_flash_msg", None)
         if st.button("Gerar critica da IA", key=f"btn_{artifact_id}"):
             with st.spinner("Gerando critica da IA..."):
                 artifact_meta = meta[artifact_id]
                 review: ReviewSchema = call_review_llm(artifact_id, artifact_meta)
             reviews[artifact_id] = review.model_dump()
+            ss["_analise_flash_id"] = artifact_id
+            ss["_analise_flash_msg"] = "Critica gerada com sucesso."
             AppState.set_current_page(
                 SLUG_MAP.get("analise", "Análise"),
                 "analise_artifact",
                 slug="analise",
             )
             AppState.sync_to_query_params()
-            st.success("Critica gerada com sucesso.")
+            if st.query_params.get("p") != "analise":
+                st.query_params["p"] = "analise"
+            st.rerun()
     with col_b:
         if artifact_id in reviews:
             rev = reviews[artifact_id]

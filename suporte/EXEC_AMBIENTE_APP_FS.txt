@@ -7,6 +7,8 @@
 # **apenas a primeira vez
 py -3.11 -m venv .venv
 
+cd app_front && py -3.11 -m venv .venv 
+
 -------------------
 # (II) ATIVAR
 # PowerShell
@@ -35,7 +37,7 @@ py -3.11 -m venv .venv && .\\.venv\Scripts\Activate.ps1 && pip install -r requir
 streamlit run .\\app_front\\app.py
 
 # Com log
-streamlit run .\\app_front\\app.py --logger.level=debug
+streamlit run app.py --logger.level=debug
 
 # Dica: se você já estiver DENTRO da pasta `app_front`, rode apenas o arquivo:
 # Windows (PowerShell ou CMD)
