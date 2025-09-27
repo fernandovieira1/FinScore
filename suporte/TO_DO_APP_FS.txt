@@ -516,37 +516,37 @@ Até aqui:
 ---
 
 =====Novidades=====
-* ( ) Dados Análise/Resumo:
-    - ( ) FinScore Bruto:
-        + ( ) Número;
-        + ( ) Classificação:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-    - ( ) FinScore Ajustado:
-        + ( ) Número;
-        + ( ) Classificação:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-    - ( ) Serasa Score:
-        + ( ) Número;
-        + ( ) Classificação:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-* ( ) Gráficos de Análise/Gráficos:
-    - ( ) Dados Contábeis brutos:
-        + ( ) Definir gráficos:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-    - ( ) Índices Contábeis:
-        + ( ) Definir gráficos:.
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final)
-* ( ) Tabelas de Análise/Tabelas:
-    - ( ) Dados Contábeis brutos:
-        + ( ) Definir tabelas:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-    - ( ) Índices Contábeis:
-        + ( ) Definir tabelas:
-            . ( ) IA/LLM (prompt IA + edição humana + retorno IA final).
-    - ( ) Componentes Principais (PCA):
-        + ( ) IA/LLM (prompt IA, sem interação humana).
-    - ( ) Top 3 Índices por Componente:
-        + ( ) IA/LLM (prompt IA, sem interação humana).
+* (x) Dados Análise/Resumo:
+    - (x) FinScore Bruto:
+        + (x) Número;
+        + (x) Classificação:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - (x) FinScore Ajustado:
+        + (x) Número;
+        + (x) Classificação:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - (x) Serasa Score:
+        + (x) Número;
+        + (x) Classificação:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+* (x) Gráficos de Análise/Gráficos:
+    - (x) Dados Contábeis brutos:
+        + (x) Definir gráficos:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - (x) Índices Contábeis:
+        + (x) Definir gráficos:.
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final)
+* (x) Tabelas de Análise/Tabelas:
+    - (x) Dados Contábeis brutos:
+        + (x) Definir tabelas:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - (x) Índices Contábeis:
+        + (x) Definir tabelas:
+            . (x) IA/LLM (prompt IA + edição humana + retorno IA final).
+    - (x) Componentes Principais (PCA):
+        + (x) IA/LLM (prompt IA, sem interação humana).
+    - (x) Top 3 Índices por Componente:
+        + (x) IA/LLM (prompt IA, sem interação humana).
 ---
 Até aqui:
 [v. 0.8.02 (ia), de 23/09/2025]
@@ -556,14 +556,14 @@ Até aqui:
 * ( ) Salvar cache dados exceto se clicar em /Novo.
 =====Ajustes=====
 * (x) Testes [v. 0.8.01 (ia)].
-* ( ) Testes [v. 0.8.02 (ia)].
-* ( ) Prompts gráficos e tabelas a aperfeiçoar (análise com crítica mais objetiva, apresentando os nrs).
+* (x) Testes [v. 0.8.02 (ia)].
 ---
 Até aqui:
 [v. 0.8.03 (ia), de 24/09/2025]
 [v. 0.8.03a (ia), de 24/09/2025]
 [v. 0.8.03b (ia), de 24/09/2025]
 [v. 0.8.03c (ia), de 27/09/2025] --> cache em nav e topbar funcionando
+[v. 0.8.04 (ia), de 27/09/2025] --> cache em nav e topbar funcionando, visual e formato dos nrs ok.
 ---
 
 =====Novidades=====

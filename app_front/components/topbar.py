@@ -44,12 +44,12 @@ def render_topbar(current_page: str | None = None) -> None:
           .nav {{ display:flex; align-items:center; gap:16px; margin:0; }}
           .pill-btn, .pill-btn:link, .pill-btn:visited, .pill-btn:active {{
             display:inline-block; padding:6px 10px; border-radius:10px;
-            color:var(--tb-fg-muted); font-weight:600; font-size:.92rem; line-height:1;
+            color:#4a4138; font-weight:700; font-size:.92rem; line-height:1;
             border:1px solid transparent; text-decoration:none;
             cursor: pointer;
           }}
           .pill-btn:hover, .pill-btn.active {{
-            color:var(--tb-fg); background:var(--tb-hover); border-color:var(--tb-border);
+            color:#4a4138; background:var(--tb-hover); border-color:var(--tb-border);
             text-decoration:none;
           }}
           .right {{ display:flex; align-items:center; gap:14px; }}

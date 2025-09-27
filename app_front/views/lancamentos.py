@@ -1,4 +1,6 @@
 # app_front/views/lancamentos.py
+import math
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 from components.state_manager import AppState
@@ -189,7 +191,49 @@ def _render_data_preview(df, caption="Prévia:", anos_rotulos=None):
     if preview is None:
         return False
     st.caption(caption)
-    st.dataframe(preview.head(), use_container_width=True, hide_index=True)
+    preview_for_display = preview.head().copy()
+
+    def _format_number_ptbr(value):
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return ""
+            try:
+                normalized = text.replace(".", "").replace(",", ".")
+                num = float(normalized)
+            except (ValueError, TypeError):
+                return value
+        else:
+            try:
+                num = float(value)
+            except (ValueError, TypeError):
+                return value
+
+        if math.isnan(num):
+            return ""
+
+        if float(num).is_integer():
+            formatted = f"{int(round(num)):,}"
+        else:
+            formatted = f"{num:,.2f}"
+        return formatted.replace(",", "¤").replace(".", ",").replace("¤", ".")
+
+    for col in preview_for_display.columns:
+        if col.lower() == "ano":
+            continue
+        try:
+            numeric_series = pd.to_numeric(preview_for_display[col], errors="coerce")
+        except Exception:
+            continue
+        if numeric_series.notna().any():
+            preview_for_display[col] = [
+                _format_number_ptbr(val) if not pd.isna(num_val) else ("" if val is None else val)
+                for val, num_val in zip(preview_for_display[col].tolist(), numeric_series.tolist())
+            ]
+
+    st.dataframe(preview_for_display, use_container_width=True, hide_index=True)
     return True
 
 
