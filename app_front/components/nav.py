@@ -10,55 +10,96 @@ LOGO = ASSETS / "logo5.png"
 
 def render_sidebar(current_page: str = "Home"):
     """
-    Sidebar sem links HTML (que causam reload total).
-    Usa widgets nativos para preservar st.session_state ao navegar.
-
-    Retorna None: aplica navegacao via AppState + st.rerun.
+    Renderiza a barra lateral com dropdown e submenu (HTML <details>/<summary>).
+    Retorna a página selecionada (label) quando o usuário clica em um item,
+    caso contrário, retorna None.
     """
-    with st.sidebar:
-        # Logo
-        try:
-            st.image(str(LOGO))
-        except Exception:
-            pass
+    client_token = AppState.get_client_token()
 
-        # Slug/pagina atual
+    with st.sidebar:
+        # Estilos CSS para a sidebar
+        st.markdown(
+            """
+            <style>
+            .side-logo { margin-top: -350px !important; padding-top: 0px !important; }
+            /* Container do menu */
+            .fs-menu { font-family: inherit; }
+            .fs-menu a { text-decoration: none; color: #001733; display: block; }
+            .fs-menu .item, .fs-menu summary { 
+                padding: 10px 12px; border-radius: 0; margin: 0; list-style: none; 
+                background: #cdcdcd; color: #001733; cursor: pointer; 
+            }
+            .fs-menu .item:hover, .fs-menu summary:hover { background: #e9e9e9; }
+            .fs-menu details { background: #cdcdcd; }
+            .fs-menu details[open] > summary { background: #d6d6d6; }
+            .fs-menu .active { background: #d6d6d6; border-left: 3px solid #9aa0a6; }
+            .fs-menu .submenu a { padding: 8px 16px 8px 28px; }
+            /* Caret */
+            .fs-menu summary { position: relative; }
+            .fs-menu summary::marker { display: none; }
+            .fs-menu summary::-webkit-details-marker { display: none; }
+            .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; }
+            details[open] > summary .caret { transform: rotate(180deg); }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Logo
+        st.markdown('<div class="side-logo">', unsafe_allow_html=True)
+        st.image(str(LOGO))
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Determina slug atual a partir do nome da página atual
         reverse_slug_map = {v: k for k, v in SLUG_MAP.items()}
         current_slug = reverse_slug_map.get(current_page, "home")
 
-        # Permissoes
-        ss = st.session_state
-        lanc_enabled = ss.get("liberar_lancamentos", False)
-        analise_enabled = ss.get("liberar_analise", False)
-        parecer_enabled = ss.get("liberar_parecer", False)
+        # Constrói o HTML do menu com submenus
+        def build_menu_html():
+            html = ['<nav class="fs-menu">']
+            for item in SIDEBAR_MENU:
+                label = item["label"]
+                slug = item["slug"]
+                children = item.get("children", [])
 
-        # Menu hierarquico
-        for item in SIDEBAR_MENU:
-            label = item["label"]
-            slug = item["slug"]
-            children = item.get("children", [])
+                is_active_top = (current_slug == slug) or any(current_slug == c.get("slug") for c in children)
+                open_attr = " open" if is_active_top else ""
+                active_cls = " active" if current_slug == slug else ""
 
-            if children:
-                expanded = (current_slug == slug) or any(current_slug == c.get("slug") for c in children)
-                with st.expander(label, expanded=expanded):
+                href = f"?p={slug}"
+                if client_token:
+                    href = f"?p={slug}&sid={client_token}"
+
+                if children:
+                    html.append(
+                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▾</span></summary>'
+                    )
                     for c in children:
                         c_label, c_slug = c["label"], c["slug"]
-                        disabled = (
-                            (c_slug == "lanc" and not lanc_enabled) or
-                            (c_slug == "analise" and not analise_enabled) or
-                            (c_slug == "parecer" and not parecer_enabled)
-                        )
-                        if st.button(c_label, key=f"side_{c_slug}", disabled=disabled, use_container_width=True):
-                            AppState.set_current_page(SLUG_MAP.get(c_slug, c_label), "sidebar", slug=c_slug)
-                            AppState.sync_to_query_params()
-                            st.rerun()
-            else:
-                if st.button(label, key=f"side_{slug}", use_container_width=True):
-                    AppState.set_current_page(SLUG_MAP.get(slug, label), "sidebar", slug=slug)
-                    AppState.sync_to_query_params()
-                    st.rerun()
+                        c_active = " active" if current_slug == c_slug else ""
+                        child_href = f"?p={c_slug}"
+                        if client_token:
+                            child_href = f"?p={c_slug}&sid={client_token}"
+                        html.append(f'<div class="submenu"><a class="item{c_active}" href="{child_href}" target="_self">{c_label}</a></div>')
+                    html.append('</details>')
+                else:
+                    html.append(f'<a class="item{active_cls}" href="{href}" target="_self">{label}</a>')
+            html.append('</nav>')
+            return "\n".join(html)
 
+        st.markdown(build_menu_html(), unsafe_allow_html=True)
+
+        # Detecta cliques: como usamos links, deixamos a URL conduzir; o AppState
+        # fará sync em app.py. Para manter API, checamos se o parâmetro mudou.
+        # Se mudou, retornamos o label correspondente (para fluxo atual do app).
+        qp = st.query_params.get("p")
+        if qp:
+            qp = qp[0] if isinstance(qp, list) else qp
+            target_label = SLUG_MAP.get(qp)
+            if target_label and target_label != current_page:
+                return target_label
         return None
+            
     return None
 
 

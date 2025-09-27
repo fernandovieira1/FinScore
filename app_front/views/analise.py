@@ -698,11 +698,11 @@ def _artifact_box(
             reviews[artifact_id] = review.model_dump()
             ss["_analise_flash_id"] = artifact_id
             ss["_analise_flash_msg"] = "Critica gerada com sucesso."
-            AppState.set_current_page(
-                SLUG_MAP.get("analise", "Análise"),
-                "analise_artifact",
-                slug="analise",
-            )
+            # AppState.set_current_page(
+#                SLUG_MAP.get("analise", "Análise"),
+#                "analise_artifact",
+#                slug="analise",
+#            )
             AppState.sync_to_query_params()
             if st.query_params.get("p") != "analise":
                 st.query_params["p"] = "analise"

@@ -47,6 +47,9 @@ load_css()
 # --------------- inicialização do estado ---------------
 AppState.initialize()
 
+# Preserva os dados ao navegar entre as páginas
+AppState.preserve_data_across_pages()
+
 # --------------- definição das rotas ---------------
 ROUTES = {
     "Home": view_home.render,

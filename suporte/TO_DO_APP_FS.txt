@@ -563,7 +563,15 @@ Até aqui:
 [v. 0.8.03 (ia), de 24/09/2025]
 [v. 0.8.03a (ia), de 24/09/2025]
 [v. 0.8.03b (ia), de 24/09/2025]
+[v. 0.8.03c (ia), de 27/09/2025]
 ---
+
+=====Novidades=====
+* ( ) LLM /Análise
+    * ( ) Resultados botão análise IA
+    * ( ) Processamento IA em segundo plano
+    * ( ) Setas cima, baixo, direita-esquerda
+* ( ) Aba Resumo
 
 ......................................................................................................................
 ============

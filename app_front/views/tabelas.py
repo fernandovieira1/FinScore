@@ -355,9 +355,14 @@ def table_liquidez_indices() -> pd.DataFrame | None:
     if not ok:
         return None
     metrics = _compute_liquidez_metricas(df).round(2)
-    media = metrics.tail(min(len(metrics), 5)).mean(numeric_only=True)
-    media["Ano"] = "Media 5 anos"
-    table = pd.concat([metrics, pd.DataFrame([media])], ignore_index=True)
+    window = metrics.drop(columns=["Ano"], errors="ignore").tail(min(len(metrics), 5))
+    media_values = window.mean(numeric_only=True).round(2)
+    media_row = {"Ano": "Media 5 anos"}
+    for col in metrics.columns:
+        if col == "Ano":
+            continue
+        media_row[col] = media_values.get(col, np.nan)
+    table = pd.concat([metrics, pd.DataFrame([media_row])], ignore_index=True)
     return _finalize_table(table)
 
 
@@ -368,11 +373,15 @@ def table_endividamento_indices() -> pd.DataFrame | None:
     if not ok:
         return None
     metrics = _compute_endividamento_metricas(df).round(2)
-    media = metrics.tail(min(len(metrics), 5)).mean(numeric_only=True)
-    media["Ano"] = "Media 5 anos"
+    window = metrics.drop(columns=["Ano"], errors="ignore").tail(min(len(metrics), 5))
+    media_values = window.mean(numeric_only=True).round(2)
     metrics["Benchmark"] = np.nan
-    media["Benchmark"] = np.nan
-    table = pd.concat([metrics, pd.DataFrame([media])], ignore_index=True)
+    media_row = {"Ano": "Media 5 anos", "Benchmark": np.nan}
+    for col in metrics.columns:
+        if col in {"Ano", "Benchmark"}:
+            continue
+        media_row[col] = media_values.get(col, np.nan)
+    table = pd.concat([metrics, pd.DataFrame([media_row])], ignore_index=True)
     return _finalize_table(table)
 
 
@@ -431,7 +440,6 @@ def table_eficiencia_indices() -> pd.DataFrame | None:
         media_row[f"{col} Δ YoY"] = np.nan
     table = pd.concat([table, pd.DataFrame([media_row])], ignore_index=True)
     return _finalize_table(table)
-
 
 def get_pca_variance_table() -> pd.DataFrame | None:
     out = st.session_state.get("out")

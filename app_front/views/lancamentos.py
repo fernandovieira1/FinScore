@@ -1,6 +1,7 @@
 # app_front/views/lancamentos.py
 import streamlit as st
 import streamlit.components.v1 as components
+from components.state_manager import AppState
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore, ajustar_coluna_ano
 
@@ -135,7 +136,7 @@ def _auto_save_cliente():
 
     if ss.get("df") is not None:
         df_atualizado, anos_rotulos = ajustar_coluna_ano(ss.df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
-        ss.df = df_atualizado.copy()
+        ss.df = df_atualizado.copy()  # type: ignore[attr-defined]
         if anos_rotulos:
             ss.meta["anos_rotulos"] = anos_rotulos
         else:
@@ -146,6 +147,62 @@ def _auto_save_cliente():
         st.warning(pend)
     else:
         st.success("Cliente salvo automaticamente.")
+
+
+def _normalize_preview(df, anos_rotulos=None):
+    if df is None or getattr(df, "empty", False):
+        return None
+    preview = df.copy()
+    if "ano" not in preview.columns:
+        return preview
+
+    preview = preview.sort_values("ano", ascending=True).reset_index(drop=True)
+
+    if anos_rotulos is not None:
+        source_values = list(anos_rotulos)
+    else:
+        try:
+            source_values = list(preview["ano"].tolist())
+        except Exception:
+            source_values = []
+
+    def _fmt(valor, fallback):
+        if valor is None:
+            return fallback
+        try:
+            return str(int(float(valor)))
+        except (TypeError, ValueError):
+            text = str(valor).strip()
+            return text if text else fallback
+
+    formatted = []
+    total = len(preview)
+    for idx in range(total):
+        valor = source_values[idx] if idx < len(source_values) else None
+        formatted.append(_fmt(valor, str(idx + 1)))
+    preview["ano"] = formatted
+    return preview
+
+
+def _render_data_preview(df, caption="Prévia:", anos_rotulos=None):
+    preview = _normalize_preview(df, anos_rotulos)
+    if preview is None:
+        return False
+    st.caption(caption)
+    st.dataframe(preview.head(), use_container_width=True, hide_index=True)
+    return True
+
+
+def _render_cached_data_preview():
+    ss = st.session_state
+    cached_df = ss.get("df")
+    if cached_df is None or getattr(cached_df, "empty", False):
+        return False
+    st.info("Dados contábeis carregados nesta sessão.")
+    _render_data_preview(cached_df, caption="Prévia dos dados armazenados", anos_rotulos=ss.meta.get("anos_rotulos"))
+    if ss.get("out"):
+        st.success("FinScore já calculado. Acesse a aba Análise para visualizar os resultados.")
+    return True
 
 
 
@@ -217,32 +274,8 @@ def _sec_dados():
     if df is not None:
         df_exibicao, anos_rotulos = ajustar_coluna_ano(df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
         st.success(f"✅ Dados carregados (aba: {aba}).")
-        st.caption("Prévia:")
-        df_preview = df_exibicao.copy()
-        if "ano" in df_preview.columns:
-            df_preview = df_preview.sort_values("ano", ascending=True).reset_index(drop=True)
-            def _fmt(valor, fallback):
-                if valor is None:
-                    return fallback
-                try:
-                    return str(int(float(valor)))
-                except (TypeError, ValueError):
-                    return str(valor)
-
-            if anos_rotulos:
-                valores_preview = list(anos_rotulos)
-            elif "ano" in df.columns:
-                valores_preview = df["ano"].tolist()
-            else:
-                valores_preview = []
-            if not valores_preview:
-                valores_preview = list(range(1, len(df_preview) + 1))
-            valores_formatados = [
-                _fmt(valor, str(idx + 1)) for idx, valor in enumerate(valores_preview)
-            ]
-            df_preview["ano"] = valores_formatados
-        st.dataframe(df_preview.head(), use_container_width=True, hide_index=True)
-        ss.df = df_exibicao.copy()
+        _render_data_preview(df_exibicao, anos_rotulos=anos_rotulos)
+        ss.df = df_exibicao.copy()  # type: ignore[attr-defined]
         if anos_rotulos:
             ss.meta["anos_rotulos"] = anos_rotulos
         else:
@@ -253,6 +286,9 @@ def _sec_dados():
             st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
         st.success("✅ Dados contábeis salvos.")
         ss.out = None  # Limpa resultados se dados mudaram
+        AppState.drop_cached_process_data("out")
+    else:
+        _render_cached_data_preview()
 
     st.write("---")
 
