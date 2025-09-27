@@ -241,6 +241,35 @@ section[data-testid="stSidebar"] .nav-link-selected {
     border-left: 4px solid #8a8a8a !important;
 }
 
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebar"] [data-testid="baseButton-header"],
+[data-testid="stSidebar"] button[aria-label="Close"],
+[data-testid="stSidebar"] button[aria-label="Fechar"] {
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover,
+[data-testid="stSidebar"] [data-testid="baseButton-header"]:hover,
+[data-testid="stSidebar"] button[aria-label="Close"]:hover,
+[data-testid="stSidebar"] button[aria-label="Fechar"]:hover {
+    opacity: 1;
+}
+
+[data-testid="stSidebar"]:hover [data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebar"]:hover [data-testid="baseButton-header"],
+[data-testid="stSidebar"]:hover button[aria-label="Close"],
+[data-testid="stSidebar"]:hover button[aria-label="Fechar"] {
+    opacity: 0.7;
+}
+
+button[title="View fullscreen"],
+button[aria-label="View fullscreen"],
+[data-testid="styled-fullscreen-button"],
+[data-testid="stFullscreenButton"] {
+    display: none !important;
+}
+
 hr {
     border-color: rgba(2, 6, 23, .08);
 }
