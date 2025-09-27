@@ -5,7 +5,7 @@ from components.config import SIDEBAR_MENU, SLUG_MAP, DEBUG_MODE
 from components.state_manager import AppState
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
-LOGO = ASSETS / "logo5.png"
+LOGO = ASSETS / "logo_fin1a.png"
 
 
 def render_sidebar(current_page: str = "Home"):
@@ -21,7 +21,7 @@ def render_sidebar(current_page: str = "Home"):
         st.markdown(
             """
             <style>
-            .side-logo { margin-top: -350px !important; padding-top: 0px !important; }
+            .side-logo { margin-top: 0 !important; padding-top: 0 !important; }
             /* Container do menu */
             .fs-menu { font-family: inherit; }
             .fs-menu a { text-decoration: none; color: #245561; display: block; }
@@ -29,14 +29,14 @@ def render_sidebar(current_page: str = "Home"):
                 padding: 10px 12px; border-radius: 0; margin: 0; list-style: none; 
                 background: #cdcdcd; color: #245561; cursor: pointer; font-weight: 700;
             }
-            .fs-menu .item:hover, .fs-menu summary:hover { background: #e9e9e9; }
+            .fs-menu .item:hover, .fs-menu summary:hover { background: #cdcdcd; }
             .fs-menu details { background: #cdcdcd; }
-            .fs-menu details[open] > summary { background: #d6d6d6; }
-            .fs-menu .active { background: #d6d6d6; border-left: 3px solid #9aa0a6; }
+            .fs-menu details[open] > summary { background: #cdcdcd; }
+            .fs-menu .active { background: #cdcdcd; border-left: 3px solid #9aa0a6; }
             .fs-menu .submenu a { padding: 8px 16px 8px 28px; }
             .fs-menu .item.disabled,
             .fs-menu .submenu a.disabled {
-                background: #e4e4e4 !important;
+                background: #cdcdcd !important;
                 color: #7a7a7a !important;
                 cursor: not-allowed !important;
                 pointer-events: none !important;
@@ -44,7 +44,7 @@ def render_sidebar(current_page: str = "Home"):
             }
             .fs-menu .item.disabled:hover,
             .fs-menu .submenu a.disabled:hover {
-                background: #e4e4e4 !important;
+                background: #cdcdcd !important;
             }
             /* Caret */
             .fs-menu summary { position: relative; }
@@ -55,6 +55,103 @@ def render_sidebar(current_page: str = "Home"):
             </style>
             """,
             unsafe_allow_html=True
+        )
+
+        st.markdown(
+            """
+            <script>
+            (function() {
+                const win = window.parent || window;
+                if (!win || win.__FS_SIDEBAR_RESIZER_INIT__) { return; }
+                win.__FS_SIDEBAR_RESIZER_INIT__ = true;
+                const doc = win.document;
+
+                const getVarPx = (name, fallback) => {
+                    try {
+                        const value = getComputedStyle(doc.documentElement).getPropertyValue(name).trim();
+                        const parsed = parseFloat(value.replace('px', ''));
+                        return Number.isFinite(parsed) ? parsed : fallback;
+                    } catch (e) {
+                        return fallback;
+                    }
+                };
+
+                const MIN = getVarPx('--fs-sidebar-min', 220);
+                const MAX = getVarPx('--fs-sidebar-max', 547);
+                const DEF = getVarPx('--fs-sidebar-default', 274);
+                const state = win.__FS_SIDEBAR_RESIZER_STATE__ || { width: DEF };
+                win.__FS_SIDEBAR_RESIZER_STATE__ = state;
+
+                const clampWidth = (value) => Math.min(MAX, Math.max(MIN, value));
+
+                const applyWidth = (sidebar, value) => {
+                    const target = clampWidth(value || state.width || DEF);
+                    state.width = target;
+                    sidebar.style.setProperty('--fs-sidebar-width', `${target}px`);
+                };
+
+                const ensureResizer = () => {
+                    const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+                    if (!sidebar) { return; }
+
+                    applyWidth(sidebar, state.width);
+
+                    if (sidebar.querySelector('.fs-sidebar-resizer')) { return; }
+
+                    const resizer = doc.createElement('div');
+                    resizer.className = 'fs-sidebar-resizer';
+                    sidebar.appendChild(resizer);
+
+                    let dragging = false;
+                    let startX = 0;
+                    let startWidth = state.width || DEF;
+
+                    const onMouseDown = (event) => {
+                        dragging = true;
+                        resizer.classList.add('active');
+                        startX = event.clientX;
+                        const currentWidth = parseFloat(getComputedStyle(sidebar).width);
+                        startWidth = Number.isFinite(currentWidth) ? currentWidth : state.width || DEF;
+                        event.preventDefault();
+                    };
+
+                    const onMouseMove = (event) => {
+                        if (!dragging) { return; }
+                        const delta = event.clientX - startX;
+                        const newWidth = clampWidth(startWidth + delta);
+                        sidebar.style.setProperty('--fs-sidebar-width', `${newWidth}px`);
+                        state.width = newWidth;
+                    };
+
+                    const stopDrag = () => {
+                        if (!dragging) { return; }
+                        dragging = false;
+                        resizer.classList.remove('active');
+                        sidebar.style.setProperty('--fs-sidebar-width', `${state.width}px`);
+                    };
+
+                    resizer.addEventListener('mousedown', onMouseDown);
+                    doc.addEventListener('mousemove', onMouseMove);
+                    doc.addEventListener('mouseup', stopDrag);
+                    doc.addEventListener('mouseleave', stopDrag);
+
+                    const attrObserver = new MutationObserver(() => {
+                        const expanded = sidebar.getAttribute('aria-expanded');
+                        if (expanded !== 'false') {
+                            applyWidth(sidebar, state.width);
+                        }
+                    });
+                    attrObserver.observe(sidebar, { attributes: true, attributeFilter: ['aria-expanded'] });
+                };
+
+                const mo = new MutationObserver(() => ensureResizer());
+                mo.observe(doc.body, { childList: true, subtree: true });
+
+                ensureResizer();
+            })();
+            </script>
+            """,
+            unsafe_allow_html=True,
         )
 
         # Logo

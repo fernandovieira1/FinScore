@@ -566,13 +566,23 @@ Até aqui:
 [v. 0.8.04 (ia), de 27/09/2025] --> cache em nav e topbar funcionando, visual e formato dos nrs ok.
 ---
 
+=====Ajustes=====
+* (x) Diminuição da largura da sidebar, ajustes em cores e nova logo
+---
+Até aqui:
+[v. 0.8.05 (ia), de 27/09/2025]
+---
+
 =====Novidades=====
 * ( ) LLM /Análise
     * ( ) Resultados botão análise IA
     * ( ) Processamento IA em segundo plano
     * ( ) Setas cima, baixo, direita-esquerda
 * ( ) Aba Resumo
-
+---
+Até aqui:
+[v. 0.8.0x (ia), de xx/09/2025]
+---
 ......................................................................................................................
 ============
 4. PARECER

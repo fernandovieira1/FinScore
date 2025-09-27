@@ -59,6 +59,10 @@ table {
     --menu-text: #001733;
     --primary-btn: #5ea68d;
     --side-logo-top-fix: -38px;
+    --fs-sidebar-min: 220px;
+    --fs-sidebar-max: 547px;
+    --fs-sidebar-default: 274px;
+    --fs-sidebar-width: var(--fs-sidebar-default);
 }
 
 header[data-testid="stHeader"] {
@@ -131,9 +135,53 @@ span {
 
 
 /* -------- sidebar -------- */
+section[data-testid="stSidebar"] {
+    position: relative;
+    width: var(--fs-sidebar-width) !important;
+    min-width: var(--fs-sidebar-width) !important;
+    max-width: var(--fs-sidebar-width) !important;
+    flex: 0 0 var(--fs-sidebar-width) !important;
+    transition: width 0.12s ease-in-out;
+}
+
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    flex: 0 0 0 !important;
+}
+
+section[data-testid="stSidebar"] .fs-sidebar-resizer {
+    position: absolute;
+    top: 0;
+    right: -3px;
+    width: 6px;
+    min-width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    z-index: 1000;
+    transition: background 0.15s ease;
+}
+
+section[data-testid="stSidebar"] .fs-sidebar-resizer:hover,
+section[data-testid="stSidebar"] .fs-sidebar-resizer.active {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+section[data-testid="stSidebar"][aria-expanded="false"] .fs-sidebar-resizer {
+    display: none;
+}
+
 section[data-testid="stSidebar"]>div:first-child {
     background: #cdcdcd !important;
     padding-top: 0 !important;
+    width: 100% !important;
+    max-width: var(--fs-sidebar-width) !important;
+    padding-left: clamp(18px, 3vw, 28px) !important;
+    padding-right: clamp(18px, 3vw, 28px) !important;
 }
 
 /* Unifica fonte da sidebar com a topbar */
@@ -147,6 +195,12 @@ section[data-testid="stSidebar"]>div:first-child {
 section[data-testid="stSidebar"] .block-container {
     padding-top: 0 !important;
     padding-bottom: .8rem;
+    width: 100% !important;
+    max-width: var(--fs-sidebar-width) !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
 }
 
 section[data-testid="stSidebar"] .side-logo {
@@ -154,7 +208,7 @@ section[data-testid="stSidebar"] .side-logo {
     align-items: center;
     justify-content: center;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 4px 0 0 0 !important;
     border-bottom: none !important;
 }
 
@@ -185,14 +239,6 @@ section[data-testid="stSidebar"] .nav-link {
 section[data-testid="stSidebar"] .nav-link-selected {
     background-color: #bdbdbd !important;
     border-left: 4px solid #8a8a8a !important;
-}
-
-/* ocultar o botão de fechar/colapsar a sidebar */
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
-section[data-testid="stSidebar"] [data-testid="baseButton-header"],
-section[data-testid="stSidebar"] button[aria-label="Close"],
-section[data-testid="stSidebar"] button[aria-label="Fechar"] {
-    display: none !important;
 }
 
 hr {
