@@ -4,9 +4,11 @@ import copy
 import html
 import json
 import math
+import os
 import statistics
 import time
 import unicodedata
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
@@ -82,9 +84,17 @@ except Exception:
     _tabelas_module = None
 
 
-_REVIEW_EXECUTOR = ThreadPoolExecutor(max_workers=3)
+_REVIEW_EXECUTOR = ThreadPoolExecutor(max_workers=1)
 _INSIGHT_STYLES_FLAG = "_insight_styles_loaded"
+_INSIGHT_POLL_INTERVAL_MS = 1500
+_INSIGHT_POLL_INTERVAL_SEC = _INSIGHT_POLL_INTERVAL_MS / 1000.0
+_INSIGHT_POLL_LAST_KEY = "_insight_last_poll_ts"
+_INSIGHT_POLL_FLAG = "_insight_polling_active"
 
+_LLM_CALL_LOCK = threading.Lock()
+_LLM_LAST_CALL_TS = [0.0]
+_LLM_MIN_GAP = float(os.getenv("FINSCORE_LLM_MIN_GAP", "2.5"))
+_LLM_MAX_RETRIES = int(os.getenv("FINSCORE_LLM_MAX_RETRIES", "3"))
 
 _MAX_AUTO_ATTEMPTS = 2
 
@@ -93,6 +103,73 @@ def _get_review_tasks() -> Dict[str, Dict[str, Any]]:
     return st.session_state.setdefault("_review_tasks", {})
 
 
+def _call_review_llm_with_throttle(artifact_id: str, payload: Dict[str, Any]) -> ReviewSchema:
+    attempts = 0
+    last_error = None
+    while attempts < _LLM_MAX_RETRIES:
+        attempts += 1
+        with _LLM_CALL_LOCK:
+            now = time.time()
+            wait = _LLM_MIN_GAP - (now - _LLM_LAST_CALL_TS[0])
+            if wait > 0:
+                time.sleep(wait)
+            _LLM_LAST_CALL_TS[0] = time.time()
+        try:
+            return call_review_llm(artifact_id, payload)
+        except Exception as exc:  # handle rate limit fallback
+            message = str(exc).lower()
+            if 'rate limit' in message or '429' in message:
+                backoff = max(_LLM_MIN_GAP, _LLM_MIN_GAP * attempts)
+                time.sleep(backoff)
+                last_error = exc
+                continue
+            raise
+    raise RuntimeError(f'Falha ao gerar insight apos {_LLM_MAX_RETRIES} tentativas: {last_error}')
+
+
+
+
+
+
+def _ensure_insight_polling() -> None:
+    tasks = _get_review_tasks()
+    has_running = any((task or {}).get("status") in ("pending", "running") for task in tasks.values())
+    timer_active = st.session_state.get(_INSIGHT_POLL_FLAG, False)
+
+    if has_running:
+        st.session_state[_INSIGHT_POLL_FLAG] = True
+        st.markdown(
+            f"""
+            <script>
+            if (window.__fsInsightTimer) {{
+                clearTimeout(window.__fsInsightTimer);
+            }}
+            window.__fsInsightTimer = setTimeout(function () {{
+                window.parent.postMessage({{isStreamlitMessage: true, type: 'streamlit:rerun'}}, '*');
+            }}, {_INSIGHT_POLL_INTERVAL_MS});
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
+        last_ts = float(st.session_state.get(_INSIGHT_POLL_LAST_KEY, 0.0))
+        now_ts = time.time()
+        if now_ts - last_ts >= _INSIGHT_POLL_INTERVAL_SEC:
+            st.session_state[_INSIGHT_POLL_LAST_KEY] = now_ts
+            st.experimental_rerun()
+    elif timer_active:
+        st.session_state.pop(_INSIGHT_POLL_LAST_KEY, None)
+        st.session_state[_INSIGHT_POLL_FLAG] = False
+        st.markdown(
+            """
+            <script>
+            if (window.__fsInsightTimer) {
+                clearTimeout(window.__fsInsightTimer);
+                window.__fsInsightTimer = null;
+            }
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 
@@ -188,7 +265,7 @@ def _submit_review_task(artifact_id: str, artifact_meta: Dict[str, Any], *, auto
     tasks = _get_review_tasks()
     previous = tasks.get(artifact_id) or {}
     attempts = int(previous.get("attempts", 0)) + 1
-    future = _REVIEW_EXECUTOR.submit(call_review_llm, artifact_id, payload)
+    future = _REVIEW_EXECUTOR.submit(_call_review_llm_with_throttle, artifact_id, payload)
     tasks[artifact_id] = {
         "future": future,
         "status": "pending",
@@ -1638,6 +1715,7 @@ def render():
 
     _poll_review_tasks()
     _ensure_insight_styles()
+    _ensure_insight_polling()
 
     # CSS para centralizar as abas
     st.markdown(
@@ -1667,3 +1745,4 @@ def render():
         _render_graficos_tab_content()
     with tab_tabelas:
         _render_tabelas_tab_content()
+

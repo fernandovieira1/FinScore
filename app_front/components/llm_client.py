@@ -1,15 +1,27 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import json
 import logging
 import os
 import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
 load_dotenv()
+
+_env_candidates = [
+    Path(__file__).resolve().parent.parent / '.env',
+    Path(__file__).resolve().parent / '.env',
+]
+for _env_path in _env_candidates:
+    try:
+        if _env_path.is_file():
+            load_dotenv(_env_path, override=False)
+    except Exception:
+        pass
 
 from .schemas import ReviewSchema
 
@@ -198,65 +210,43 @@ INDEX_METADATA["dl ebitda x"] = INDEX_METADATA.get(_normalize_label("DL/EBITDA")
 def _prepare_metrics_payload(
     dados_resumo: Dict[str, Any],
     review_kind: str,
-) -> List[Dict[str, Any]]:
-    metrics: List[Dict[str, Any]] = []
+) -> List[Tuple[str, Any]]:
+    metrics: List[Tuple[str, Any]] = []
     for nome, info in dados_resumo.items():
-        if not isinstance(info, dict):
+        if len(metrics) >= 3:
+            break
+        valor = None
+        if isinstance(info, dict):
+            valor = info.get('ultimo')
+            if valor is None:
+                valor = info.get('valor')
+        elif isinstance(info, (int, float)):
+            valor = info
+        if valor in (None, '', []):
             continue
-        snapshot = {
-            "nome": nome,
-            "ultimo": info.get("ultimo"),
-            "tendencia": info.get("tendencia"),
-            "variacao_percentual": info.get("variacao_percentual"),
-        }
-        if review_kind == "indices":
-            normalized = _normalize_label(str(nome))
-            metadata = INDEX_METADATA.get(normalized, {})
-            if metadata.get("grupo"):
-                snapshot["grupo"] = metadata["grupo"]
-            if metadata.get("formula"):
-                snapshot["formula"] = metadata["formula"]
-        metrics.append({k: v for k, v in snapshot.items() if v not in (None, "")})
+        metrics.append((str(nome), valor))
+    if not metrics and dados_resumo.get('nota'):
+        metrics.append(('nota', dados_resumo['nota']))
     return metrics
 
-
 def build_prompt(artifact_id: str, artifact_meta: Dict[str, Any]) -> str:
-    review_kind = artifact_meta.get("review_kind", "raw")
-    title = artifact_meta.get("title")
-    mini_ctx = artifact_meta.get("mini_ctx", {})
-    dados_resumo = artifact_meta.get("dados_resumo", {})
-    metrics_payload = _prepare_metrics_payload(dados_resumo, review_kind)
-    metrics_text = json.dumps(metrics_payload, ensure_ascii=False, separators=(",", ":"))
-    minimal_ctx = {key: mini_ctx[key] for key in ("empresa", "anos_disponiveis") if key in mini_ctx}
-    ctx_text = json.dumps(minimal_ctx, ensure_ascii=False)
+    title = artifact_meta.get('title')
+    mini_ctx = artifact_meta.get('mini_ctx', {})
+    dados_resumo = artifact_meta.get('dados_resumo', {})
+    metrics_payload = _prepare_metrics_payload(dados_resumo, artifact_meta.get('review_kind', 'raw'))
+    metrics_dict = {nome: valor for nome, valor in metrics_payload}
+    metrics_text = json.dumps(metrics_dict, ensure_ascii=False, separators=(',', ':'))
+    minimal_ctx = {key: mini_ctx[key] for key in ('empresa', 'anos_disponiveis') if key in mini_ctx}
+    ctx_text = json.dumps(minimal_ctx, ensure_ascii=False) if minimal_ctx else 'null'
 
-    if review_kind == "indices":
-        instructions = f"""
-Analise rapida dos indices do artefato \"{title}\".
-Contexto: {ctx_text}
-Resumo em JSON: {metrics_text}
-
-Escreva UMA frase (ate 25 palavras) explicando o comportamento dominante dos indices e o impacto no risco; cite apenas um numero essencial, se preciso.
-Defina `sinal` como \"positivo\", \"neutro\" ou \"negativo\" coerente com a frase.
-Preencha `riscos` com no maximo um alerta objetivo; deixe a lista vazia se nao houver alerta imediato.
-
-Retorne apenas {{\"insight\": str, \"riscos\": list[str], \"sinal\": str}}.
+    instructions = f"""
+Analise as metrics do artefato '{title}' e escreva um paragrafo curto (ate 25 palavras) com a visao principal do analista.
+Classifique o parecer como positivo, neutro ou negativo, retornando apenas JSON no formato {{\"insight\": str, \"riscos\": list[str], \"sinal\": str}}.
+Considere as metricas: {metrics_text} e o contexto basico: {ctx_text}.
 """
-    else:
-        instructions = f"""
-Analise rapida das contas do artefato \"{title}\".
-Contexto: {ctx_text}
-Resumo em JSON: {metrics_text}
-
-Escreva UMA frase (ate 25 palavras) descrevendo o movimento principal das contas e suas implicacoes; cite um numero chave somente se indispensavel.
-Defina `sinal` como \"positivo\", \"neutro\" ou \"negativo\" coerente com a frase.
-Preencha `riscos` com no maximo um alerta objetivo; deixe a lista vazia se nao houver alerta imediato.
-
-Retorne apenas {{\"insight\": str, \"riscos\": list[str], \"sinal\": str}}.
-"""
-
 
     return instructions.strip()
+
 
 
 REVIEW_SYSTEM = (

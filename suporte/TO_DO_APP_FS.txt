@@ -30,7 +30,8 @@ Streamlit               : https://docs.streamlit.io/ (documentação)
                           https://share.streamlit.io/ (publish)
 Streamlit-option-menu   : https://github.com/victoryhb/streamlit-option-menu
 Streamlit deploy: https ://finscore-alpha.streamlit.app/?p=lanc
-OpenAI API              : https://platform.openai.com/api-keys
+OpenAI API Keys         : https://platform.openai.com/api-keys
+OpenAI Usage            : https://platform.openai.com/usage
 Boostrap                : https://getbootstrap.com/docs/5.3/components
 ......................................................................................................................
 
@@ -585,6 +586,7 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.8.06 (ia), de 28/09/2025]
+[v. 0.8.06a (ia), de 28/09/2025] - 'Processando' em análise sem funcionar
 ---
 ......................................................................................................................
 ============
