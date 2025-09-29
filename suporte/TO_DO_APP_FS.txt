@@ -23,14 +23,15 @@ Controle de Versões
 ====================================
 Links e dicas
 ====================================
-Logo: https://turbologo.com/
-Emojis: https://emojipedia.org/
-Cores hex: https://www.color-hex.com/
-Streamlit: https://docs.streamlit.io/ (documentação)
-           https://share.streamlit.io/ (publish)
-Streamlit-option-menu: https://github.com/victoryhb/streamlit-option-menu
-Streamlit deploy: https://finscore-alpha.streamlit.app/?p=lanc
-OpenAI: https://platform.openai.com/api-keys
+Logo                    : https://turbologo.com/
+Emojis                  : https://emojipedia.org/
+Cores hex               : https://www.color-hex.com/
+Streamlit               : https://docs.streamlit.io/ (documentação)
+                          https://share.streamlit.io/ (publish)
+Streamlit-option-menu   : https://github.com/victoryhb/streamlit-option-menu
+Streamlit deploy: https ://finscore-alpha.streamlit.app/?p=lanc
+OpenAI API              : https://platform.openai.com/api-keys
+Boostrap                : https://getbootstrap.com/docs/5.3/components
 ......................................................................................................................
 
 ====================================
@@ -575,13 +576,15 @@ Até aqui:
 
 =====Novidades=====
 * ( ) LLM /Análise
+    * (x) Reconfiguração de 'Gerar crítica da IA' para 'Insight', em popover
+    * ( ) Processamento IA em segundo plano não termina
     * ( ) Resultados botão análise IA
     * ( ) Processamento IA em segundo plano
     * ( ) Setas cima, baixo, direita-esquerda
 * ( ) Aba Resumo
 ---
 Até aqui:
-[v. 0.8.0x (ia), de xx/09/2025]
+[v. 0.8.06 (ia), de 28/09/2025]
 ---
 ......................................................................................................................
 ============

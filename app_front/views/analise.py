@@ -1,16 +1,19 @@
 # app_front/views/analise.py
 # coding: utf-8
-import unicodedata
+import copy
+import html
+import json
 import math
 import statistics
+import time
+import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
 import streamlit as st
 
 from components.llm_client import call_review_llm
 from components.schemas import ReviewSchema
-from components.state_manager import AppState
-from components.config import SLUG_MAP
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
@@ -77,6 +80,173 @@ try:
     from . import tabelas as _tabelas_module
 except Exception:
     _tabelas_module = None
+
+
+_REVIEW_EXECUTOR = ThreadPoolExecutor(max_workers=3)
+_INSIGHT_STYLES_FLAG = "_insight_styles_loaded"
+
+
+_MAX_AUTO_ATTEMPTS = 2
+
+
+def _get_review_tasks() -> Dict[str, Dict[str, Any]]:
+    return st.session_state.setdefault("_review_tasks", {})
+
+
+
+
+
+def _ensure_insight_styles() -> None:
+    if st.session_state.get(_INSIGHT_STYLES_FLAG):
+        return
+    st.markdown(
+        """
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+        />
+        <style>
+        .insight-button-wrapper { display: inline-block; }
+        .btn-insight {
+            display: inline-block;
+            padding: 0.45rem 1.4rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            border: none;
+            color: #ffffff;
+            background-color: #adb5bd;
+            cursor: not-allowed;
+            opacity: 0.65;
+            transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+        .btn-insight.ready {
+            background-color: #198754;
+            cursor: pointer;
+            opacity: 1;
+        }
+        .btn-insight.ready:hover { background-color: #157347; }
+        .btn-insight:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+        }
+        .insight-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            border: 0.16rem solid #0d6efd;
+            border-top-color: transparent;
+            animation: insight-spin 0.75s linear infinite;
+            margin-top: 0.4rem;
+        }
+        @keyframes insight-spin { to { transform: rotate(360deg); } }
+        .insight-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            margin-top: 0.35rem;
+        }
+        .insight-status-error { color: #dc3545; font-weight: 600; }
+        .insight-popover .popover-header { font-weight: 600; }
+        .insight-popover .popover-body { font-size: 0.9rem; color: #212529; }
+        .insight-popover .insight-text { margin-bottom: 0.6rem; }
+        .insight-popover .insight-sinal { display: inline-block; margin-bottom: 0.6rem; }
+        .insight-popover .badge { font-size: 0.75rem; }
+        .insight-popover .badge-positivo { background-color: #198754; }
+        .insight-popover .badge-neutro { background-color: #6c757d; }
+        .insight-popover .badge-negativo { background-color: #dc3545; }
+        .insight-popover .insight-riscos { padding-left: 1rem; margin: 0; }
+        .insight-popover .insight-riscos li { font-size: 0.84rem; }
+        </style>
+        <script>
+        (function() {
+            const win = window.parent || window;
+            if (!win || win.__FS_BOOTSTRAP_INIT__) { return; }
+            win.__FS_BOOTSTRAP_INIT__ = true;
+            const doc = win.document;
+            if (!doc.querySelector('script[data-fs-bootstrap]')) {
+                const script = doc.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
+                script.integrity = 'sha384-HoA5SgdAxeMR5X0xOYe/gkGEXUXMaLLfi5yRvDqxn6VOGGAIv/uGFo9Y8dU5I+4f';
+                script.crossOrigin = 'anonymous';
+                script.dataset.fsBootstrap = 'true';
+                doc.head.appendChild(script);
+            }
+        })();
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.session_state[_INSIGHT_STYLES_FLAG] = True
+
+
+def _submit_review_task(artifact_id: str, artifact_meta: Dict[str, Any], *, auto: bool = False) -> None:
+    payload = copy.deepcopy(artifact_meta)
+    tasks = _get_review_tasks()
+    previous = tasks.get(artifact_id) or {}
+    attempts = int(previous.get("attempts", 0)) + 1
+    future = _REVIEW_EXECUTOR.submit(call_review_llm, artifact_id, payload)
+    tasks[artifact_id] = {
+        "future": future,
+        "status": "pending",
+        "started_at": time.time(),
+        "attempts": attempts,
+        "auto": bool(auto),
+    }
+
+
+def _poll_review_tasks() -> None:
+    tasks = _get_review_tasks()
+    reviews = st.session_state.setdefault("reviews", {})
+    rerun_needed = False
+
+    for artifact_id, task in list(tasks.items()):
+        future = task.get("future")
+        if not future:
+            continue
+        if future.done():
+            if task.get("status") not in ("completed", "failed"):
+                try:
+                    review = future.result()
+                    if isinstance(review, ReviewSchema):
+                        payload = review.model_dump()
+                    else:
+                        dump = getattr(review, "model_dump", None)
+                        payload = dump() if callable(dump) else review
+                    if isinstance(payload, ReviewSchema):
+                        payload = payload.model_dump()
+                    if not isinstance(payload, dict):
+                        payload = {"insight": str(payload), "riscos": [], "sinal": "neutro", "status": "draft"}
+                    reviews[artifact_id] = payload
+                    task["status"] = "completed"
+                    task.pop("error", None)
+                except Exception as exc:
+                    task["status"] = "failed"
+                    task["error"] = str(exc)
+                task["completed_at"] = time.time()
+                task["notified"] = False
+        elif task.get("status") == "pending":
+            task["status"] = "running"
+
+    for artifact_id, task in tasks.items():
+        status = task.get("status")
+        if status in ("completed", "failed") and not task.get("notified"):
+            if status == "completed":
+                st.session_state["_analise_flash_id"] = artifact_id
+                st.session_state["_analise_flash_msg"] = "Insight gerado com sucesso."
+            else:
+                st.session_state["_analise_flash_id"] = artifact_id
+                st.session_state["_analise_flash_msg"] = task.get("error") or "Falha ao gerar insight."
+            task["notified"] = True
+            rerun_needed = True
+
+    if rerun_needed:
+        if st.query_params.get("p") != "analise":
+            st.query_params["p"] = "analise"
+        st.rerun()
 
 
 def _emit_captions(captions):
@@ -666,6 +836,7 @@ def _register_artifact(
     _artifact_box(artifact_id, title, mini_ctx, summary, review_kind)
 
 
+
 def _artifact_box(
     artifact_id: str,
     title: str,
@@ -676,58 +847,187 @@ def _artifact_box(
     ss = st.session_state
     meta = ss.setdefault("artifacts_meta", {})
     reviews = ss.setdefault("reviews", {})
+    tasks = _get_review_tasks()
     flash_id = ss.get("_analise_flash_id")
-    flash_msg = ss.get("_analise_flash_msg", "Critica gerada com sucesso.")
-    meta[artifact_id] = {
+    flash_msg = ss.get("_analise_flash_msg", "Insight gerado com sucesso.")
+
+    artifact_meta = {
         "title": title,
         "mini_ctx": dict(mini_ctx),
         "dados_resumo": dict(dados_resumo),
         "review_kind": review_kind,
         "artifact_id": artifact_id,
     }
-    col_a, col_b = st.columns([1, 1])
-    with col_a:
+    meta[artifact_id] = artifact_meta
+
+    review_payload = reviews.get(artifact_id)
+    has_review = review_payload is not None
+
+    task_state = tasks.get(artifact_id)
+    status = task_state.get("status") if task_state else None
+
+    if not has_review:
+        should_submit = False
+        if task_state is None:
+            should_submit = True
+        elif status == "failed" and task_state.get("auto"):
+            attempts = int(task_state.get("attempts", 0))
+            if attempts < _MAX_AUTO_ATTEMPTS:
+                should_submit = True
+        if should_submit:
+            _submit_review_task(artifact_id, artifact_meta, auto=True)
+            task_state = tasks.get(artifact_id)
+            status = task_state.get("status") if task_state else None
+
+    is_running = status in ("pending", "running")
+    has_error = status == "failed"
+    error_msg = task_state.get("error") if has_error else None
+    review_payload = reviews.get(artifact_id)
+    has_review = review_payload is not None
+
+    popover_id = f"insight-popover-{artifact_id}"
+    popover_html = "<div class='insight-popover-body'><p class='insight-text'>Insight em processamento...</p></div>"
+    if has_error and not is_running:
+        popover_html = (
+            "<div class='insight-popover-body'><p class='insight-text'>"
+            + html.escape(error_msg or "Falha ao gerar insight")
+            + "</p></div>"
+        )
+    elif has_review and review_payload:
+        insight_html = html.escape(review_payload.get("insight", ""))
+        sinal_value = (review_payload.get("sinal") or "neutro").lower()
+        sinal_label = sinal_value.capitalize()
+        riscos_list = review_payload.get("riscos") or []
+        riscos_items = (
+            "".join(f"<li>{html.escape(str(item))}</li>" for item in riscos_list)
+            if riscos_list
+            else "<li>Sem riscos destacados</li>"
+        )
+        popover_html = (
+            "<div class='insight-popover-body'>"
+            f"<p class='insight-text'>{insight_html}</p>"
+            f"<span class='badge insight-sinal badge-{sinal_value}'>{html.escape(sinal_label)}</span>"
+            f"<ul class='insight-riscos'>{riscos_items}</ul>"
+            "</div>"
+        )
+
+    popover_json = json.dumps(popover_html)
+    btn_ready = has_review and not is_running
+    button_class = "btn-insight ready" if btn_ready else "btn-insight"
+
+    button_col, status_col = st.columns([1, 0.2])
+    with button_col:
         if flash_id == artifact_id:
             st.success(flash_msg)
             ss.pop("_analise_flash_id", None)
             ss.pop("_analise_flash_msg", None)
-        if st.button("Gerar critica da IA", key=f"btn_{artifact_id}"):
-            with st.spinner("Gerando critica da IA..."):
-                artifact_meta = meta[artifact_id]
-                review: ReviewSchema = call_review_llm(artifact_id, artifact_meta)
-            reviews[artifact_id] = review.model_dump()
-            ss["_analise_flash_id"] = artifact_id
-            ss["_analise_flash_msg"] = "Critica gerada com sucesso."
-            # AppState.set_current_page(
-#                SLUG_MAP.get("analise", "Análise"),
-#                "analise_artifact",
-#                slug="analise",
-#            )
-            AppState.sync_to_query_params()
-            if st.query_params.get("p") != "analise":
-                st.query_params["p"] = "analise"
-            st.rerun()
-    with col_b:
-        if artifact_id in reviews:
-            rev = reviews[artifact_id]
-            st.json({k: v for k, v in rev.items() if k != "status"})
-            c1, c2, c3 = st.columns(3)
-            if c1.button("Aceitar", key=f"ok_{artifact_id}"):
-                rev["status"] = "accepted"
-                st.rerun()
-            if c2.button("Revisar", key=f"rev_{artifact_id}"):
-                rev["status"] = "needs_revision"
-                st.rerun()
-            if c3.button("Descartar", key=f"del_{artifact_id}"):
-                del reviews[artifact_id]
-                st.rerun()
-            note_key = f"obs_{artifact_id}"
-            obs_value = st.text_area(
-                "Observacao do analista",
-                value=rev.get("obs", ""),
-                key=note_key,
+        disabled_attr = "" if btn_ready else "disabled"
+        if btn_ready:
+            data_attrs = (
+                ' data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="focus"'
+                + ' data-bs-html="true" data-bs-custom-class="insight-popover" data-fs-insight-popover="1"'
             )
-            reviews[artifact_id]["obs"] = obs_value
+        else:
+            data_attrs = ' data-fs-insight-popover="1"'
+        st.markdown(
+            f"""
+            <div class="insight-button-wrapper">
+                <button type="button" class="{button_class}" id="{popover_id}" {disabled_attr}{data_attrs}>Insight</button>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"""
+            <script>
+            (function() {{
+                const win = window.parent || window;
+                if (!win) {{ return; }}
+                const doc = win.document;
+                const btn = doc.getElementById('{popover_id}');
+                if (!btn) {{ return; }}
+                const ready = {str(btn_ready).lower()};
+                const content = {popover_json};
+                if (ready) {{
+                    btn.removeAttribute('disabled');
+                    btn.classList.add('ready');
+                    btn.setAttribute('data-bs-toggle', 'popover');
+                    btn.setAttribute('data-bs-placement', 'bottom');
+                    btn.setAttribute('data-bs-trigger', 'focus');
+                    btn.setAttribute('data-bs-html', 'true');
+                    btn.setAttribute('data-bs-custom-class', 'insight-popover');
+                    btn.setAttribute('data-bs-content', content);
+                }} else {{
+                    btn.classList.remove('ready');
+                    btn.setAttribute('disabled', 'disabled');
+                    btn.removeAttribute('data-bs-toggle');
+                }}
+                const init = () => {{
+                    if (!win.bootstrap || !bootstrap.Popover) {{
+                        setTimeout(init, 120);
+                        return;
+                    }}
+                    if (ready) {{
+                        const instance = bootstrap.Popover.getOrCreateInstance(btn, {{container: 'body', html: true, trigger: 'focus', placement: 'bottom', customClass: 'insight-popover'}});
+                        instance.setContent({{'.popover-body': content}});
+                    }} else {{
+                        const instance = bootstrap.Popover.getInstance(btn);
+                        if (instance) {{ instance.dispose(); }}
+                    }}
+                }};
+                init();
+            }})();
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    if is_running:
+        status_col.markdown(
+            "<div class='insight-status'><span class='insight-spinner'></span><span>Processando...</span></div>",
+            unsafe_allow_html=True,
+        )
+    elif has_error:
+        safe_error = html.escape(error_msg or "Falha ao gerar insight")
+        status_col.markdown(
+            f"<div class='insight-status insight-status-error'>{safe_error}</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        status_col.empty()
+
+    if has_error and not is_running:
+        if st.button("Tentar novamente", key=f"retry_{artifact_id}"):
+            _submit_review_task(artifact_id, artifact_meta, auto=False)
+            st.rerun()
+
+    if not has_review and not is_running and not has_error:
+        st.caption("Insight sendo preparado automaticamente. Aguarde alguns instantes.")
+
+    if review_payload:
+        st.json({k: v for k, v in review_payload.items() if k != "status"})
+        c1, c2, c3 = st.columns(3)
+        if c1.button("Aceitar", key=f"ok_{artifact_id}"):
+            review_payload["status"] = "accepted"
+            st.rerun()
+        if c2.button("Revisar", key=f"rev_{artifact_id}"):
+            review_payload["status"] = "needs_revision"
+            st.rerun()
+        if c3.button("Descartar", key=f"del_{artifact_id}"):
+            reviews.pop(artifact_id, None)
+            st.rerun()
+
+        note_key = f"obs_{artifact_id}"
+        obs_value = st.text_area(
+            "Observacao do analista",
+            value=review_payload.get("obs", ""),
+            key=note_key,
+        )
+        review_payload["obs"] = obs_value
+
+        if st.button("Reprocessar insight", key=f"refresh_{artifact_id}", disabled=is_running):
+            _submit_review_task(artifact_id, artifact_meta, auto=False)
+            st.rerun()
 
 
 def _render_graficos_tab_content():
@@ -1333,6 +1633,12 @@ def render():
     ss.setdefault("reviews", {})
     ss.setdefault("artifacts_meta", {})
 
+    if st.query_params.get("p") != "analise":
+        st.query_params["p"] = "analise"
+
+    _poll_review_tasks()
+    _ensure_insight_styles()
+
     # CSS para centralizar as abas
     st.markdown(
         """
@@ -1361,4 +1667,3 @@ def render():
         _render_graficos_tab_content()
     with tab_tabelas:
         _render_tabelas_tab_content()
-

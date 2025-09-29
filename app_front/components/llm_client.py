@@ -5,6 +5,7 @@ import os
 import unicodedata
 from dataclasses import dataclass
 
+import requests
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
@@ -21,32 +22,11 @@ class _SimpleMessage:
 
 
 def _maybe_get_langchain_client(model: str, temperature: float):
-    try:
-        from langchain_openai import ChatOpenAI  # type: ignore
-    except Exception as exc:  # pragma: no cover - optional dependency
-        logger.info("langchain_openai not available: %s", exc)
-        return None
-
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        logger.warning("OPENAI_API_KEY missing; cannot build ChatOpenAI client")
-        return None
-
-    try:
-        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key)
-    except TypeError as exc:
-        if "proxies" in str(exc):
-            logger.warning("ChatOpenAI rejected proxies argument; falling back to REST")
-            return None
-        raise
-    except Exception as exc:  # pragma: no cover - defensive
-        logger.warning("ChatOpenAI initialization failed: %s", exc)
-        return None
+    # LangChain client disabled: environment lacks compatible dependencies.
+    return None
 
 
 def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessage:
-    import requests
-
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not configured")
@@ -63,7 +43,7 @@ def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessag
         "Content-Type": "application/json",
     }
 
-    response = requests.post(endpoint, json=payload, headers=headers, timeout=60)
+    response = requests.post(endpoint, json=payload, headers=headers, timeout=20)
     response.raise_for_status()
     data = response.json()
     try:
@@ -74,23 +54,47 @@ def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessag
 
 
 def _invoke_model(messages, model: str, temperature: float) -> str:
-    client = _maybe_get_langchain_client(model, temperature)
-    if client is not None:
+    _maybe_get_langchain_client(model, temperature)  # noop (mantido para compatibilidade futura)
+
+    tried_models: List[str] = []
+    last_exc: Exception | None = None
+    candidates = [model] + [fallback for fallback in MODEL_FALLBACKS if fallback and fallback != model]
+
+    for candidate in candidates:
+        tried_models.append(candidate)
         try:
-            result = client.invoke(messages)
-            return getattr(result, "content", None) or str(result)
-        except TypeError as exc:
-            if "proxies" not in str(exc):
-                raise
-            logger.warning("ChatOpenAI invoke failed due to proxies: %s", exc)
+            response = _call_openai_rest(messages, model=candidate, temperature=temperature)
+            if candidate != model:
+                logger.info("LLM fallback: usando modelo %s (preferido: %s)", candidate, model)
+            return response.content
+        except requests.exceptions.HTTPError as exc:  # type: ignore[attr-defined]
+            status = exc.response.status_code if exc.response is not None else None
+            if status in (400, 404):
+                logger.warning("Modelo %s indisponivel (%s). Tentando proxima opcao.", candidate, status)
+                last_exc = exc
+                continue
+            logger.error("Falha HTTP ao consultar modelo %s: %s", candidate, exc)
+            raise
         except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("ChatOpenAI invocation failed: %s", exc)
-    fallback = _call_openai_rest(messages, model=model, temperature=temperature)
-    return fallback.content
+            logger.error("Falha ao consultar modelo %s: %s", candidate, exc)
+            last_exc = exc
+            break
+
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError(f"Nao foi possivel invocar nenhum modelo: {tried_models}")
 
 
-MODEL_NAME = "gpt-4o-mini"
-MODEL_TEMPERATURE = 0.2
+MODEL_NAME = os.getenv("FINSCORE_LLM_MODEL", "gpt-4o-mini")
+MODEL_TEMPERATURE = float(os.getenv("FINSCORE_LLM_TEMPERATURE", "0.1"))
+MODEL_FALLBACKS = [
+    model for model in (
+        os.getenv("FINSCORE_LLM_FALLBACK1", "gpt-4o-mini"),
+        os.getenv("FINSCORE_LLM_FALLBACK2", "gpt-4o"),
+        os.getenv("FINSCORE_LLM_FALLBACK3", "gpt-4.1-mini"),
+    )
+    if model
+]
 
 
 INDEX_CATALOG: List[Dict[str, str]] = [
@@ -199,25 +203,20 @@ def _prepare_metrics_payload(
     for nome, info in dados_resumo.items():
         if not isinstance(info, dict):
             continue
-        if "serie" not in info:
-            continue
-        normalized = _normalize_label(str(nome))
-        metadata = INDEX_METADATA.get(normalized, {})
-        metrics.append(
-            {
-                "nome": nome,
-                "grupo": metadata.get("grupo") if review_kind == "indices" else None,
-                "formula": metadata.get("formula") if review_kind == "indices" else None,
-                "serie": info.get("serie"),
-                "estatisticas": info.get("estatisticas"),
-                "ultimo": info.get("ultimo"),
-                "media": info.get("media"),
-                "variacao_percentual": info.get("variacao_percentual"),
-                "variacao_absoluta": info.get("variacao_absoluta"),
-                "tendencia": info.get("tendencia"),
-                "anos": info.get("anos"),
-            }
-        )
+        snapshot = {
+            "nome": nome,
+            "ultimo": info.get("ultimo"),
+            "tendencia": info.get("tendencia"),
+            "variacao_percentual": info.get("variacao_percentual"),
+        }
+        if review_kind == "indices":
+            normalized = _normalize_label(str(nome))
+            metadata = INDEX_METADATA.get(normalized, {})
+            if metadata.get("grupo"):
+                snapshot["grupo"] = metadata["grupo"]
+            if metadata.get("formula"):
+                snapshot["formula"] = metadata["formula"]
+        metrics.append({k: v for k, v in snapshot.items() if v not in (None, "")})
     return metrics
 
 
@@ -227,103 +226,42 @@ def build_prompt(artifact_id: str, artifact_meta: Dict[str, Any]) -> str:
     mini_ctx = artifact_meta.get("mini_ctx", {})
     dados_resumo = artifact_meta.get("dados_resumo", {})
     metrics_payload = _prepare_metrics_payload(dados_resumo, review_kind)
-    metrics_text = json.dumps(metrics_payload, ensure_ascii=False, indent=2)
-    ctx_text = json.dumps(mini_ctx, ensure_ascii=False, indent=2)
+    metrics_text = json.dumps(metrics_payload, ensure_ascii=False, separators=(",", ":"))
+    minimal_ctx = {key: mini_ctx[key] for key in ("empresa", "anos_disponiveis") if key in mini_ctx}
+    ctx_text = json.dumps(minimal_ctx, ensure_ascii=False)
 
     if review_kind == "indices":
-        catalog_text = json.dumps(INDEX_CATALOG, ensure_ascii=False, indent=2)
         instructions = f"""
-Você é um especialista em análise financeira e contábil. Sua tarefa é interpretar profundamente os índices contábeis fornecidos, considerando três dimensões de análise.
+Analise rapida dos indices do artefato \"{title}\".
+Contexto: {ctx_text}
+Resumo em JSON: {metrics_text}
 
-Contexto do artefato: {title}
-Contexto adicional: {ctx_text}
+Escreva UMA frase (ate 25 palavras) explicando o comportamento dominante dos indices e o impacto no risco; cite apenas um numero essencial, se preciso.
+Defina `sinal` como \"positivo\", \"neutro\" ou \"negativo\" coerente com a frase.
+Preencha `riscos` com no maximo um alerta objetivo; deixe a lista vazia se nao houver alerta imediato.
 
-CATÁLOGO DE ÍNDICES (grupo, nome, fórmula):
-{catalog_text}
-
-DADOS FORNECIDOS (séries anuais, estatísticas e metadados por índice em JSON):
-{metrics_text}
-
-INSTRUÇÕES ESPECÍFICAS PARA A ANÁLISE:
-1. ANÁLISE INDIVIDUAL POR ANO:
-   - Para cada índice em cada ano, interprete qualitativamente o resultado numérico.
-   - Contextualize o significado do valor obtido e cite explicitamente o número usado.
-   - Classifique cada valor como "excelente", "bom", "regular", "ruim" ou "crítico" com base em parâmetros teóricos/setoriais.
-
-2. ANÁLISE DE TENDÊNCIA TEMPORAL:
-   - Identifique a direção da evolução entre os anos (aumento, diminuição ou estabilidade).
-   - Informe a variação percentual entre o primeiro e o último ano disponível.
-   - Avalie se a tendência é positiva, negativa ou neutra para a saúde financeira.
-   - Destaque pontos de virada relevantes.
-
-3. ANÁLISE ESTATÍSTICA DESCRITIVA:
-   - Utilize os valores fornecidos em "estatísticas" (média, amplitude, desvio padrão, variância, mínimo, máximo) para comentar estabilidade e dispersão.
-   - Relacione volatilidade com previsibilidade do indicador.
-
-FORMATO DE SAÍDA EXIGIDO (coloque o relatório completo dentro do campo "insight" do JSON final):
-Para cada índice, siga o layout:
-"[Nome do Índice] - [Fórmula]"
-- "Análise Anual Individual":
-  - "20XX: [valor] → [interpretação qualitativa citando o número e a classificação]"
-- "Tendência Temporal": descrição com variação percentual e classificação da tendência (positiva/negativa/estável).
-- "Estatística Descritiva":
-  * "Média: [valor] → [interpretação]"
-  * "Dispersão: amplitude de [valor] entre [min] e [max]"
-  * "Desvio Padrão" e "Variância" com leitura sobre volatilidade.
-
-REQUISITOS:
-- Use terminologia técnica com explicações claras.
-- Contextualize cada índice dentro de seu grupo.
-- Destaque inter-relações relevantes entre índices.
-- Cite sempre os números que embasam cada afirmação.
-- NÃO utilize informações de Serasa ou FinScore.
-
-INSTRUÇÕES PARA O JSON DE SAÍDA:
-- Retorne apenas um JSON com as chaves {{"insight": str, "riscos": list[str], "acoes": list[str], "sinal": str}}.
-- Coloque o relatório completo acima no campo "insight".
-- "riscos" deve listar até três riscos práticos identificados.
-- "acoes" deve listar recomendações acionáveis.
-- "sinal" deve ser "positivo", "neutro" ou "negativo", refletindo a visão geral.
+Retorne apenas {{\"insight\": str, \"riscos\": list[str], \"sinal\": str}}.
 """
     else:
         instructions = f"""
-Você é um especialista em análise contábil focado em dados brutos (valores absolutos e séries históricas). Analise o artefato "{title}" considerando as contas apresentadas.
+Analise rapida das contas do artefato \"{title}\".
+Contexto: {ctx_text}
+Resumo em JSON: {metrics_text}
 
-Contexto adicional: {ctx_text}
-DADOS FORNECIDOS (séries e estatísticas em JSON):
-{metrics_text}
+Escreva UMA frase (ate 25 palavras) descrevendo o movimento principal das contas e suas implicacoes; cite um numero chave somente se indispensavel.
+Defina `sinal` como \"positivo\", \"neutro\" ou \"negativo\" coerente com a frase.
+Preencha `riscos` com no maximo um alerta objetivo; deixe a lista vazia se nao houver alerta imediato.
 
-INSTRUÇÕES:
-1. Para cada conta, descreva os níveis por ano, comparando valores e percentuais de variação (quando disponíveis). Cite explicitamente os números.
-2. Identifique tendências (crescimento, queda, estabilidade) e explique possíveis implicações financeiras.
-3. Use as estatísticas (média, amplitude, desvio padrão, variância) para avaliar a estabilidade.
-4. Relacione contas entre si quando houver interdependência (ex.: Ativo vs Passivo).
-
-FORMATO DO RELATÓRIO (coloque tudo no campo "insight" do JSON final):
-- Para cada conta, apresente subtópicos com: panorama anual, tendência consolidada e leitura estatística (média, amplitude, volatilidade).
-- Termine com um parágrafo síntese destacando implicações operacionais.
-
-REQUISITOS:
-- Cite sempre os valores numéricos.
-- Explique termos técnicos de forma objetiva.
-- Não utilize referências a Serasa ou FinScore.
-
-JSON DE SAÍDA:
-- Retorne apenas um JSON com as chaves {{"insight": str, "riscos": list[str], "acoes": list[str], "sinal": str}}.
-- "insight" deve conter o relatório completo formatado.
-- "riscos" traga até três riscos relevantes.
-- "acoes" liste recomendações concretas.
-- "sinal" deve refletir a visão geral (positivo, neutro ou negativo).
+Retorne apenas {{\"insight\": str, \"riscos\": list[str], \"sinal\": str}}.
 """
+
 
     return instructions.strip()
 
 
 REVIEW_SYSTEM = (
-    "Você é um analista de crédito e risco financeiro. Responda SEMPRE com um único JSON contendo as chaves "
-    '{"insight": str, "riscos": [str], "acoes": [str], "sinal": "positivo|neutro|negativo"}. '
-    "O campo 'insight' deve trazer o relatório completo no formato exigido pelo usuário. Os campos 'riscos' e 'acoes' "
-    "devem ser listas de strings e 'sinal' um resumo categórico da visão final. Nunca inclua texto fora do JSON."
+    "Voce e um analista de credito. Responda SEMPRE com um unico JSON {\"insight\": str, \"riscos\": [str], \"sinal\": \"positivo|neutro|negativo\"}. "
+    "O campo 'insight' deve ser uma frase curta e objetiva. Use 'riscos' apenas para alertas diretos (pode ficar vazio) e 'sinal' deve resumir a visao final. Nao escreva nada fora do JSON."
 )
 
 
@@ -340,7 +278,6 @@ def call_review_llm(artifact_id: str, artifact_meta: Dict[str, Any]) -> ReviewSc
         fallback_payload = {
             "insight": f"Nao foi possivel gerar a analise automatica: {exc}",
             "riscos": [],
-            "acoes": [],
             "sinal": "neutro",
         }
         return ReviewSchema(**fallback_payload)
@@ -351,13 +288,13 @@ def call_review_llm(artifact_id: str, artifact_meta: Dict[str, Any]) -> ReviewSc
         candidate = text[start : end + 1]
         payload = json.loads(candidate)
     except Exception:
-        payload = {"insight": text.strip(), "riscos": [], "acoes": [], "sinal": "neutro"}
+        payload = {"insight": text.strip(), "riscos": [], "sinal": "neutro"}
 
-    if "acoes" not in payload and "acao" in payload:
-        payload["acoes"] = payload.pop("acao")
+    payload.pop("acoes", None)
+    payload.pop("acao", None)
 
     try:
         return ReviewSchema(**payload)
     except ValidationError:
-        fallback = {"insight": str(payload)[:400], "riscos": [], "acoes": [], "sinal": "neutro"}
+        fallback = {"insight": str(payload)[:400], "riscos": [], "sinal": "neutro"}
         return ReviewSchema(**fallback)

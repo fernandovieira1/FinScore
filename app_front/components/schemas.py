@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import BaseModel, Field
 
 SinalType = Literal["positivo", "neutro", "negativo"]
 StatusType = Literal["draft", "accepted", "needs_revision"]
@@ -9,11 +9,6 @@ StatusType = Literal["draft", "accepted", "needs_revision"]
 class ReviewSchema(BaseModel):
     insight: str = Field(..., description="Resumo objetivo do que o artefato mostra")
     riscos: List[str] = Field(default_factory=list, description="Riscos relevantes")
-    acoes: List[str] = Field(
-        default_factory=list,
-        description="Acoes sugeridas ou mitigacoes",
-        validation_alias=AliasChoices("acoes", "acao"),
-    )
     sinal: SinalType = "neutro"
     status: StatusType = "draft"
 
