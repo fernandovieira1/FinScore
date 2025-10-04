@@ -112,153 +112,157 @@ def _build_parecer_prompt(
     dados_formatados = json.dumps(analysis_data, ensure_ascii=False, indent=2, default=str)
     
     prompt = f"""
-Você é um analista de crédito sênior. Redija um parecer financeiro técnico, claro e analítico em **Markdown puro** (sem HTML).
+Você é um analista de crédito sênior com 15+ anos de experiência em avaliação de risco corporativo.
+Sua tarefa é redigir um parecer técnico profissional baseado nos dados financeiros e na decisão determinística fornecida.
 
-**DADOS DA EMPRESA:**
-- Empresa: {empresa}
-- CNPJ: {cnpj}
+**CONTEXTO DA ANÁLISE:**
+Empresa: {empresa}
+CNPJ: {cnpj}
 
-**DECISÃO DETERMINÍSTICA (INALTERÁVEL):**
-- Decisão: {decisao_motor}
-- Motivos: {', '.join(motivos_motor) if motivos_motor else 'Nenhum motivo específico'}
-- Covenants: {', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant'}
+**PRÉ-VEREDITO (INALTERÁVEL):**
+Decisão: {decisao_motor}
+Motivos: {', '.join(motivos_motor) if motivos_motor else 'Nenhum motivo específico'}
+Covenants sugeridos: {', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant'}
 
-**DADOS FINANCEIROS:**
+**METODOLOGIA DE CLASSIFICAÇÃO:**
+
+FinScore - Faixas de Risco:
+• Muito Abaixo do Risco: > 875 pontos (risco mínimo)
+• Levemente Abaixo do Risco: 750-875 pontos (risco controlado)
+• Neutro: 250-750 pontos (risco moderado)
+• Levemente Acima do Risco: 125-250 pontos (risco elevado)
+• Muito Acima do Risco: < 125 pontos (risco crítico)
+
+Serasa - Classificação de Crédito:
+• Excelente: 851-1000 pontos
+• Bom: 701-850 pontos
+• Baixo: 0-400 pontos
+• Muito Baixo: sem cadastro ou dados insuficientes
+
+Critérios de Decisão:
+1. FinScore = indicador PRIMÁRIO (define aprovação/reprovação)
+2. Serasa = complementar (pode adicionar ressalvas)
+3. DL/EBITDA ≤ 3,0x (meta de endividamento saudável)
+4. Cobertura de Juros ≥ 1,5x (capacidade mínima de pagamento)
+
+**DADOS FINANCEIROS COMPLETOS:**
 {dados_formatados}
 
-**ESTRUTURA OBRIGATÓRIA (siga exatamente):**
+**ESTRUTURA OBRIGATÓRIA DO PARECER:**
 
 ## 1. Introdução
-
-Apresente a empresa ({empresa}, CNPJ {cnpj}) e o objetivo do parecer: avaliar sua capacidade de crédito com base nos indicadores financeiros e no FinScore.
-
----
+Breve contextualização da empresa e objetivo da análise (2-3 frases).
 
 ## 2. Resumo Executivo
-
-Um parágrafo de 5–8 linhas com:
-- Destaques principais: FinScore e Serasa (valores e classificações)
-- Pontos fortes e eventuais fragilidades
-- Conclusão direta: aprovar ou não o crédito, com justificativa
-- Indicação se há ou não covenants necessários
-
----
+Visão geral da situação financeira e patrimonial da empresa, destacando:
+- Classificação FinScore e Serasa
+- Principal conclusão sobre capacidade de pagamento
+- Recomendação de crédito (2-3 parágrafos)
 
 ## 3. Metodologia
 
-Descreva objetivamente:
-- O que é o **FinScore** (score proprietário via PCA sobre 15+ indicadores financeiros, dividido em 5 faixas)
-- O que é o **Serasa Score** (indicador externo de mercado)
-- Critério de decisão: FinScore é primário; Serasa é complementar
+Este parecer utiliza dois sistemas complementares de avaliação de risco de crédito:
 
-**Tabela – FinScore**
+**FinScore** é o score proprietário principal, calculado através de análise multivariada (PCA) de 15+ indicadores financeiros, resultando em uma pontuação que classifica o risco da empresa em 5 faixas:
 
 | Faixa de Pontuação | Classificação de Risco |
-|-------------------:|:-----------------------|
+|-------------------|------------------------|
 | > 875 | Muito Abaixo do Risco |
-| 750 – 875 | Levemente Abaixo do Risco |
-| 250 – 750 | Neutro |
-| 125 – 250 | Levemente Acima do Risco |
+| 750 - 875 | Levemente Abaixo do Risco |
+| 250 - 750 | Neutro |
+| 125 - 250 | Levemente Acima do Risco |
 | < 125 | Muito Acima do Risco |
 
-**Tabela – Serasa**
+**Serasa Score** é o indicador de mercado utilizado como complemento, refletindo o comportamento de crédito da empresa no mercado brasileiro:
 
 | Faixa de Pontuação | Classificação |
-|-------------------:|:--------------|
-| 851 – 1000 | Excelente |
-| 701 – 850 | Bom |
-| 0 – 400 | Baixo |
+|-------------------|---------------|
+| 851 - 1000 | Excelente |
+| 701 - 850 | Bom |
+| 0 - 400 | Baixo |
 | Sem cadastro | Muito Baixo |
 
----
+**Critério de Decisão:** O FinScore é o indicador primário para aprovação ou reprovação de crédito. O Serasa complementa a análise e pode adicionar ressalvas (covenants) quando indicar risco adicional, mesmo com FinScore aprovando.
 
 ## 4. Análise Detalhada dos Indicadores
 
-### 4.1 Liquidez
-
-Apresente e interprete:
-- Liquidez Corrente
-- Liquidez Seca
+### 4.1 Indicadores de Liquidez
+Analise TODOS os índices disponíveis:
+- Liquidez Corrente, Liquidez Seca, Liquidez Imediata
 - CCL/Ativo Total
+- Interprete se a empresa tem capacidade de honrar obrigações de curto prazo
 
-Comente sobre capacidade de pagamento de curto prazo, eventuais alertas (como liquidez seca negativa) e possíveis causas.
+### 4.2 Indicadores de Endividamento e Estrutura de Capital
+Analise TODOS os índices disponíveis:
+- Alavancagem (DL/EBITDA)
+- Endividamento (Passivo/Ativo)
+- Cobertura de Juros (EBITDA/Despesas Financeiras)
+- Composição do Endividamento
+- Avalie se a estrutura de capital é saudável
 
-### 4.2 Endividamento e Estrutura de Capital
-
-Analise:
-- DL/EBITDA (Alavancagem)
-- Passivo/Ativo (Endividamento)
-- Cobertura de Juros
-
-Indique se a empresa apresenta equilíbrio de capital e capacidade de pagamento de juros.
-
-### 4.3 Rentabilidade
-
-Avalie:
+### 4.3 Indicadores de Rentabilidade
+Analise TODOS os índices disponíveis:
 - ROE (Retorno sobre Patrimônio)
 - ROA (Retorno sobre Ativos)
 - Margem Líquida
 - Margem EBITDA
+- Avalie a capacidade de geração de lucro
 
-Comente sobre retorno ao acionista, eficiência na geração de lucros e eventuais margens anômalas (>100%).
-
-### 4.4 Eficiência Operacional
-
-Inclua:
-- PMR, PMP, Giro do Ativo (ou "ND" se ausentes)
-
-Quando possível, relacione Receita Total e Ativo Total para inferir eficiência.
+### 4.4 Indicadores de Eficiência Operacional
+Analise TODOS os índices disponíveis:
+- PMR (Prazo Médio de Recebimento)
+- PMP (Prazo Médio de Pagamento)
+- PME (Prazo Médio de Estocagem)
+- Giro do Ativo
+- Ciclo Operacional e Ciclo Financeiro
+- Avalie a eficiência da gestão operacional
 
 ### 4.5 Dados Patrimoniais e de Resultado
-
-Apresente em formato tabular:
-
-| Indicador | Valor |
-|-----------|------:|
-| Receita Total | [valor] |
-| Lucro Líquido | [valor] |
-| Ativo Total | [valor] |
-| Patrimônio Líquido | [valor] |
-| Passivo Total | [valor] |
-
-Finalize com 2–3 frases sobre o porte e desempenho geral.
-
----
+Mencione valores absolutos quando disponíveis:
+- Receita Total
+- Lucro Líquido
+- EBITDA
+- Ativo Total
+- Patrimônio Líquido
+- Passivo Total
+- Contextualize o porte e evolução da empresa
 
 ## 5. Análise de Risco e Scoring
 
 ### 5.1 FinScore
-
-Explique o valor e a classificação do FinScore. Interprete o significado em termos de solidez patrimonial e risco de inadimplência.
+- Valor obtido: [mencionar pontuação exata]
+- Classificação: [mencionar faixa]
+- Interpretação detalhada do que significa esse score
 
 ### 5.2 Serasa
-
-Analise o valor e a classificação Serasa, destacando como complementa o FinScore e se sugere atenção adicional.
+- Valor obtido: [mencionar pontuação exata]
+- Classificação: [mencionar faixa]
+- Como complementa a análise do FinScore
 
 ### 5.3 Síntese de Risco
-
-Compare e concilie FinScore e Serasa, indicando convergências e eventuais tensões entre as avaliações.
-
----
+Consolidação dos dois scores e o que indicam sobre o risco de crédito.
 
 ## 6. Considerações Finais
+- Reitere a decisão: {decisao_motor}
+- Justificativa técnica final baseada nos dados
+- Se houver covenants, explique em detalhes cada um e sua importância
+- Recomendações adicionais (ex: monitoramento, condições especiais)
 
-- Apresente a **decisão final**: {decisao_motor}
-- Justifique em 3–4 bullets os principais fundamentos da decisão
-- Mencione se há **covenants** (ex.: limites de endividamento, envio de balanços trimestrais)
-- Acrescente uma **recomendação de monitoramento** contínuo, se aplicável
-
----
-
-**DIRETRIZES:**
-✓ Markdown puro (sem HTML)
-✓ Linguagem técnica, clara e analítica
-✓ Transições suaves entre seções
-✓ Use valores EXATOS dos dados fornecidos
-✓ Percentuais: 15% (não 0,15)
-✓ Múltiplos: 2,5x (não 2,5)
+**DIRETRIZES DE REDAÇÃO:**
+✓ Use linguagem técnica mas acessível
+✓ Seja objetivo e direto
+✓ Sempre justifique com números e fatos dos dados fornecidos
+✓ Destaque tanto pontos positivos quanto negativos
+✓ CITE valores exatos dos índices (não generalize)
+✓ Mencione TODOS os índices presentes nos dados
+✓ Use percentuais para margens e retornos (ex: 15% em vez de 0,15)
+✓ Use "x vezes" para múltiplos (ex: 2,5x em vez de 2,5)
 ✓ Máximo 1000 palavras
-✓ A decisão {decisao_motor} é FINAL e INALTERÁVEL
+✓ Formatação markdown: use ##, **, - para estruturar
+
+**REGRA FUNDAMENTAL:**
+A decisão "{decisao_motor}" é FINAL e IMUTÁVEL.
+Você NÃO decide - você REDIGE e JUSTIFICA a decisão já tomada.
 """
     return prompt.strip()
 
