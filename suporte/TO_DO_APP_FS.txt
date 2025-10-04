@@ -590,6 +590,10 @@ Até aqui:
 Desistência da ideia de processamento em segundo plano. O Streamlit não permite.
 ---
 
+......................................................................................................................
+============
+4. PARECER
+============
 =====Ajustes=====
 * (x) Readequação do prompt para o LLM com a exclusão das análises parciais e /Análise
 =====Novidades=====
@@ -618,14 +622,12 @@ Até aqui:
 [v. 0.8.09 (ia), de 03/10/2025]
 ---
 
-
-......................................................................................................................
-============
-4. PARECER
-============
-* ( ) Definir e configurar dados que servirão de parâmetro.
-* ( ) Configurar modelo padrão.
-* ( ) Testar diferentes resultados/cenários.
+=====Ajustes=====
+* (x) Geração do parecer - versão alpha3
+---
+Até aqui:
+[v. 0.8.10 (ia), de 04/10/2025]
+---
 
 ......................................................................................................................
 ============

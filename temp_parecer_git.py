@@ -112,168 +112,33 @@ def _build_parecer_prompt(
     dados_formatados = json.dumps(analysis_data, ensure_ascii=False, indent=2, default=str)
     
     prompt = f"""
-Você é um analista de crédito sênior com 15+ anos de experiência em avaliação de risco corporativo.
-Sua tarefa é redigir um parecer técnico profissional baseado nos dados financeiros e na decisão determinística fornecida.
+Você é um analista de crédito experiente. Gere um parecer técnico completo e profissional para análise de crédito.
 
-**CONTEXTO DA ANÁLISE:**
-Empresa: {empresa}
-CNPJ: {cnpj}
+**EMPRESA:** {empresa} (CNPJ: {cnpj})
 
-**PRÉ-VEREDITO (INALTERÁVEL):**
-Decisão: {decisao_motor}
-Motivos: {', '.join(motivos_motor) if motivos_motor else 'Nenhum motivo específico'}
-Covenants sugeridos: {', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant'}
+**PRÉ-VEREDITO DETERMINÍSTICO (NÃO ALTERE):**
+- Decisão: {decisao_motor}
+- Motivos: {', '.join(motivos_motor) if motivos_motor else 'Nenhum motivo adicional'}
+- Covenants sugeridos: {', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant específico'}
 
-**METODOLOGIA DE CLASSIFICAÇÃO:**
-
-FinScore - Faixas de Risco:
-• Muito Abaixo do Risco: > 875 pontos (risco mínimo)
-• Levemente Abaixo do Risco: 750-875 pontos (risco controlado)
-• Neutro: 250-750 pontos (risco moderado)
-• Levemente Acima do Risco: 125-250 pontos (risco elevado)
-• Muito Acima do Risco: < 125 pontos (risco crítico)
-
-Serasa - Classificação de Crédito:
-• Excelente: 851-1000 pontos
-• Bom: 701-850 pontos
-• Baixo: 0-400 pontos
-• Muito Baixo: sem cadastro ou dados insuficientes
-
-Critérios de Decisão:
-1. FinScore = indicador PRIMÁRIO (define aprovação/reprovação)
-2. Serasa = complementar (pode adicionar ressalvas)
-3. DL/EBITDA ≤ 3,0x (meta de endividamento saudável)
-4. Cobertura de Juros ≥ 1,5x (capacidade mínima de pagamento)
-
-**DADOS FINANCEIROS COMPLETOS:**
+**DADOS DA ANÁLISE FINANCEIRA:**
 {dados_formatados}
 
-**ESTRUTURA OBRIGATÓRIA DO PARECER:**
+**INSTRUÇÕES:**
+1. Mantenha a decisão do motor ({decisao_motor}) como FINAL e INALTERÁVEL
+2. Redija um parecer narrativo estruturado em seções:
+   - Resumo Executivo (2-3 parágrafos)
+   - Análise dos Indicadores Financeiros (liquidez, endividamento, rentabilidade, eficiência)
+   - Análise de Risco (baseado em FinScore e Serasa)
+   - Conclusão e Recomendações
+3. Use linguagem técnica mas acessível
+4. Destaque pontos positivos e negativos de forma equilibrada
+5. Justifique a decisão com base nos dados apresentados
+6. Se houver covenants, explique sua importância
+7. Máximo de 800 palavras
+8. Use markdown para formatação (**, ##, -, etc)
 
-**ATENÇÃO CRÍTICA:** Use PONTO (.) como separador de numeração de seções, NUNCA vírgula (,).
-Correto: 4.1, 4.2, 5.1, 5.2
-Errado: 4,1, 4,2, 5,1, 5,2
-
-## 1. Introdução
-Breve contextualização da empresa e objetivo da análise (2-3 frases).
-
-## 2. Resumo Executivo
-Visão geral da situação financeira e patrimonial da empresa, destacando:
-- Classificação FinScore e Serasa
-- Principal conclusão sobre capacidade de pagamento
-- Recomendação de crédito (2-3 parágrafos)
-
-## 3. Metodologia
-
-Este parecer utiliza dois sistemas complementares de avaliação de risco de crédito:
-
-**FinScore** é o score proprietário principal, calculado através de análise multivariada (PCA) de 15+ indicadores financeiros, resultando em uma pontuação que classifica o risco da empresa em 5 faixas:
-
-| Faixa de Pontuação | Classificação de Risco |
-|-------------------|------------------------|
-| > 875 | Muito Abaixo do Risco |
-| 750 - 875 | Levemente Abaixo do Risco |
-| 250 - 750 | Neutro |
-| 125 - 250 | Levemente Acima do Risco |
-| < 125 | Muito Acima do Risco |
-
-**Serasa Score** é o indicador de mercado utilizado como complemento, refletindo o comportamento de crédito da empresa no mercado brasileiro:
-
-| Faixa de Pontuação | Classificação |
-|-------------------|---------------|
-| 851 - 1000 | Excelente |
-| 701 - 850 | Bom |
-| 0 - 400 | Baixo |
-| Sem cadastro | Muito Baixo |
-
-**Critério de Decisão:** O FinScore é o indicador primário para aprovação ou reprovação de crédito. O Serasa complementa a análise e pode adicionar ressalvas (covenants) quando indicar risco adicional, mesmo com FinScore aprovando.
-
-## 4. Análise Detalhada dos Indicadores
-
-**LEMBRE-SE: Use 4.1, 4.2, 4.3, 4.4, 4.5 (com PONTO, não vírgula)**
-
-### 4.1 Indicadores de Liquidez
-Analise TODOS os índices disponíveis:
-- Liquidez Corrente, Liquidez Seca, Liquidez Imediata
-- CCL/Ativo Total
-- Interprete se a empresa tem capacidade de honrar obrigações de curto prazo
-
-### 4.2 Indicadores de Endividamento e Estrutura de Capital
-Analise TODOS os índices disponíveis:
-- Alavancagem (DL/EBITDA)
-- Endividamento (Passivo/Ativo)
-- Cobertura de Juros (EBITDA/Despesas Financeiras)
-- Composição do Endividamento
-- Avalie se a estrutura de capital é saudável
-
-### 4.3 Indicadores de Rentabilidade
-Analise TODOS os índices disponíveis:
-- ROE (Retorno sobre Patrimônio)
-- ROA (Retorno sobre Ativos)
-- Margem Líquida
-- Margem EBITDA
-- Avalie a capacidade de geração de lucro
-
-### 4.4 Indicadores de Eficiência Operacional
-Analise TODOS os índices disponíveis:
-- PMR (Prazo Médio de Recebimento)
-- PMP (Prazo Médio de Pagamento)
-- PME (Prazo Médio de Estocagem)
-- Giro do Ativo
-- Ciclo Operacional e Ciclo Financeiro
-- Avalie a eficiência da gestão operacional
-
-### 4.5 Dados Patrimoniais e de Resultado
-Mencione valores absolutos quando disponíveis:
-- Receita Total
-- Lucro Líquido
-- EBITDA
-- Ativo Total
-- Patrimônio Líquido
-- Passivo Total
-- Contextualize o porte e evolução da empresa
-
-## 5. Análise de Risco e Scoring
-
-**LEMBRE-SE: Use 5.1, 5.2, 5.3 (com PONTO, não vírgula)**
-
-### 5.1 FinScore
-- Valor obtido: [mencionar pontuação exata]
-- Classificação: [mencionar faixa]
-- Interpretação detalhada do que significa esse score
-
-### 5.2 Serasa
-- Valor obtido: [mencionar pontuação exata]
-- Classificação: [mencionar faixa]
-- Como complementa a análise do FinScore
-
-### 5.3 Síntese de Risco
-Consolidação dos dois scores e o que indicam sobre o risco de crédito.
-
-## 6. Considerações Finais
-- Reitere a decisão: {decisao_motor}
-- Justificativa técnica final baseada nos dados
-- Se houver covenants, explique em detalhes cada um e sua importância
-- Recomendações adicionais (ex: monitoramento, condições especiais)
-
-**ATENÇÃO:** A seção 3 (Metodologia) DEVE incluir a tabela de classificação no formato markdown mostrado acima.
-
-**DIRETRIZES DE REDAÇÃO:**
-✓ Use linguagem técnica mas acessível
-✓ Seja objetivo e direto
-✓ Sempre justifique com números e fatos dos dados fornecidos
-✓ Destaque tanto pontos positivos quanto negativos
-✓ CITE valores exatos dos índices (não generalize)
-✓ Mencione TODOS os índices presentes nos dados
-✓ Use percentuais para margens e retornos (ex: 15% em vez de 0,15)
-✓ Use "x vezes" para múltiplos (ex: 2,5x em vez de 2,5)
-✓ Máximo 1000 palavras
-✓ Formatação markdown: use ##, **, - para estruturar
-✓ IMPORTANTE: Use PONTO como separador de seções (4.1, 4.2, 5.1) NUNCA vírgula (4,1, 4,2, 5,1)
-
-**REGRA FUNDAMENTAL:**
-A decisão "{decisao_motor}" é FINAL e IMUTÁVEL.
-Você NÃO decide - você REDIGE e JUSTIFICA a decisão já tomada.
+**IMPORTANTE:** A decisão final é "{decisao_motor}" e isso NÃO PODE ser alterado pela sua análise.
 """
     return prompt.strip()
 
@@ -328,34 +193,21 @@ def _fix_formatting_issues(text: str) -> str:
         text = text.replace(ch, '')
     text = text.replace('\u00A0', ' ')
     
-    # 3) Corrigir numeração de seções: vírgula -> ponto em títulos markdown
-    text = re.sub(r'^(#{2,3}\s+)(\d+),(\d+)(\s+)', r'\1\2.\3\4', text, flags=re.MULTILINE)
-    
-    # 4) Correções monetárias
+    # 3) Correções monetárias (PRINCIPAL PROBLEMA)
     # "R 0.83" ou "R 210" -> "R$ 0,83" ou "R$ 210"
     text = re.sub(r'\bR\s+(\d+[.,]?\d*)', r'R$ \1', text)
     text = re.sub(r'R\$(?!\s)', r'R$ ', text)
     
-    # 5) Converter ponto decimal para vírgula (padrão BR)
-    # Processar linha por linha para NÃO afetar títulos markdown
-    lines = text.split('\n')
-    result_lines = []
-    for line in lines:
-        if line.strip().startswith('#'):
-            # Linhas com # (títulos) mantêm pontos na numeração
-            result_lines.append(line)
-        else:
-            # Outras linhas: converter ponto para vírgula em decimais
-            result_lines.append(re.sub(r'(\d+)\.(\d+)', r'\1,\2', line))
-    text = '\n'.join(result_lines)
+    # "de 0.83" ou "de 0,83" -> "de 0,83" (vírgula decimal BR)
+    text = re.sub(r'(\d+)\.(\d+)', r'\1,\2', text)
     
-    # 5) Escapar $ para evitar MathJax
+    # 4) Escapar $ para evitar MathJax
     text = re.sub(r'(?<!\\)\$', r'\\$', text)
     
-    # 6) Espaços múltiplos
+    # 5) Espaços múltiplos
     text = re.sub(r'([^\n]) {2,}', r'\1 ', text)
     
-    # 7) Espaços antes de pontuação
+    # 6) Espaços antes de pontuação
     text = re.sub(r' +([,.;:!?])', r'\1', text)
     
     return text
@@ -414,59 +266,31 @@ def render():
             "nao_aprovar": "❌ Não Aprovar"
         }.get(resultado["decisao"], resultado["decisao"])
         
-        # Usar container com quebra de linha automática
-        st.markdown(f"**Decisão Final**")
-        st.markdown(f"<div style='white-space: normal; word-wrap: break-word;'>{decisao_label}</div>", unsafe_allow_html=True)
+        st.metric("Decisão Final", decisao_label)
     
     with col2:
         if resultado.get("motivos"):
             st.markdown("**Motivos:**")
             for motivo in resultado["motivos"]:
-                # Adicionar Serasa entre parênteses se o motivo mencionar FinScore
-                if "FinScore" in motivo and finscore_aj:
-                    motivo_formatado = motivo.replace(f"({finscore_aj:.0f})", f"(FinScore: {finscore_aj:.0f})")
-                elif "Serasa" in motivo and o.get("serasa"):
-                    serasa_val = o.get("serasa")
-                    if f"({serasa_val})" not in motivo:
-                        motivo_formatado = motivo.replace("Serasa", f"Serasa ({serasa_val})")
-                    else:
-                        motivo_formatado = motivo
-                else:
-                    motivo_formatado = motivo
-                st.markdown(f"- {motivo_formatado}")
-        
-        # Adicionar bullet com resumo de índices relevantes
-        st.markdown("**Resumo dos Principais Indicadores:**")
-        resumo_items = []
-        
-        # Liquidez
-        liq_corrente = _safe_float(indices_row.get("Liquidez Corrente"))
-        if liq_corrente:
-            resumo_items.append(f"Liquidez Corrente: {liq_corrente:.2f}x")
-        
-        # Endividamento
-        if dl_ebitda:
-            resumo_items.append(f"DL/EBITDA: {dl_ebitda:.2f}x")
-        
-        # Rentabilidade
-        roe = _safe_float(indices_row.get("ROE"))
-        if roe:
-            resumo_items.append(f"ROE: {roe:.2%}")
-        
-        # Eficiência
-        margem_ebitda = _safe_float(indices_row.get("Margem EBITDA"))
-        if margem_ebitda:
-            resumo_items.append(f"Margem EBITDA: {margem_ebitda:.2%}")
-        
-        if resumo_items:
-            st.markdown(f"- {' | '.join(resumo_items)}")
-        else:
-            st.markdown("- Dados insuficientes para resumo")
+                st.markdown(f"- {motivo}")
         
         if resultado.get("covenants"):
             st.markdown("**Covenants Sugeridos:**")
             for covenant in resultado["covenants"]:
                 st.markdown(f"- 📌 {covenant}")
+    
+    # Dados chave usados na decisão
+    with st.expander("📊 Ver dados-chave da decisão"):
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            st.metric("FinScore Ajustado", f"{finscore_aj:.0f}" if finscore_aj else "N/A")
+            st.caption(cls_fin or "N/A")
+        with col_b:
+            st.metric("DL/EBITDA", f"{dl_ebitda:.2f}x" if dl_ebitda else "N/A")
+            st.caption("Meta: ≤ 3.0x")
+        with col_c:
+            st.metric("Cobertura Juros", f"{cobertura:.2f}x" if cobertura else "N/A")
+            st.caption("Meta: ≥ 1.5x")
 
     st.divider()
 
@@ -485,7 +309,16 @@ def render():
     """)
     
     # Botão para gerar parecer
-    gerar = st.button("🤖 Gerar Parecer IA", use_container_width=True, type="primary")
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+    
+    with col_btn1:
+        gerar = st.button("🤖 Gerar Parecer IA", use_container_width=True, type="primary")
+    
+    with col_btn2:
+        if "parecer_gerado" in ss:
+            if st.button("🔄 Regenerar", use_container_width=True):
+                gerar = True
+                del ss["parecer_gerado"]
     
     if gerar:
         with st.spinner("🤖 Analisando dados e gerando parecer técnico..."):
