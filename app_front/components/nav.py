@@ -50,7 +50,7 @@ def render_sidebar(current_page: str = "Home"):
             .fs-menu summary { position: relative; }
             .fs-menu summary::marker { display: none; }
             .fs-menu summary::-webkit-details-marker { display: none; }
-            .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; }
+            .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; color: #235561 !important; }
             details[open] > summary .caret { transform: rotate(180deg); }
             </style>
             """,

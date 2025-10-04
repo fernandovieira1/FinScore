@@ -17,6 +17,7 @@ st.set_page_config(page_title="FinScore", layout="wide")
 from app_front.views import estoque
 from components import AppState, render_sidebar, render_topbar, DEBUG_MODE
 from components.config import TOPBAR_PAGES, SIDEBAR_PAGES
+from components.theme import inject_global_css
 
 # Import das views
 from views import analise as view_analise
@@ -43,6 +44,7 @@ def load_css():
 
 # --------------- tema / css ---------------
 load_css()
+inject_global_css()
 
 # --------------- inicialização do estado ---------------
 AppState.initialize()

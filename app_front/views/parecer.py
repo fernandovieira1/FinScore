@@ -66,7 +66,7 @@ def _extract_analysis_data(out_dict) -> Dict[str, Any]:
     # Índices de rentabilidade
     data["roe"] = _safe_float(indices_row.get("ROE"))
     data["roa"] = _safe_float(indices_row.get("ROA"))
-    data["margem_liquida"] = _safe_float(indices_row.get("Margem Liquida"))
+    data["margem_liquida"] = _safe_float(indices_row.get("Margem Líquida"))
     data["margem_ebitda"] = _safe_float(indices_row.get("Margem EBITDA"))
     
     # Índices de eficiência

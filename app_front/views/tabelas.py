@@ -251,7 +251,7 @@ def table_pl() -> pd.DataFrame | None:
     data = df[["ano", "p_Patrimonio_Liquido"]].copy()
     table = pd.DataFrame({"Ano": data["ano"].astype(int)})
     valores = data["p_Patrimonio_Liquido"]
-    table["Patrimonio Liquido (R$ mi)"] = _currency(valores)
+    table["Patrimônio Líquido (R$ mi)"] = _currency(valores)
     table["YoY (%)"] = _yoy(valores)
     cagr = _cagr(valores)
     cagr_pct = round(cagr * 100, 2) if not np.isnan(cagr) else np.nan
@@ -455,7 +455,7 @@ def get_pca_variance_table() -> pd.DataFrame | None:
     return pd.DataFrame(
         {
             "Componente": componentes,
-            "Variancia (%)": np.round(variancia * 100, 2),
+            "Variância (%)": np.round(variancia * 100, 2),
             "Acumulada (%)": np.round(variancia_cum * 100, 2),
         }
     )
@@ -502,12 +502,12 @@ def render():
         st.info("Calcule o FinScore em **Novo** para visualizar as tabelas.")
         return
 
-    st.subheader("Indices Contabeis Calculados")
+    st.subheader("Índices Contábeis Calculados")
     df_indices = get_indices_table()
     if df_indices is not None:
         st.dataframe(df_indices, use_container_width=True, hide_index=True)
     else:
-        st.info("Sem dados de indices contabeis para exibir.")
+        st.info("Sem dados de índices contábeis para exibir.")
 
     st.subheader("Componentes Principais (PCA)")
     df_pca = get_pca_scores_table()
@@ -516,7 +516,7 @@ def render():
     else:
         st.info("Sem dados de scores de PCA para exibir.")
 
-    st.subheader("Top 3 Indices por Componente")
+    st.subheader("Top 3 Índices por Componente")
     top_indices_df = get_top_indices_table()
     if top_indices_df is not None:
         st.dataframe(top_indices_df, use_container_width=True, hide_index=True)

@@ -6,30 +6,28 @@ from components.state_manager import AppState
 from components.config import SLUG_MAP
 
 def render():
-    st.header("Novo Calculo")
+    st.header("Novo Cálculo")
     has_active_process = AppState.has_active_process()
     if has_active_process:
-        st.warning("Ha um calculo em andamento. Clicar em Iniciar limpara os dados atuais e reiniciara a analise.")
+        st.warning("Ha um cálculo em andamento. Clicar em Iniciar limpara os dados atuais e reiniciara a analise.")
 
 
     st.markdown(
         """
-Para dar inicio, siga os passos descritos:
+Para dar início, siga os passos descritos:
 
-1. Apos clicar no botao **[Iniciar]**, logo abaixo, voce sera redirecionado para a secao **"Lancamentos"**.
-2. Em lancamentos, na aba **|Cliente|**, preencha as seguintes informacoes:
+1. Após clicar no botão **[Iniciar]**, logo abaixo, você será redirecionado para a seção **"Lançamentos"**.
+2. Em lançamentos, na aba **|Cliente|**, preencha as seguintes informações:
     * Nome da empresa.
     * CNPJ.
-    * Ano Inicial e Ano Final das demonstracoes contabeis.
-    * Pontuacao do Serasa.
-    * Data de consulta ao Serasa.
+        * Ano Inicial e Ano Final das demonstrações contábeis.
 
-   Em seguida, clique no botao **[Enviar Dados]**, localizado no final do formulario.
-3. Na aba **|Dados|**, faca o lancamento dos dados contabeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
+   Em seguida, clique no botão **[Enviar Dados]**, localizado no final do formulário.
+3. Na aba **|Dados|**, faça o lançamento dos dados contábeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
     * Se optar pelo upload de arquivo, certifique-se de que ele esteja no formato correto (.xlsx).
 4. Clique em **[Calcular FinScore]**.
 
-A analise sera detalhada na secao **"Analise"** e voce podera visualizar o parecer na secao **"Parecer"**.
+A análise será detalhada na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
 *(melhorar esse final)*
 
         """,
@@ -37,15 +35,15 @@ A analise sera detalhada na secao **"Analise"** e voce podera visualizar o parec
     )
 
     st.write("")
-    # Botao centralizado com o mesmo estilo do "Calcular FinScore" (verde)
+    # Botão centralizado com o mesmo estilo do "Calcular FinScore" (verde)
     col = st.columns([3, 2, 3])[1]
     with col:
-        # Container com ID proprio para CSS de alta especificidade
+        # Container com ID próprio para CSS de alta especificidade
         st.markdown('<div id="novo-iniciar-btn">', unsafe_allow_html=True)
         st.markdown(
             """
             <style>
-            /* CSS super especifico para o botao Iniciar */
+            /* CSS super específico para o botão Iniciar */
             #novo-iniciar-btn .stButton > button,
             #novo-iniciar-btn .stButton > button[data-testid="baseButton-secondary"],
             #novo-iniciar-btn .stButton > button[kind="secondary"],

@@ -12,7 +12,7 @@ MILLION = 1_000_000
 
 
 def _prepare_base_df() -> pd.DataFrame | None:
-    # Escolhe a base mais apropriada para os graficos e padroniza a coluna 'ano'.
+    # Escolhe a base mais apropriada para os gráficos e padroniza a coluna 'ano'.
     ss = st.session_state
     base = None
 
@@ -239,7 +239,7 @@ def render_pl(df: pd.DataFrame) -> bool:
                 mode="lines+markers",
                 line=dict(color="#2c6e49", width=3),
                 marker=dict(size=8),
-                name="Patrimonio Liquido",
+                name="Patrimônio Líquido",
                 hovertemplate="Ano %{x}<br>%{y:,.2f} R$ mi<extra></extra>",
             )
         ]
@@ -711,7 +711,7 @@ def render_eficiencia_indices(df: pd.DataFrame) -> bool:
     tidy.replace([np.inf, -np.inf], np.nan, inplace=True)
     tidy.dropna(subset=["Valor"], inplace=True)
     if tidy.empty:
-        st.info("Sem dados suficientes para Eficiencia Operacional.")
+        st.info("Sem dados suficientes para Eficiência Operacional.")
         return False
 
     fig = px.bar(
@@ -775,7 +775,7 @@ def render_pca_variancia(df: pd.DataFrame | None = None) -> bool:
     variancia = out.get("pca_explained_variance")
     variancia_cum = out.get("pca_explained_variance_cum")
     if not variancia:
-        st.info("Sem dados de variancia explicada para exibir.")
+        st.info("Sem dados de variância explicada para exibir.")
         return False
 
     variancia = np.array(variancia)

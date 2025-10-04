@@ -424,7 +424,7 @@ def _try_call_plot(df, name_list) -> bool:
         try:
             result = func(df)
         except Exception as exc:  # noqa: PERF203 - user feedback prioritizado
-            st.warning(f"Falha ao renderizar grafico '{name}': {exc}")
+            st.warning(f"Falha ao renderizar gráfico '{name}': {exc}")
             continue
         if _process_plot_result(result):
             return True
@@ -1110,7 +1110,7 @@ def _artifact_box(
 def _render_graficos_tab_content():
     df = prepare_graficos_data()
     if df is None:
-        st.info("Carregue os dados em **Novo -> Dados** para visualizar os graficos.")
+        st.info("Carregue os dados em **Novo -> Dados** para visualizar os gráficos.")
         return
 
     ss = st.session_state
@@ -1118,8 +1118,8 @@ def _render_graficos_tab_content():
     indices_df = out.get("df_indices")
     row = _latest_row_dict(df)
 
-    st.header("1. Dados Contabeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanco Patrimonial)")
+    st.header("1. Dados Contábeis (brutos)")
+    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
     st.markdown("### - Ativos")
     if not _try_call_plot(
         df,
@@ -1135,9 +1135,9 @@ def _render_graficos_tab_content():
     st.markdown("### - Passivos")
     if not _try_call_plot(df, ["render_passivos", "render_passivo_total", "render_contas_a_pagar"]):
         _todo_placeholder("Passivos")
-    st.markdown("### - Patrimonio Liquido")
+    st.markdown("### - Patrimônio Líquido")
     if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
-        _todo_placeholder("Patrimonio Liquido")
+        _todo_placeholder("Patrimônio Líquido")
     st.markdown("### - Capital de Giro e Liquidez")
     capital_rendered = render_ativo_passivo_circulante(df)
     if not capital_rendered:
@@ -1184,10 +1184,10 @@ def _render_graficos_tab_content():
     rentabilidade_rendered = _try_call_plot(df, ["render_rentabilidade_indices"])
     if not rentabilidade_rendered:
         _todo_placeholder("Rentabilidade")
-    st.markdown("### - Eficiencia Operacional / Ciclo")
+    st.markdown("### - Eficiência Operacional / Ciclo")
     eficiencia_rendered = _try_call_plot(df, ["render_eficiencia_indices"])
     if not eficiencia_rendered:
-        _todo_placeholder("Eficiencia Operacional / Ciclo")
+        _todo_placeholder("Eficiência Operacional / Ciclo")
 
     st.divider()
 
@@ -1196,14 +1196,14 @@ def _render_graficos_tab_content():
     loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
     if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
-    st.markdown("### - Variancia explicada (explained variance)")
+    st.markdown("### - Variância explicada (explained variance)")
     variancia_rendered = _try_call_plot(df, ["render_pca_variancia"])
     if not variancia_rendered:
-        _todo_placeholder("Variancia explicada (explained variance)")
-    st.markdown("### - Projecoes (scores) por periodo/empresa")
+        _todo_placeholder("Variância explicada (explained variance)")
+    st.markdown("### - Projeções (scores) por período/empresa")
     scores_rendered = _try_call_plot(df, ["render_pca_scores"])
     if not scores_rendered:
-        _todo_placeholder("Projecoes (scores) por periodo/empresa")
+        _todo_placeholder("Projeções (scores) por período/empresa")
 
 def _render_indices_tables(df):
     categories = _split_indices_columns(df)
@@ -1230,8 +1230,8 @@ def _render_tabelas_tab_content():
     indices_df = out.get("df_indices")
     top_indices_df = out.get("top_indices_df")
 
-    st.header("Dados Contabeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanco Patrimonial)")
+    st.header("Dados Contábeis (brutos)")
+    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
     st.markdown("### - Ativos")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")

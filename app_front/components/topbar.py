@@ -4,6 +4,7 @@ import base64
 from pathlib import Path
 from components.config import TOPBAR_PAGES
 from components.state_manager import AppState
+from components.theme import get_palette
 
 def show_topbar_calculo_popup(target_page: str):
     """
@@ -25,13 +26,18 @@ def render_topbar(current_page: str | None = None) -> None:
 
     def is_active(page: str) -> str:
         return "active" if current_page == page else ""
+    
+    c = get_palette()
 
     st.markdown(
         f"""
         <style>
           :root {{
-            --tb-bg:#fff; --tb-fg:#1f2937; --tb-fg-muted:#071700;
-            --tb-border: rgba(2,6,23,.10); --tb-hover: rgba(2,6,23,.06);
+            --tb-bg: {c["white"]};
+            --tb-fg: {c["text"]};
+            --tb-fg-muted: {c["muted"]};
+            --tb-border: {c["gray_border"]};
+            --tb-hover: rgba(2,6,23,.06);
             --radius:14px;
           }}
           .mm-wrap {{ display:flex; justify-content:flex-start; margin:10px 0; width:100%; }}
@@ -44,23 +50,24 @@ def render_topbar(current_page: str | None = None) -> None:
           .nav {{ display:flex; align-items:center; gap:16px; margin:0; }}
           .pill-btn, .pill-btn:link, .pill-btn:visited, .pill-btn:active {{
             display:inline-block; padding:6px 10px; border-radius:10px;
-            color:#4a4138; font-weight:700; font-size:.92rem; line-height:1;
+            color: var(--tb-fg); font-weight:700; font-size:.92rem; line-height:1;
             border:1px solid transparent; text-decoration:none;
             cursor: pointer;
+            transition: all 0.2s ease;
           }}
           .pill-btn:hover, .pill-btn.active {{
-            color:#4a4138; background:var(--tb-hover); border-color:var(--tb-border);
+            color: var(--tb-fg); background:var(--tb-hover); border-color:var(--tb-border);
             text-decoration:none;
           }}
           .right {{ display:flex; align-items:center; gap:14px; }}
           .assertif-logo {{ height:22px; display:block; border-radius:4px; }}
           
-          /* Estilo para botões sociais e de configuração */
+          /* Estilo para botões sociais, tema e configuração */
           .social-btn, .theme-btn, .config-btn {{
             display: flex; align-items: center; justify-content: center;
             width: 30px; height: 30px; border-radius: 50%;
             background: transparent;
-            border: 1px solid rgba(2,6,23,.10);
+            border: 1px solid var(--tb-border);
             font-size: 14px; cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
@@ -76,7 +83,7 @@ def render_topbar(current_page: str | None = None) -> None:
           button.theme-btn i,
           button.config-btn,
           button.config-btn i {{
-            color: #999999 !important;
+            color: {c["muted"]} !important;
           }}
           
           .social-btn:hover,
@@ -89,8 +96,8 @@ def render_topbar(current_page: str | None = None) -> None:
           button.theme-btn:hover i,
           button.config-btn:hover,
           button.config-btn:hover i {{
-            background: rgba(2,6,23,.06) !important;
-            color: #bcbcbc !important;
+            background: var(--tb-hover) !important;
+            color: {c["text"]} !important;
           }}
         </style>
 
@@ -123,8 +130,8 @@ def render_topbar(current_page: str | None = None) -> None:
               <a href="https://www.linkedin.com/company/grupoassertif" class="social-btn" title="LinkedIn" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-linkedin-in"></i>
               </a>
-              <button class="theme-btn" title="Alternar tema">
-                <i class="fas fa-moon"></i>
+              <button class="theme-btn" title="Alternar Tema">
+                <i class="fas fa-adjust"></i>
               </button>
               <button class="config-btn" title="Configurações">
                 <i class="fas fa-cog"></i>

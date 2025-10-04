@@ -83,7 +83,7 @@ def _datas(ss):
     serasa_data = meta.get("serasa_data")
     serasa_label = serasa_data if serasa_data else "-"
     with col1:
-        st.caption("Data da Analise")
+        st.caption("Data da Análise")
         st.markdown(
             f"<p style='margin:0;font-size:1.25rem;font-weight:600;'>{hoje}</p>",
             unsafe_allow_html=True,
