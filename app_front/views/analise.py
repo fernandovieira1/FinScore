@@ -1132,75 +1132,18 @@ def _render_graficos_tab_content():
         ],
     ):
         _todo_placeholder("Ativos")
-    else:
-        _register_artifact(
-            "grafico_ativos",
-            "Grafico - Ativos",
-            df=df,
-            columns=[
-                "p_Ativo_Circulante",
-                "p_Ativo_Total",
-                "p_Caixa",
-                "p_Estoques",
-                "p_Contas_a_Receber",
-            ],
-            divisors={
-                "p_Ativo_Circulante": 1_000_000,
-                "p_Ativo_Total": 1_000_000,
-                "p_Caixa": 1_000_000,
-                "p_Estoques": 1_000_000,
-                "p_Contas_a_Receber": 1_000_000,
-            },
-            note="Evolucao dos ativos (R$ mi)",
-        )
     st.markdown("### - Passivos")
     if not _try_call_plot(df, ["render_passivos", "render_passivo_total", "render_contas_a_pagar"]):
         _todo_placeholder("Passivos")
-    else:
-        _register_artifact(
-            "grafico_passivos",
-            "Grafico - Passivos",
-            df=df,
-            columns=["p_Contas_a_Pagar", "p_Passivo_Circulante", "p_Passivo_Total"],
-            divisors={
-                "p_Contas_a_Pagar": 1_000_000,
-                "p_Passivo_Circulante": 1_000_000,
-                "p_Passivo_Total": 1_000_000,
-            },
-            note="Evolucao dos passivos (R$ mi)",
-        )
     st.markdown("### - Patrimonio Liquido")
     if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
         _todo_placeholder("Patrimonio Liquido")
-    else:
-        _register_artifact(
-            "grafico_patrimonio_liquido",
-            "Grafico - Patrimonio Liquido",
-            df=df,
-            columns=["p_Patrimonio_Liquido"],
-            divisors={"p_Patrimonio_Liquido": 1_000_000},
-            note="Patrimonio liquido em R$ mi",
-        )
     st.markdown("### - Capital de Giro e Liquidez")
     capital_rendered = render_ativo_passivo_circulante(df)
     if not capital_rendered:
         capital_rendered = _try_call_plot(df, ["render_capital_giro", "render_liquidez_corrente"])
     if not capital_rendered:
         _todo_placeholder("Capital de Giro e Liquidez")
-    else:
-        _register_artifact(
-            "grafico_capital_giro",
-            "Grafico - Capital de Giro e Liquidez",
-            df=df,
-            columns=["p_Ativo_Circulante", "p_Passivo_Circulante", "p_Estoques", "p_Ativo_Total"],
-            divisors={
-                "p_Ativo_Circulante": 1_000_000,
-                "p_Passivo_Circulante": 1_000_000,
-                "p_Estoques": 1_000_000,
-                "p_Ativo_Total": 1_000_000,
-            },
-            note="Capital de giro e liquidez (R$ mi)",
-        )
 
     st.divider()
 
@@ -1211,92 +1154,20 @@ def _render_graficos_tab_content():
         operacional_rendered = True
     if not operacional_rendered:
         _todo_placeholder("Operacional")
-    else:
-        dados_resumo = _summarize_metrics(
-            df,
-            ["r_Receita_Total", "r_Custos", "r_Lucro_Liquido"],
-            rename={
-                "r_Receita_Total": "Receita (mi)",
-                "r_Custos": "Custos (mi)",
-                "r_Lucro_Liquido": "Lucro (mi)",
-            },
-            divisors={
-                "r_Receita_Total": 1_000_000,
-                "r_Custos": 1_000_000,
-                "r_Lucro_Liquido": 1_000_000,
-            },
-        )
-        ebitda = _compute_ebitda_snapshot(row)
-        if ebitda is not None:
-            dados_resumo["EBITDA (mi)"] = _format_metric(ebitda, 1_000_000)
-        dados_resumo.setdefault("nota", "Receita, Custos e EBITDA em R$ mi")
-        _artifact_box(
-            "grafico_receita_total",
-            "Receita, Custos e EBITDA",
-            _build_mini_context(),
-            dados_resumo,
-            "raw",
-        )
     st.markdown("### - Financeiro")
     financeiro_rendered = render_juros_lucro_receita(df)
     if not financeiro_rendered:
         financeiro_rendered = _try_call_plot(df, ["render_despesa_juros"])
     if not financeiro_rendered:
         _todo_placeholder("Financeiro")
-    else:
-        row = _latest_row_dict(df)
-        dados_resumo = _summarize_metrics(
-            df,
-            ["r_Despesa_de_Juros", "r_Lucro_Liquido", "r_Receita_Total"],
-            rename={
-                "r_Despesa_de_Juros": "Juros (mi)",
-                "r_Lucro_Liquido": "Lucro (mi)",
-                "r_Receita_Total": "Receita (mi)",
-            },
-            divisors={
-                "r_Despesa_de_Juros": 1_000_000,
-                "r_Lucro_Liquido": 1_000_000,
-                "r_Receita_Total": 1_000_000,
-            },
-        )
-        indices_row = _latest_row_dict(indices_df)
-        cobertura = _to_float(indices_row.get("Cobertura de Juros")) if indices_row else None
-        if cobertura is not None:
-            dados_resumo["Cobertura (x)"] = round(cobertura, 2)
-        dados_resumo.setdefault("nota", "Fluxo financeiro e cobertura")
-        _artifact_box(
-            "grafico_financeiro",
-            "Fluxo Financeiro e Cobertura",
-            _build_mini_context(),
-            dados_resumo,
-            "raw",
-        )
     st.markdown("### - Tributos")
     impostos_rendered = _try_call_plot(df, ["render_impostos", "render_despesa_impostos"])
     if not impostos_rendered:
         _todo_placeholder("Tributos")
-    else:
-        dados_resumo = _build_tax_summary(df)
-        _artifact_box(
-            "grafico_impostos",
-            "Despesa de Impostos e Efetividade Tributaria",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Resultado")
     resultado_rendered = _try_call_plot(df, ["render_lucro_liquido", "render_resultado_liquido"])
     if not resultado_rendered:
         _todo_placeholder("Resultado")
-    else:
-        dados_resumo = _build_profit_summary(df)
-        _artifact_box(
-            "grafico_lucro_liquido",
-            "Lucro Liquido",
-            _build_mini_context(),
-            dados_resumo,
-            "raw",
-        )
 
     st.divider()
 
@@ -1305,76 +1176,18 @@ def _render_graficos_tab_content():
     liquidez_rendered = _try_call_plot(df, ["render_liquidez_indices"])
     if not liquidez_rendered:
         _todo_placeholder("Liquidez")
-    else:
-        dados_resumo = _summarize_metrics(
-            indices_df,
-            ["Liquidez Corrente", "Liquidez Seca", "CCL/Ativo Total"],
-            rename={
-                "Liquidez Corrente": "Liquidez Corrente (x)",
-                "Liquidez Seca": "Liquidez Seca (x)",
-                "CCL/Ativo Total": "CCL/Ativo (x)",
-            },
-        )
-        dados_resumo.setdefault("nota", "Indicadores de liquidez (vezes)")
-        _artifact_box(
-            "grafico_liquidez_indices",
-            "Indicadores de Liquidez",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Endividamento/Estrutura")
     endividamento_rendered = _try_call_plot(df, ["render_endividamento_indices"])
     if not endividamento_rendered:
         _todo_placeholder("Endividamento/Estrutura")
-    else:
-        dados_resumo = _summarize_metrics(
-            indices_df,
-            ["Alavancagem", "Endividamento", "Cobertura de Juros"],
-            rename={
-                "Alavancagem": "DL/EBITDA (x)",
-                "Endividamento": "Divida/Ativo (x)",
-                "Cobertura de Juros": "Cobertura de Juros (x)",
-            },
-        )
-        dados_resumo.setdefault("nota", "Estrutura de capital (vezes)")
-        _artifact_box(
-            "grafico_endividamento_indices",
-            "Estrutura de Capital e Alavancagem",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Rentabilidade")
     rentabilidade_rendered = _try_call_plot(df, ["render_rentabilidade_indices"])
     if not rentabilidade_rendered:
         _todo_placeholder("Rentabilidade")
-    else:
-        dados_resumo = _collect_indices_summary(indices_df, "Rentabilidade", "Indicadores de rentabilidade")
-        _artifact_box(
-            "grafico_rentabilidade_indices",
-            "Indicadores de Rentabilidade",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Eficiencia Operacional / Ciclo")
     eficiencia_rendered = _try_call_plot(df, ["render_eficiencia_indices"])
     if not eficiencia_rendered:
         _todo_placeholder("Eficiencia Operacional / Ciclo")
-    else:
-        dados_resumo = _collect_indices_summary(
-            indices_df,
-            "Eficiencia Operacional / Ciclo",
-            "Indicadores de eficiencia operacional",
-        )
-        _artifact_box(
-            "grafico_eficiencia_indices",
-            "Eficiencia e Ciclo Operacional",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
     st.divider()
 
@@ -1383,49 +1196,14 @@ def _render_graficos_tab_content():
     loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
     if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
-    else:
-        loadings_df = (out or {}).get("loadings") if isinstance(out, dict) else None
-        dados_resumo = _build_pca_loadings_summary(loadings_df)
-        if not dados_resumo:
-            dados_resumo = {"nota": "Resumo das cargas nao disponivel"}
-        _artifact_box(
-            "grafico_pca_loadings",
-            "PCA - Cargas (Loadings)",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Variancia explicada (explained variance)")
     variancia_rendered = _try_call_plot(df, ["render_pca_variancia"])
     if not variancia_rendered:
         _todo_placeholder("Variancia explicada (explained variance)")
-    else:
-        variancias = out.get("pca_explained_variance") or []
-        dados_resumo = {f"PC{i + 1}": round(valor * 100, 2) for i, valor in enumerate(variancias[:3])}
-        dados_resumo.setdefault("nota", "Variancia explicada (%)")
-        _artifact_box(
-            "grafico_pca_variancia",
-            "PCA - Variancia Explicada",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Projecoes (scores) por periodo/empresa")
     scores_rendered = _try_call_plot(df, ["render_pca_scores"])
     if not scores_rendered:
         _todo_placeholder("Projecoes (scores) por periodo/empresa")
-    else:
-        scores_df = (out or {}).get("df_pca") if isinstance(out, dict) else None
-        dados_resumo = _build_pca_scores_summary(scores_df)
-        if not dados_resumo:
-            dados_resumo = {"nota": "Resumo dos scores nao disponivel"}
-        _artifact_box(
-            "grafico_pca_scores",
-            "PCA - Projecoes (Scores)",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
 def _render_indices_tables(df):
     categories = _split_indices_columns(df)
@@ -1457,43 +1235,15 @@ def _render_tabelas_tab_content():
     st.markdown("### - Ativos")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")
-    else:
-        _register_table_section(
-            "tabela_ativos",
-            "Tabela - Ativos",
-            ["table_ativos", "get_ativos_table"],
-            note="Evolucao dos ativos (R$ mi) e variacao anual",
-        )
     st.markdown("### - Passivos")
     if not _try_show_table(["table_passivos", "get_passivos_table"]):
         _todo_placeholder("Passivos")
-    else:
-        _register_table_section(
-            "tabela_passivos",
-            "Tabela - Passivos",
-            ["table_passivos", "get_passivos_table"],
-            note="Evolucao dos passivos (R$ mi) e variacao anual",
-        )
     st.markdown("### - Patrimonio Liquido")
     if not _try_show_table(["table_pl", "get_pl_table", "get_patrimonio_liquido_table"]):
         _todo_placeholder("Patrimonio Liquido")
-    else:
-        _register_table_section(
-            "tabela_pl",
-            "Tabela - Patrimonio Liquido",
-            ["table_pl", "get_pl_table", "get_patrimonio_liquido_table"],
-            note="Patrimonio liquido e variacoes anuais",
-        )
     st.markdown("### - Capital de Giro / Liquidez")
     if not _try_show_table(["table_capital_giro", "get_ccl_table", "get_liquidez_table"]):
         _todo_placeholder("Capital de Giro / Liquidez")
-    else:
-        _register_table_section(
-            "tabela_capital_giro_base",
-            "Tabela - Capital de Giro / Liquidez",
-            ["table_capital_giro", "get_ccl_table", "get_liquidez_table"],
-            note="Capital de giro, CCL e liquidez",
-        )
 
     st.divider()
 
@@ -1508,50 +1258,15 @@ def _render_tabelas_tab_content():
         "get_amortizacao_table",
     ]):
         _todo_placeholder("Operacional")
-    else:
-        _register_table_section(
-            "tabela_operacional",
-            "Tabela - Operacional",
-            [
-                "table_operacional",
-                "get_operacional_table",
-                "get_receita_table",
-                "get_custos_table",
-                "get_depreciacao_table",
-                "get_amortizacao_table",
-            ],
-            note="Receita, custos e itens operacionais",
-        )
     st.markdown("### - Financeiro")
     if not _try_show_table(["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"]):
         _todo_placeholder("Financeiro")
-    else:
-        _register_table_section(
-            "tabela_financeiro",
-            "Tabela - Financeiro",
-            ["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"],
-            note="Fluxo financeiro e despesas de juros",
-        )
     st.markdown("### - Tributos")
     if not _try_show_table(["table_impostos", "get_impostos_table", "get_despesa_impostos_table"]):
         _todo_placeholder("Tributos")
-    else:
-        _register_table_section(
-            "tabela_tributos",
-            "Tabela - Tributos",
-            ["table_impostos", "get_impostos_table", "get_despesa_impostos_table"],
-            note="Despesa de impostos e efetividade",
-        )
     st.markdown("### - Resultado")
     if not _try_show_table(["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"]):
         _todo_placeholder("Resultado")
-    else:
-        _register_table_section(
-            "tabela_resultado",
-            "Tabela - Resultado",
-            ["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"],
-            note="Indicadores de resultado e lucro",
-        )
 
     st.divider()
 
@@ -1560,80 +1275,18 @@ def _render_tabelas_tab_content():
     liquidez_table = _try_show_table(["table_liquidez_indices"])
     if not liquidez_table:
         _todo_placeholder("Liquidez")
-    else:
-        dados_resumo = _summarize_metrics(
-            indices_df,
-            ["Liquidez Corrente", "Liquidez Seca", "CCL/Ativo Total"],
-            rename={
-                "Liquidez Corrente": "Liquidez Corrente (x)",
-                "Liquidez Seca": "Liquidez Seca (x)",
-                "CCL/Ativo Total": "CCL/Ativo (x)",
-            },
-        )
-        dados_resumo.setdefault("nota", "Tabela de liquidez (vezes)")
-        _artifact_box(
-            "tabela_liquidez_indices",
-            "Tabela - Indicadores de Liquidez",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Endividamento/Estrutura")
     endividamento_table = _try_show_table(["table_endividamento_indices"])
     if not endividamento_table:
         _todo_placeholder("Endividamento/Estrutura")
-    else:
-        dados_resumo = _summarize_metrics(
-            indices_df,
-            ["Alavancagem", "Endividamento", "Cobertura de Juros"],
-            rename={
-                "Alavancagem": "DL/EBITDA (x)",
-                "Endividamento": "Divida/Ativo (x)",
-                "Cobertura de Juros": "Cobertura de Juros (x)",
-            },
-        )
-        dados_resumo.setdefault("nota", "Tabela de estrutura de capital (vezes)")
-        _artifact_box(
-            "tabela_endividamento_indices",
-            "Tabela - Estrutura de Capital",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Rentabilidade")
     rent_table = _try_show_table(["table_rentabilidade_indices"])
     if not rent_table:
         _todo_placeholder("Rentabilidade")
-    else:
-        dados_resumo = _collect_indices_summary(
-            indices_df,
-            "Rentabilidade",
-            "Tabela de indicadores de rentabilidade",
-        )
-        _artifact_box(
-            "tabela_rentabilidade_indices",
-            "Tabela - Indicadores de Rentabilidade",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
     st.markdown("### - Eficiencia Operacional / Ciclo")
     eficiencia_table = _try_show_table(["table_eficiencia_indices"])
     if not eficiencia_table:
         _todo_placeholder("Eficiencia Operacional / Ciclo")
-    else:
-        dados_resumo = _collect_indices_summary(
-            indices_df,
-            "Eficiencia Operacional / Ciclo",
-            "Tabela de eficiencia operacional",
-        )
-        _artifact_box(
-            "tabela_eficiencia_indices",
-            "Tabela - Eficiencia Operacional",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
     st.divider()
 
@@ -1642,18 +1295,6 @@ def _render_tabelas_tab_content():
     pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
     if not pca_loadings_table:
         _todo_placeholder("Cargas (loadings)")
-    else:
-        loadings_df = out.get("loadings") if isinstance(out, dict) else None
-        dados_resumo = _build_pca_loadings_summary(loadings_df)
-        if not dados_resumo:
-            dados_resumo = {"nota": "Resumo das cargas nao disponivel"}
-        _artifact_box(
-            "tabela_pca_loadings",
-            "Tabela - PCA Loadings",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
     st.markdown("### - Variancia explicada (explained variance)")
     if not _try_show_table(["get_pca_variance_table"]):
@@ -1663,43 +1304,11 @@ def _render_tabelas_tab_content():
     pca_scores_table = _try_show_table(["get_pca_scores_table"])
     if not pca_scores_table:
         _todo_placeholder("Projecoes (scores) por periodo/empresa")
-    else:
-        scores_df = out.get("df_pca") if isinstance(out, dict) else None
-        dados_resumo = _build_pca_scores_summary(scores_df)
-        if not dados_resumo:
-            dados_resumo = {"nota": "Resumo dos scores nao disponivel"}
-        _artifact_box(
-            "tabela_pca_scores",
-            "Tabela - PCA Scores",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
     st.markdown("### - Destaques de componentes (top indices)")
     top_table = _try_show_table(["get_top_indices_table"])
     if not top_table:
         _todo_placeholder("Destaques de componentes (top indices)")
-    else:
-        row = _latest_row_dict(top_indices_df)
-        dados_resumo = {}
-        if row:
-            dados_resumo["PC"] = row.get("PC")
-            for idx in range(1, 4):
-                indice = row.get(f"Indice {idx}")
-                peso = _to_float(row.get(f"Peso {idx}"))
-                if indice:
-                    dados_resumo[f"Indice {idx}"] = indice
-                if peso is not None:
-                    dados_resumo[f"Peso {idx}"] = round(peso, 3)
-        dados_resumo.setdefault("nota", "Top indices por componente principal")
-        _artifact_box(
-            "tabela_top_indices",
-            "Tabela - PCA Top Indices",
-            _build_mini_context(),
-            dados_resumo,
-            "indices",
-        )
 
 
 

@@ -250,8 +250,8 @@ Considere as metricas: {metrics_text} e o contexto basico: {ctx_text}.
 
 
 REVIEW_SYSTEM = (
-    "Voce e um analista de credito. Responda SEMPRE com um unico JSON {\"insight\": str, \"riscos\": [str], \"sinal\": \"positivo|neutro|negativo\"}. "
-    "O campo 'insight' deve ser uma frase curta e objetiva. Use 'riscos' apenas para alertas diretos (pode ficar vazio) e 'sinal' deve resumir a visao final. Nao escreva nada fora do JSON."
+    "Voce e um analista de credito. Responda SEMPRE com um unico JSON {\"insight\": str, \"riscos\": [str], \"acao\": [str], \"sinal\": \"positivo|neutro|negativo\"}. "
+    "O campo 'insight' deve ser uma frase curta e objetiva (max 120 palavras). Use 'riscos' para alertas diretos, 'acao' para recomendacoes praticas (ambos podem ficar vazios) e 'sinal' deve resumir a visao final. Nao escreva nada fora do JSON."
 )
 
 
@@ -278,13 +278,16 @@ def call_review_llm(artifact_id: str, artifact_meta: Dict[str, Any]) -> ReviewSc
         candidate = text[start : end + 1]
         payload = json.loads(candidate)
     except Exception:
-        payload = {"insight": text.strip(), "riscos": [], "sinal": "neutro"}
+        payload = {"insight": text.strip(), "riscos": [], "acao": [], "sinal": "neutro"}
 
-    payload.pop("acoes", None)
-    payload.pop("acao", None)
+    # Normalizar campo acao/acoes
+    if "acoes" in payload and "acao" not in payload:
+        payload["acao"] = payload.pop("acoes")
+    elif "acao" not in payload:
+        payload["acao"] = []
 
     try:
         return ReviewSchema(**payload)
     except ValidationError:
-        fallback = {"insight": str(payload)[:400], "riscos": [], "sinal": "neutro"}
+        fallback = {"insight": str(payload)[:400], "riscos": [], "acao": [], "sinal": "neutro"}
         return ReviewSchema(**fallback)

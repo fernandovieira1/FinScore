@@ -9,8 +9,10 @@ StatusType = Literal["draft", "accepted", "needs_revision"]
 class ReviewSchema(BaseModel):
     insight: str = Field(..., description="Resumo objetivo do que o artefato mostra")
     riscos: List[str] = Field(default_factory=list, description="Riscos relevantes")
+    acao: List[str] = Field(default_factory=list, description="Ações sugeridas")
     sinal: SinalType = "neutro"
     status: StatusType = "draft"
+    obs: Optional[str] = Field(default="", description="Observação do analista")
 
     class Config:
         populate_by_name = True

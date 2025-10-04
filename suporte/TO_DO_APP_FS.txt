@@ -587,7 +587,19 @@ Até aqui:
 Até aqui:
 [v. 0.8.06 (ia), de 28/09/2025]
 [v. 0.8.06a (ia), de 28/09/2025] - 'Processando' em análise sem funcionar
+Desistência da ideia de processamento em segundo plano. O Streamlit não permite.
 ---
+
+=====Ajustes=====
+* (x) Readequação do prompt para o LLM com a exclusão das análises parciais e /Análise
+=====Novidades=====
+* (x) Versão alpha do parecer implementada
+---
+Até aqui:
+[v. 0.8.07 (ia), de 03/10/2025]
+---
+
+
 ......................................................................................................................
 ============
 4. PARECER
