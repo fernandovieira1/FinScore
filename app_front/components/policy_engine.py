@@ -13,25 +13,57 @@ class PolicyInputs:
 
 
 def decide(pi: PolicyInputs) -> dict:
+    """
+    Motor de decisão baseado em:
+    1. FinScore como threshold principal de aprovação
+    2. Serasa como critério de ressalva (se aprovado mas Serasa baixo)
+    3. Índices financeiros detalhados servem para análise crítica na seção de indicadores
+    """
     decisao, motivos, covenants = "nao_aprovar", [], []
     fs = pi.finscore_ajustado or 0.0
-    cj = pi.cobertura_juros if pi.cobertura_juros is not None else 0.0
-    de = pi.dl_ebitda if pi.dl_ebitda is not None else 1e9
+    serasa_rank = pi.serasa_rank or 4  # 4 = Muito Baixo (default conservador)
 
-    if fs >= 750 and cj >= 2:
+    # DECISÃO PRINCIPAL: baseada no FinScore
+    if fs > 875:
+        # Muito Abaixo do Risco - Aprovação automática
         decisao = "aprovar"
-    elif 500 <= fs < 750:
-        if de <= 3 and cj >= 1.5:
+        motivos.append("FinScore excelente (> 875) indica capacidade patrimonial robusta")
+        
+    elif 750 < fs <= 875:
+        # Levemente Abaixo do Risco - Aprovação com possível ressalva por Serasa
+        decisao = "aprovar"
+        motivos.append("FinScore bom (750-875) indica capacidade patrimonial adequada")
+        
+    elif 250 <= fs <= 750:
+        # Neutro - Aprovação com ressalvas
+        decisao = "aprovar_com_ressalvas"
+        motivos.append("FinScore neutro (250-750) requer monitoramento adicional")
+        covenants += ["Monitoramento trimestral de indicadores", "Envio de DFs atualizadas"]
+        
+    elif 125 < fs < 250:
+        # Levemente Acima do Risco - Não aprovar
+        decisao = "nao_aprovar"
+        motivos.append("FinScore baixo (125-250) indica fragilidade patrimonial")
+        
+    else:
+        # Muito Acima do Risco - Não aprovar
+        decisao = "nao_aprovar"
+        motivos.append("FinScore crítico (< 125) indica alta fragilidade patrimonial")
+
+    # CRITÉRIO SERASA: Adiciona ressalvas se aprovado mas Serasa baixo
+    if decisao == "aprovar":
+        if serasa_rank >= 3:  # Baixo (3) ou Muito Baixo (4)
             decisao = "aprovar_com_ressalvas"
-            covenants += ["DL/EBITDA<=3", "Cobertura>=1.5", "envio trimestral de DFs"]
-        else:
-            decisao = "nao_aprovar"
+            motivos.append("Serasa Baixo/Muito Baixo requer garantias adicionais e monitoramento de histórico de crédito")
+            covenants += ["Garantias reais ou fidejussórias", "Consulta Serasa mensal", "Limite de crédito conservador"]
+        elif serasa_rank == 2:  # Bom
+            motivos.append("Serasa Bom complementa positivamente a análise patrimonial")
 
-    if pi.serasa_rank and pi.finscore_rank:
-        if abs(pi.serasa_rank - pi.finscore_rank) >= 2:
-            motivos.append("divergencia com Serasa -> reforcar garantias/monitoramento")
-
+    # Flags de qualidade
     if pi.flags_qualidade.get("dados_incompletos"):
-        motivos.append("dados incompletos: decisao mais conservadora")
+        motivos.append("Dados incompletos: decisão mais conservadora aplicada")
+        if decisao == "aprovar":
+            decisao = "aprovar_com_ressalvas"
+            covenants += ["Completar dados faltantes em 30 dias"]
 
     return {"decisao": decisao, "motivos": motivos, "covenants": covenants}

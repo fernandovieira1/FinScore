@@ -606,6 +606,18 @@ Até aqui:
 [v. 0.8.08 (ia), de 03/10/2025]
 ---
 
+=====Ajustes=====
+* (x) Geração do parecer - versão alpha2
+    - (x) Readequação do prompt para o LLM
+    - (x) Thresholds de FinScore Bruto e FinScore Ajustado
+    - (x) Thresholds de Serasa Score como "aprovação com ressalvas" no caso de aprovação do FinScore
+    - (x) Índices e contas contábeis como critérios suplementares
+* (x) Correções de ortografia
+---
+Até aqui:
+[v. 0.8.09 (ia), de 03/10/2025]
+---
+
 
 ......................................................................................................................
 ============

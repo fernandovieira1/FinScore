@@ -1120,7 +1120,6 @@ def _render_graficos_tab_content():
 
     st.header("1. Dados Contábeis (brutos)")
     st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
-    st.markdown("### - Ativos")
     if not _try_call_plot(
         df,
         [
@@ -1132,13 +1131,10 @@ def _render_graficos_tab_content():
         ],
     ):
         _todo_placeholder("Ativos")
-    st.markdown("### - Passivos")
     if not _try_call_plot(df, ["render_passivos", "render_passivo_total", "render_contas_a_pagar"]):
         _todo_placeholder("Passivos")
-    st.markdown("### - Patrimônio Líquido")
     if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
         _todo_placeholder("Patrimônio Líquido")
-    st.markdown("### - Capital de Giro e Liquidez")
     capital_rendered = render_ativo_passivo_circulante(df)
     if not capital_rendered:
         capital_rendered = _try_call_plot(df, ["render_capital_giro", "render_liquidez_corrente"])
@@ -1148,43 +1144,35 @@ def _render_graficos_tab_content():
     st.divider()
 
     st.subheader("1.2 Contas de Resultado (DRE)")
-    st.markdown("### - Operacional")
     operacional_rendered = render_receita_total(df)
     if _try_call_plot(df, ["render_custos", "render_depreciacao", "render_amortizacao"]):
         operacional_rendered = True
     if not operacional_rendered:
         _todo_placeholder("Operacional")
-    st.markdown("### - Financeiro")
     financeiro_rendered = render_juros_lucro_receita(df)
     if not financeiro_rendered:
         financeiro_rendered = _try_call_plot(df, ["render_despesa_juros"])
     if not financeiro_rendered:
         _todo_placeholder("Financeiro")
-    st.markdown("### - Tributos")
     impostos_rendered = _try_call_plot(df, ["render_impostos", "render_despesa_impostos"])
     if not impostos_rendered:
         _todo_placeholder("Tributos")
-    st.markdown("### - Resultado")
     resultado_rendered = _try_call_plot(df, ["render_lucro_liquido", "render_resultado_liquido"])
     if not resultado_rendered:
         _todo_placeholder("Resultado")
 
     st.divider()
 
-    st.header("2. Indices Contabeis")
-    st.markdown("### - Liquidez")
+    st.header("2. Indices Contábeis")
     liquidez_rendered = _try_call_plot(df, ["render_liquidez_indices"])
     if not liquidez_rendered:
         _todo_placeholder("Liquidez")
-    st.markdown("### - Endividamento/Estrutura")
     endividamento_rendered = _try_call_plot(df, ["render_endividamento_indices"])
     if not endividamento_rendered:
         _todo_placeholder("Endividamento/Estrutura")
-    st.markdown("### - Rentabilidade")
     rentabilidade_rendered = _try_call_plot(df, ["render_rentabilidade_indices"])
     if not rentabilidade_rendered:
         _todo_placeholder("Rentabilidade")
-    st.markdown("### - Eficiência Operacional / Ciclo")
     eficiencia_rendered = _try_call_plot(df, ["render_eficiencia_indices"])
     if not eficiencia_rendered:
         _todo_placeholder("Eficiência Operacional / Ciclo")
@@ -1192,15 +1180,12 @@ def _render_graficos_tab_content():
     st.divider()
 
     st.header("3. PCA")
-    st.markdown("### - Cargas (loadings)")
     loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
     if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
-    st.markdown("### - Variância explicada (explained variance)")
     variancia_rendered = _try_call_plot(df, ["render_pca_variancia"])
     if not variancia_rendered:
         _todo_placeholder("Variância explicada (explained variance)")
-    st.markdown("### - Projeções (scores) por período/empresa")
     scores_rendered = _try_call_plot(df, ["render_pca_scores"])
     if not scores_rendered:
         _todo_placeholder("Projeções (scores) por período/empresa")
@@ -1232,23 +1217,18 @@ def _render_tabelas_tab_content():
 
     st.header("Dados Contábeis (brutos)")
     st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
-    st.markdown("### - Ativos")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")
-    st.markdown("### - Passivos")
     if not _try_show_table(["table_passivos", "get_passivos_table"]):
         _todo_placeholder("Passivos")
-    st.markdown("### - Patrimonio Liquido")
     if not _try_show_table(["table_pl", "get_pl_table", "get_patrimonio_liquido_table"]):
         _todo_placeholder("Patrimonio Liquido")
-    st.markdown("### - Capital de Giro / Liquidez")
     if not _try_show_table(["table_capital_giro", "get_ccl_table", "get_liquidez_table"]):
         _todo_placeholder("Capital de Giro / Liquidez")
 
     st.divider()
 
     st.subheader("1.2 Contas de Resultado (DRE)")
-    st.markdown("### - Operacional")
     if not _try_show_table([
         "table_operacional",
         "get_operacional_table",
@@ -1258,32 +1238,25 @@ def _render_tabelas_tab_content():
         "get_amortizacao_table",
     ]):
         _todo_placeholder("Operacional")
-    st.markdown("### - Financeiro")
     if not _try_show_table(["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"]):
         _todo_placeholder("Financeiro")
-    st.markdown("### - Tributos")
     if not _try_show_table(["table_impostos", "get_impostos_table", "get_despesa_impostos_table"]):
         _todo_placeholder("Tributos")
-    st.markdown("### - Resultado")
     if not _try_show_table(["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"]):
         _todo_placeholder("Resultado")
 
     st.divider()
 
-    st.header("2. Indices Contabeis")
-    st.markdown("### - Liquidez")
+    st.header("2. Indices Contábeis")
     liquidez_table = _try_show_table(["table_liquidez_indices"])
     if not liquidez_table:
         _todo_placeholder("Liquidez")
-    st.markdown("### - Endividamento/Estrutura")
     endividamento_table = _try_show_table(["table_endividamento_indices"])
     if not endividamento_table:
         _todo_placeholder("Endividamento/Estrutura")
-    st.markdown("### - Rentabilidade")
     rent_table = _try_show_table(["table_rentabilidade_indices"])
     if not rent_table:
         _todo_placeholder("Rentabilidade")
-    st.markdown("### - Eficiencia Operacional / Ciclo")
     eficiencia_table = _try_show_table(["table_eficiencia_indices"])
     if not eficiencia_table:
         _todo_placeholder("Eficiencia Operacional / Ciclo")
@@ -1291,16 +1264,13 @@ def _render_tabelas_tab_content():
     st.divider()
 
     st.header("3. PCA")
-    st.markdown("### - Cargas (loadings)")
     pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
     if not pca_loadings_table:
         _todo_placeholder("Cargas (loadings)")
 
-    st.markdown("### - Variancia explicada (explained variance)")
     if not _try_show_table(["get_pca_variance_table"]):
         _todo_placeholder("Variancia explicada (explained variance)")
 
-    st.markdown("### - Projecoes (scores) por periodo/empresa")
     pca_scores_table = _try_show_table(["get_pca_scores_table"])
     if not pca_scores_table:
         _todo_placeholder("Projecoes (scores) por periodo/empresa")

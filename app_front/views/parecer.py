@@ -5,7 +5,10 @@ from typing import Dict, Any, Optional
 import streamlit as st
 
 from components.policy_engine import PolicyInputs, decide
-from components.llm_client import _invoke_model, MODEL_NAME, MODEL_TEMPERATURE
+from components.llm_client import _invoke_model, MODEL_NAME
+
+# Usar temperatura 0 para máxima determinism e reduzir erros ortográficos
+PARECER_TEMPERATURE = 0.0
 
 RANK_SERASA = {"Excelente": 1, "Bom": 2, "Baixo": 3, "Muito Baixo": 4}
 RANK_FINSCORE = {
@@ -165,11 +168,49 @@ def _generate_parecer_ia(
     ]
     
     try:
-        response = _invoke_model(messages, MODEL_NAME, MODEL_TEMPERATURE)
+        response = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
+        response = _fix_formatting_issues(response)
         return response
     except Exception as e:
         st.error(f"Erro ao gerar parecer: {e}")
         return None
+
+
+def _fix_formatting_issues(text: str) -> str:
+    """
+    Pós-processamento MINIMALISTA: apenas correções essenciais comprovadas.
+    Temperatura 0 já reduz drasticamente erros ortográficos.
+    """
+    import re
+    import unicodedata
+
+    # 1) Normalização Unicode
+    text = unicodedata.normalize('NFC', text)
+    
+    # 2) Remover caracteres invisíveis
+    invisibles = ['\u200B', '\u200C', '\u200D', '\u2060', '\uFEFF', '\u00AD']
+    for ch in invisibles:
+        text = text.replace(ch, '')
+    text = text.replace('\u00A0', ' ')
+    
+    # 3) Correções monetárias (PRINCIPAL PROBLEMA)
+    # "R 0.83" ou "R 210" -> "R$ 0,83" ou "R$ 210"
+    text = re.sub(r'\bR\s+(\d+[.,]?\d*)', r'R$ \1', text)
+    text = re.sub(r'R\$(?!\s)', r'R$ ', text)
+    
+    # "de 0.83" ou "de 0,83" -> "de 0,83" (vírgula decimal BR)
+    text = re.sub(r'(\d+)\.(\d+)', r'\1,\2', text)
+    
+    # 4) Escapar $ para evitar MathJax
+    text = re.sub(r'(?<!\\)\$', r'\\$', text)
+    
+    # 5) Espaços múltiplos
+    text = re.sub(r'([^\n]) {2,}', r'\1 ', text)
+    
+    # 6) Espaços antes de pontuação
+    text = re.sub(r' +([,.;:!?])', r'\1', text)
+    
+    return text
 
 
 def render():

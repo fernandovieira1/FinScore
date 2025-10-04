@@ -142,6 +142,7 @@ section[data-testid="stSidebar"] {
     max-width: var(--fs-sidebar-width) !important;
     flex: 0 0 var(--fs-sidebar-width) !important;
     transition: width 0.12s ease-in-out;
+    border-right: 1px solid #f5f7fb !important;
 }
 
 section[data-testid="stSidebar"][aria-expanded="false"] {
