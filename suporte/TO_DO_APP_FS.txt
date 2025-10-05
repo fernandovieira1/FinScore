@@ -756,6 +756,27 @@ Até aqui:
 [v. 0.8.15 (ia), de 05/10/2025]
 ---
 
+=====Ajustes=====
+* (x) Melhorias incrementais no parecer e header:
+    - (x) Correção da exibição de "aprovar_com_ressalvas" para "Aprovar com Ressalvas" no header
+    - (x) Substituição de "Covenants Sugeridos" por "Salvaguardas a serem sopesadas" no header
+    - (x) Aprimoramento dos bullets de "Motivos:" com formato estruturado:
+        + Bullet 1 (FinScore): Nome do índice, classificação em texto, valor em parênteses, interpretação
+        + Bullet 2 (Serasa): Nome do índice, classificação em texto, valor em parênteses, interpretação
+        + Bullet 3 (Indicadores): Crítica baseada nos indicadores da seção 3 (Liquidez, Rentabilidade, Endividamento)
+    - (x) Lógica de crítica diferenciada por decisão:
+        + Aprovar: enfatiza pontos positivos dos indicadores
+        + Aprovar com ressalvas: equilibra pontos bons e ruins
+        + Não aprovar: enfatiza pontos negativos
+    - (x) Expansão do PolicyInputs para incluir dados adicionais:
+        + serasa_score, classificacao_finscore, classificacao_serasa
+        + liquidez_corrente, liquidez_seca, roe, margem_liquida, margem_ebitda, endividamento
+    - (x) Nova função _gerar_critica_indicadores() para análise automática de indicadores
+---
+Até aqui:
+[v. 0.8.16 (ia), de 05/10/2025]
+---
+
 ......................................................................................................................
 ============
 5. LOGIN

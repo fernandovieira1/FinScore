@@ -494,9 +494,16 @@ def render():
     finscore_aj = o.get("finscore_ajustado")
     cls_fin = o.get("classificacao_finscore")
     cls_ser = o.get("classificacao_serasa")
+    serasa_score = o.get("serasa")
 
     dl_ebitda = _safe_float(indices_row.get("Alavancagem"))
     cobertura = _safe_float(indices_row.get("Cobertura de Juros"))
+    liquidez_corrente = _safe_float(indices_row.get("Liquidez Corrente"))
+    liquidez_seca = _safe_float(indices_row.get("Liquidez Seca"))
+    roe = _safe_float(indices_row.get("ROE"))
+    margem_liquida = _safe_float(indices_row.get("Margem Líquida"))
+    margem_ebitda = _safe_float(indices_row.get("Margem EBITDA"))
+    endividamento = _safe_float(indices_row.get("Endividamento"))
 
     pi = PolicyInputs(
         finscore_ajustado=finscore_aj,
@@ -505,6 +512,15 @@ def render():
         serasa_rank=RANK_SERASA.get(cls_ser),
         finscore_rank=RANK_FINSCORE.get(cls_fin),
         flags_qualidade={"dados_incompletos": False},
+        serasa_score=serasa_score,
+        classificacao_finscore=cls_fin,
+        classificacao_serasa=cls_ser,
+        liquidez_corrente=liquidez_corrente,
+        liquidez_seca=liquidez_seca,
+        roe=roe,
+        margem_liquida=margem_liquida,
+        margem_ebitda=margem_ebitda,
+        endividamento=endividamento,
     )
     
     ss["policy_inputs"] = {
@@ -540,7 +556,7 @@ def render():
                 st.markdown(f"- {motivo}")
         
         if resultado.get("covenants"):
-            st.markdown("**Covenants Sugeridos:**")
+            st.markdown("**Salvaguardas a serem sopesadas:**")
             for covenant in resultado["covenants"]:
                 st.markdown(f"- 📌 {covenant}")
 
