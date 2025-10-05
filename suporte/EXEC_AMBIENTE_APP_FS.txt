@@ -7,7 +7,7 @@
 # **apenas a primeira vez
 py -3.11 -m venv .venv
 
-cd app_front && py -3.11 -m venv .venv 
+cd app_front && py -3.11 -m venv .venv
 
 -------------------
 # (II) ATIVAR

@@ -388,9 +388,8 @@ def render():
     # ========================================
     # SEÇÃO 1: PRÉ-VEREDITO DETERMINÍSTICO
     # ========================================
-    st.subheader("📋 Pré-Veredito (Motor Determinístico)")
-    
-    col1, col2 = st.columns([1, 2])
+   
+    col1, col2 = st.columns([2, 1])
     
     with col1:
         decisao_label = {
@@ -411,54 +410,41 @@ def render():
             st.markdown("**Covenants Sugeridos:**")
             for covenant in resultado["covenants"]:
                 st.markdown(f"- 📌 {covenant}")
-    
-    # Dados chave usados na decisão
-    with st.expander("📊 Ver dados-chave da decisão"):
-        col_a, col_b, col_c = st.columns(3)
-        with col_a:
-            st.metric("FinScore Ajustado", f"{finscore_aj:.0f}" if finscore_aj else "N/A")
-            st.caption(cls_fin or "N/A")
-        with col_b:
-            st.metric("DL/EBITDA", f"{dl_ebitda:.2f}x" if dl_ebitda else "N/A")
-            st.caption("Meta: ≤ 3.0x")
-        with col_c:
-            st.metric("Cobertura Juros", f"{cobertura:.2f}x" if cobertura else "N/A")
-            st.caption("Meta: ≥ 1.5x")
 
     st.divider()
 
     # ========================================
     # SEÇÃO 2: GERAÇÃO DO PARECER NARRATIVO
     # ========================================
-    st.subheader("📝 Parecer Técnico Completo")
     
-    st.markdown("""
-    O parecer narrativo consolida:
-    - ✅ Decisão determinística (inalterável)
-    - 📊 Análise de todos os indicadores financeiros
-    - 📈 Dados de gráficos e tabelas
-    - 🎯 Comparação FinScore vs Serasa
-    - 💡 Recomendações e justificativas
-    """)
+    # Botão para gerar parecer - centralizado
+    col_left, col_center, col_right = st.columns([1, 1, 1])
     
-    # Botão para gerar parecer
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
-    
-    with col_btn1:
+    with col_center:
         gerar = st.button("🤖 Gerar Parecer IA", use_container_width=True, type="primary")
     
-    with col_btn2:
-        if "parecer_gerado" in ss:
+    # Botão regenerar (só aparece se já houver parecer)
+    if "parecer_gerado" in ss:
+        col_regen_left, col_regen_center, col_regen_right = st.columns([1, 1, 1])
+        with col_regen_center:
             if st.button("🔄 Regenerar", use_container_width=True):
                 gerar = True
                 del ss["parecer_gerado"]
     
     if gerar:
-        with st.spinner("🤖 Analisando dados e gerando parecer técnico..."):
-            # Extrair dados consolidados
+        # Criar barra de progresso
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        try:
+            # Etapa 1: Extrair dados
+            status_text.text("🔄 Extraindo dados consolidados...")
+            progress_bar.progress(30)
             analysis_data = _extract_analysis_data(o)
             
-            # Gerar parecer
+            # Etapa 2: Gerar parecer
+            status_text.text("🤖 Gerando parecer técnico com IA...")
+            progress_bar.progress(60)
             parecer = _generate_parecer_ia(
                 decisao_motor=resultado["decisao"],
                 motivos_motor=resultado.get("motivos", []),
@@ -467,10 +453,22 @@ def render():
                 meta_cliente=meta
             )
             
+            # Etapa 3: Finalizar
+            progress_bar.progress(100)
+            status_text.text("✅ Parecer gerado com sucesso!")
+            
             if parecer:
                 ss["parecer_gerado"] = parecer
-                st.success("✅ Parecer gerado com sucesso!")
+                # Limpar componentes de progresso após breve pausa
+                import time
+                time.sleep(0.5)
+                progress_bar.empty()
+                status_text.empty()
                 st.rerun()
+        except Exception as e:
+            progress_bar.empty()
+            status_text.empty()
+            st.error(f"Erro ao gerar parecer: {e}")
     
     # Exibir parecer se já foi gerado
     if "parecer_gerado" in ss:

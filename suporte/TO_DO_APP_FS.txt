@@ -643,6 +643,13 @@ Até aqui:
 [v. 0.8.12 (ia), de 04/10/2025]
 ---
 
+=====Ajustes=====
+* (x) Página parecer - Campos decisão reconfigurados e bogão gerar parecer centralizado
+---
+Até aqui:
+[v. 0.8.12 (ia), de 05/10/2025]
+---
+
 ......................................................................................................................
 ============
 5. LOGIN
