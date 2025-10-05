@@ -674,6 +674,88 @@ Até aqui:
 [v. 0.8.13 (ia), de 05/10/2025]
 ---
 
+=====Ajustes=====
+* (x) Reestruturação da seção "4. Análise de Risco e Scoring" do parecer:
+    - (x) Renomeada para "4. Resultados"
+    - (x) Adicionado parágrafo introdutório contextualizando a seção
+    - (x) Subseção "4.1 FinScore" expandida com contextualização detalhada:
+        + Validação cruzada com índices de Liquidez
+        + Validação cruzada com índices de Rentabilidade
+        + Validação cruzada com índices de Endividamento
+        + Validação cruzada com índices de Eficiência Operacional
+    - (x) Subseção "4.2 Serasa" expandida com contextualização detalhada:
+        + Análise de convergência/divergência com FinScore
+        + Relação com capacidade de pagamento e liquidez
+        + Relação com endividamento e histórico de crédito
+        + Análise de rentabilidade vs. histórico de inadimplência
+    - (x) Subseção "4.3 Síntese de Risco" renomeada para "4.3 Riscos da Operação":
+        + Análise de riscos estruturais (valores absolutos + tendências temporais)
+        + Sugestões de covenants específicos baseados em vulnerabilidades identificadas
+        + Lista de indicadores críticos para monitoramento contínuo
+        + Síntese sobre necessidade de cláusulas restritivas
+---
+Até aqui:
+[v. 0.8.14 (ia), de 05/10/2025]
+---
+
+=====Ajustes=====
+* (x) Simplificação e otimização das instruções da seção "4. Resultados" do parecer:
+    - (x) Redução do nível de prescrição do prompt para dar mais liberdade à IA
+    - (x) Instruções mais concisas e diretas
+    - (x) Mantida a estrutura: parágrafo introdutório + 4.1 FinScore + 4.2 Serasa + 4.3 Riscos da Operação
+    - (x) Mantidos os requisitos de validação cruzada com dados contábeis e índices
+    - (x) Mantida análise temporal (valores + tendências) em 4.3
+---
+Até aqui:
+[v. 0.8.14a (ia), de 05/10/2025]
+---
+
+=====Aperfeiçoamentos=====
+* (x) Reescrita completa das seções "2. Metodologia" e "3. Análise Detalhada dos Indicadores" do parecer:
+    - (x) Seção 2. Metodologia expandida com contexto narrativo e acessibilidade:
+        + Parágrafo introdutório explicando integração entre FinScore e Serasa
+        + 2.1 FinScore: explicação detalhada das 5 etapas com linguagem acessível
+        + Adicionados "Por que" e "Como" em cada etapa
+        + Incluídos exemplos práticos de interpretação de valores
+        + Remoção de tabela duplicada do Serasa
+        + 2.2 Serasa: contextualização "o que a empresa é" vs "como se comporta"
+        + Exemplos práticos de convergência/divergência entre escores
+        + 2.3 Dados Contábeis: reescrita com foco em "por que detalhar os índices"
+        + 4 razões objetivas: identificar drivers, detectar vulnerabilidades, definir covenants, compreender tendências
+        + 2.4 Critérios de Decisão: reescrita sem pesos fictícios, focando na convergência de evidências
+        + Explicação de cada critério (FinScore primário, Serasa validação, Índices complementares, Contexto qualitativo)
+        + Cenários de convergência/divergência entre FinScore e Serasa com exemplos práticos
+        + Síntese da lógica decisória com fundamentação técnica rastreável
+    - (x) Seção 3. Análise Detalhada dos Indicadores completamente reescrita:
+        + Parágrafo introdutório contextualizando as 5 dimensões de análise
+        + 3.1 Liquidez: contextualização "o que significa na prática"
+        + Explicação detalhada de cada indicador com interpretação aplicada
+        + Exemplos concretos: "R$ 2,50 para cada R$ 1,00 de dívida"
+        + Orientação para interpretar deterioração temporal
+        + 3.2 Endividamento: contextualização sobre financiamento próprio vs terceiros
+        + Explicação de cada indicador com consequências reais
+        + Exemplo: "mais de 4 anos de caixa operacional para quitar dívidas"
+        + Análise de evolução temporal (expansão planejada vs deterioração)
+        + 3.3 Rentabilidade: contextualização sobre sustentabilidade de longo prazo
+        + Explicação de cada indicador traduzida em termos concretos
+        + Exemplo: "R$ 3,00 de cada R$ 100,00 chegam ao bolso dos sócios"
+        + Identificação de tendências (eficiência vs competitividade)
+        + 3.4 Eficiência Operacional: contextualização sobre ciclo de caixa
+        + Explicação integrada de PMR, PMP e Giro do Ativo
+        + Exemplo: "folga de 15 dias no ciclo financeiro reduz necessidade de capital de giro"
+        + Análise de cenários (PMR < PMP vs PMR > PMP)
+        + 3.5 Dados Patrimoniais: contextualização de porte em valores absolutos
+        + Orientação para interpretar tabela com exemplos narrativos
+        + Análise de trajetória e possíveis causas (expansão, crise, inadimplência)
+    - (x) Eliminação de instruções excessivamente prescritivas (bullets sem contexto)
+    - (x) Adição de parágrafos introdutórios e explicativos em todas as subseções
+    - (x) Tradução de termos técnicos para linguagem acessível a não-especialistas
+    - (x) Ênfase em "implicações práticas" e "o que isso significa na prática"
+---
+Até aqui:
+[v. 0.8.15 (ia), de 05/10/2025]
+---
+
 ......................................................................................................................
 ============
 5. LOGIN
