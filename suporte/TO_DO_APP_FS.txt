@@ -644,10 +644,34 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* (x) Página parecer - Campos decisão reconfigurados e bogão gerar parecer centralizado
+* (x) Página parecer - Campos decisão reconfigurados e botão gerar parecer centralizado
+* (x) Reestruturação da seção "1. Introdução" do parecer:
+    - (x) Mantido parágrafo atual como primeiro
+    - (x) Adicionado segundo parágrafo com síntese executiva (antigo "Resumo Executivo")
+    - (x) Adicionado terceiro parágrafo descrevendo estrutura do parecer
+    - (x) Removida seção "2. Resumo Executivo"
+    - (x) Renumeradas as seções subsequentes (2. Metodologia, 3. Análise Detalhada, 4. Risco e Scoring, 5. Considerações Finais)
+* (x) Aperfeiçoamento da seção "2. Metodologia" do parecer:
+    - (x) Contextualização com conceitos da seção /Sobre (Metodologia)
+    - (x) Detalhamento das 5 etapas do FinScore
+    - (x) Explicação aprofundada do Serasa Score
+    - (x) Adição de coluna "Interpretação" na tabela FinScore
+    - (x) Adição de coluna "Significado" na tabela Serasa
+    - (x) Novo subtópico "2.3 Dados Contábeis e Índices Financeiros"
+    - (x) Novo subtópico "2.4 Critérios de Decisão" (expandido e contextualizado)
+* (x) Removido botão "🔄 Regenerar" do parecer
+* (x) Correção seção "3.4 Eficiência Operacional" do parecer:
+    - (x) Atualizado para refletir que PMR, PMP e Giro do Ativo estão disponíveis
+    - (x) Adicionada interpretação sobre gestão do ciclo financeiro
+    - (x) Incluídas orientações sobre como interpretar cada indicador
+* (x) BUGFIX: Correção de nomes de colunas na extração de dados de eficiência:
+    - (x) "PMR (dias)" → "Período Médio de Recebimento"
+    - (x) "PMP (dias)" → "Período Médio de Pagamento"
+    - (x) "Giro do Ativo (x)" → "Giro do Ativo"
+    - Causa: Mismatch entre nomes no DataFrame (utils_finscore.py) e busca no parecer
 ---
 Até aqui:
-[v. 0.8.12 (ia), de 05/10/2025]
+[v. 0.8.13 (ia), de 05/10/2025]
 ---
 
 ......................................................................................................................

@@ -73,9 +73,9 @@ def _extract_analysis_data(out_dict) -> Dict[str, Any]:
     data["margem_ebitda"] = _safe_float(indices_row.get("Margem EBITDA"))
     
     # Índices de eficiência
-    data["pmr"] = _safe_float(indices_row.get("PMR (dias)"))
-    data["pmp"] = _safe_float(indices_row.get("PMP (dias)"))
-    data["giro_ativo"] = _safe_float(indices_row.get("Giro do Ativo (x)"))
+    data["pmr"] = _safe_float(indices_row.get("Período Médio de Recebimento"))
+    data["pmp"] = _safe_float(indices_row.get("Período Médio de Pagamento"))
+    data["giro_ativo"] = _safe_float(indices_row.get("Giro do Ativo"))
     
     # Dados patrimoniais (último ano disponível)
     if df_raw is not None and not df_raw.empty:
@@ -130,51 +130,93 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 
 ## 1. Introdução
 
-Apresente a empresa ({empresa}, CNPJ {cnpj}) e o objetivo do parecer: avaliar sua capacidade de crédito com base nos indicadores financeiros e no FinScore.
+**Primeiro parágrafo:** Apresente a empresa ({empresa}, CNPJ {cnpj}) e o objetivo do parecer: avaliar sua capacidade de crédito com base nos indicadores financeiros e no FinScore.
 
----
-
-## 2. Resumo Executivo
-
-Um parágrafo de 5–8 linhas com:
+**Segundo parágrafo (Síntese Executiva):** Em 5–8 linhas, apresente:
 - Destaques principais: FinScore e Serasa (valores e classificações)
-- Pontos fortes e eventuais fragilidades
-- Conclusão direta: aprovar ou não o crédito, com justificativa
+- Pontos fortes e eventuais fragilidades identificadas
+- Conclusão direta sobre a decisão de crédito ({decisao_motor}), com justificativa objetiva
 - Indicação se há ou não covenants necessários
 
----
-
-## 3. Metodologia
-
-Descreva objetivamente:
-- O que é o **FinScore** (score proprietário via PCA sobre 15+ indicadores financeiros, dividido em 5 faixas)
-- O que é o **Serasa Score** (indicador externo de mercado)
-- Critério de decisão: FinScore é primário; Serasa é complementar
-
-**Tabela – FinScore**
-
-| Faixa de Pontuação | Classificação de Risco |
-|-------------------:|:-----------------------|
-| > 875 | Muito Abaixo do Risco |
-| 750 – 875 | Levemente Abaixo do Risco |
-| 250 – 750 | Neutro |
-| 125 – 250 | Levemente Acima do Risco |
-| < 125 | Muito Acima do Risco |
-
-**Tabela – Serasa**
-
-| Faixa de Pontuação | Classificação |
-|-------------------:|:--------------|
-| 851 – 1000 | Excelente |
-| 701 – 850 | Bom |
-| 0 – 400 | Baixo |
-| Sem cadastro | Muito Baixo |
+**Terceiro parágrafo (Estrutura do Parecer):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e covenants, se aplicáveis.
 
 ---
 
-## 4. Análise Detalhada dos Indicadores
+## 2. Metodologia
 
-### 4.1 Liquidez
+Este parecer baseia-se em dois instrumentos complementares de avaliação de risco de crédito: o **FinScore** e o **Serasa Score**.
+
+### 2.1 FinScore
+
+O **FinScore** é um índice sintético (escala 0–1000) que avalia a higidez patrimonial, econômica e financeira da empresa a partir de suas demonstrações contábeis recentes. Inspirado em metodologias consagradas como o Altman Z-Score, o FinScore foi desenvolvido especificamente para captar múltiplas dimensões do risco de crédito através de um processo analítico em cinco etapas:
+
+1. **Cálculo de Índices Contábeis**: Extração de 15+ indicadores cobrindo rentabilidade (ROA, ROE, margens), liquidez (corrente, seca, CCL/Ativo), endividamento (alavancagem, cobertura de juros), eficiência operacional (giro do ativo, PMR, PMP) e estrutura de capital.
+
+2. **Padronização Estatística**: Transformação de todos os índices via z-score (média zero, desvio-padrão um) para garantir comparabilidade entre indicadores de diferentes naturezas e escalas.
+
+3. **Redução de Dimensionalidade (PCA)**: Aplicação de Análise de Componentes Principais para condensar a informação em poucos fatores independentes, identificando os padrões mais relevantes e eliminando redundâncias.
+
+4. **Consolidação Temporal**: Agregação de até três exercícios consecutivos com ponderação decrescente (60% para o ano mais recente, 25% para o anterior e 15% para o mais antigo), equilibrando sensibilidade a mudanças recentes e consistência histórica.
+
+5. **Escalonamento e Classificação**: Transformação do escore consolidado para a escala 0–1000 e classificação em faixas interpretativas de risco.
+
+O FinScore é o **indicador primário** deste parecer, pois reflete diretamente a capacidade financeira estrutural da empresa.
+
+**Tabela – Classificação FinScore**
+
+| Faixa de Pontuação | Classificação de Risco | Interpretação |
+|-------------------:|:-----------------------|:--------------|
+| > 875 | Muito Abaixo do Risco | Perfil financeiro excepcional, risco mínimo |
+| 750 – 875 | Levemente Abaixo do Risco | Situação confortável, baixo risco |
+| 250 – 750 | Neutro | Situação intermediária, sem sinais claros de excelência ou fragilidade |
+| 125 – 250 | Levemente Acima do Risco | Atenção recomendada, sinais de fragilidade |
+| < 125 | Muito Acima do Risco | Risco elevado, análise detalhada necessária |
+
+### 2.2 Serasa Score
+
+O **Serasa Score** é um indicador externo de mercado amplamente utilizado no Brasil, que avalia o risco de inadimplência com base no histórico de pagamentos, informações cadastrais e comportamento de crédito da empresa ao longo do tempo. Diferentemente do FinScore, o Serasa não analisa a estrutura financeira interna, mas sim o track record de cumprimento de obrigações.
+
+Neste parecer, o Serasa funciona como **indicador complementar**, útil para identificar divergências entre a capacidade financeira atual (FinScore) e o histórico de comportamento de crédito (Serasa). Divergências significativas podem sinalizar riscos ocultos ou oportunidades mal avaliadas pelo mercado.
+
+**Tabela – Classificação Serasa**
+
+| Faixa de Pontuação | Classificação | Significado |
+|-------------------:|:--------------|:------------|
+| 851 – 1000 | Excelente | Histórico de crédito exemplar |
+| 701 – 850 | Bom | Comportamento de pagamento satisfatório |
+| 0 – 400 | Baixo | Histórico comprometido, atenção necessária |
+| Sem cadastro | Muito Baixo | Ausência de histórico de crédito |
+
+### 2.3 Dados Contábeis e Índices Financeiros
+
+Embora os dados contábeis brutos e os índices financeiros individuais já estejam sintetizados no FinScore através da metodologia explanada (padronização, PCA e ponderação temporal), eles serão **contextualizados e analisados individualmente** ao longo deste parecer. Essa análise detalhada serve como **critério complementar** fundamental, permitindo:
+
+- Identificar quais dimensões específicas (liquidez, rentabilidade, endividamento, eficiência) mais influenciaram o resultado do FinScore;
+- Detectar vulnerabilidades ou pontos fortes que merecem atenção especial, mesmo quando o escore geral é satisfatório;
+- Fornecer subsídios objetivos para a definição de covenants e condições de crédito;
+- Contextualizar a trajetória histórica da empresa e tendências observadas nos últimos exercícios.
+
+Os índices apresentados nas próximas seções não substituem o FinScore, mas sim o **explicam e enriquecem**, oferecendo uma visão multidimensional que fundamenta a decisão técnica de crédito.
+
+### 2.4 Critérios de Decisão
+
+A decisão de crédito apresentada neste parecer integra múltiplos elementos em uma avaliação holística:
+
+1. **FinScore (Indicador Primário)**: O FinScore é a base da análise, pois condensa de forma objetiva e comparável a saúde financeira estrutural da empresa. Sua classificação em faixas de risco orienta a decisão inicial.
+
+2. **Serasa Score (Validação Cruzada)**: O Serasa complementa o FinScore ao trazer a perspectiva do histórico de crédito e comportamento de pagamento. A convergência entre FinScore e Serasa reforça a confiabilidade da avaliação; divergências significativas demandam investigação qualitativa para distinguir riscos conjunturais de estruturais.
+
+3. **Índices Financeiros Detalhados (Critérios Complementares)**: A análise granular de liquidez, endividamento, rentabilidade e eficiência operacional permite compreender **como** e **por que** a empresa atingiu determinado FinScore, identificando drivers específicos de risco ou solidez.
+
+4. **Contexto Temporal e Setorial**: A ponderação temporal e a consideração das particularidades do setor de atuação contextualizam a análise, evitando interpretações equivocadas de eventos atípicos ou características intrínsecas à atividade empresarial.
+
+**Em síntese**: a decisão final ({decisao_motor}) resulta da **convergência** entre o escore sintético (FinScore), a validação externa (Serasa), a análise detalhada dos fundamentos financeiros (índices contábeis) e a interpretação qualitativa do contexto empresarial. Este parecer apresenta não apenas uma recomendação, mas os **fundamentos técnicos e objetivos** que a sustentam.
+
+---
+
+## 3. Análise Detalhada dos Indicadores
+
+### 3.1 Liquidez
 
 Apresente e interprete:
 - Liquidez Corrente
@@ -183,7 +225,7 @@ Apresente e interprete:
 
 Comente sobre capacidade de pagamento de curto prazo, eventuais alertas (como liquidez seca negativa) e possíveis causas.
 
-### 4.2 Endividamento e Estrutura de Capital
+### 3.2 Endividamento e Estrutura de Capital
 
 Analise:
 - DL/EBITDA (Alavancagem)
@@ -192,7 +234,7 @@ Analise:
 
 Indique se a empresa apresenta equilíbrio de capital e capacidade de pagamento de juros.
 
-### 4.3 Rentabilidade
+### 3.3 Rentabilidade
 
 Avalie:
 - ROE (Retorno sobre Patrimônio)
@@ -202,14 +244,16 @@ Avalie:
 
 Comente sobre retorno ao acionista, eficiência na geração de lucros e eventuais margens anômalas (>100%).
 
-### 4.4 Eficiência Operacional
+### 3.4 Eficiência Operacional
 
-Inclua:
-- PMR, PMP, Giro do Ativo (ou "ND" se ausentes)
+Analise os seguintes indicadores:
+- **PMR (Prazo Médio de Recebimento)**: Tempo médio em dias que a empresa leva para receber de seus clientes
+- **PMP (Prazo Médio de Pagamento)**: Tempo médio em dias que a empresa leva para pagar seus fornecedores
+- **Giro do Ativo**: Eficiência da empresa em gerar receita a partir de seus ativos totais (Receita Total / Ativo Total)
 
-Quando possível, relacione Receita Total e Ativo Total para inferir eficiência.
+Interprete a gestão do ciclo financeiro: PMR menor que PMP indica folga de caixa operacional; o contrário pode sinalizar pressão de liquidez. O Giro do Ativo elevado sugere boa utilização dos recursos, enquanto valores muito baixos podem indicar ativos ociosos ou subutilizados.
 
-### 4.5 Dados Patrimoniais e de Resultado
+### 3.5 Dados Patrimoniais e de Resultado
 
 Apresente em formato tabular:
 
@@ -225,23 +269,23 @@ Finalize com 2–3 frases sobre o porte e desempenho geral.
 
 ---
 
-## 5. Análise de Risco e Scoring
+## 4. Análise de Risco e Scoring
 
-### 5.1 FinScore
+### 4.1 FinScore
 
 Explique o valor e a classificação do FinScore. Interprete o significado em termos de solidez patrimonial e risco de inadimplência.
 
-### 5.2 Serasa
+### 4.2 Serasa
 
 Analise o valor e a classificação Serasa, destacando como complementa o FinScore e se sugere atenção adicional.
 
-### 5.3 Síntese de Risco
+### 4.3 Síntese de Risco
 
 Compare e concilie FinScore e Serasa, indicando convergências e eventuais tensões entre as avaliações.
 
 ---
 
-## 6. Considerações Finais
+## 5. Considerações Finais
 
 - Apresente a **decisão final**: {decisao_motor}
 - Justifique em 3–4 bullets os principais fundamentos da decisão
@@ -421,15 +465,7 @@ def render():
     col_left, col_center, col_right = st.columns([1, 1, 1])
     
     with col_center:
-        gerar = st.button("🤖 Gerar Parecer IA", use_container_width=True, type="primary")
-    
-    # Botão regenerar (só aparece se já houver parecer)
-    if "parecer_gerado" in ss:
-        col_regen_left, col_regen_center, col_regen_right = st.columns([1, 1, 1])
-        with col_regen_center:
-            if st.button("🔄 Regenerar", use_container_width=True):
-                gerar = True
-                del ss["parecer_gerado"]
+        gerar = st.button("Gerar Parecer IA", use_container_width=True, type="primary")
     
     if gerar:
         # Criar barra de progresso
