@@ -55,7 +55,7 @@ def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessag
         "Content-Type": "application/json",
     }
 
-    response = requests.post(endpoint, json=payload, headers=headers, timeout=180)
+    response = requests.post(endpoint, json=payload, headers=headers, timeout=240)
     response.raise_for_status()
     data = response.json()
     try:

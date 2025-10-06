@@ -108,6 +108,13 @@ def _build_parecer_prompt(
     empresa = meta_cliente.get("empresa", "N/A")
     cnpj = meta_cliente.get("cnpj", "N/A")
     
+    # Extrair dados para variáveis no prompt
+    finscore_ajustado = analysis_data.get("finscore_ajustado", "N/A")
+    classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
+    serasa_score = analysis_data.get("serasa_score", "N/A")
+    classificacao_serasa = analysis_data.get("classificacao_serasa", "N/A")
+    covenants_texto = ', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant específico'
+    
     # Formatar dados para o prompt
     dados_formatados = json.dumps(analysis_data, ensure_ascii=False, indent=2, default=str)
     
@@ -376,10 +383,15 @@ Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estrutura
 
 ## 5. Considerações Finais
 
-- Apresente a **decisão final**: {decisao_motor}
-- Justifique em 3–4 bullets os principais fundamentos da decisão
-- Mencione se há **covenants** (ex.: limites de endividamento, envio de balanços trimestrais)
-- Acrescente uma **recomendação de monitoramento** contínuo, se aplicável
+**Primeiro parágrafo (Síntese da Análise Detalhada):** Resuma em 3-4 linhas os principais achados da seção "3. Análise Detalhada dos Indicadores", destacando os pontos mais relevantes identificados nas categorias de liquidez, endividamento, rentabilidade e eficiência. Mencione quais indicadores demonstraram maior solidez ou fragilidade.
+
+**Segundo parágrafo (Síntese dos Resultados):** Resuma em 3-4 linhas a seção "4. Resultados", consolidando a avaliação do FinScore, a pontuação Serasa, a decisão do motor de política e os principais motivos/covenants identificados. Explique como esses elementos se inter-relacionam para fundamentar a decisão final.
+
+**Terceiro parágrafo (Decisão Final e Recomendações):** 
+- Reafirme formalmente a **decisão final**: {decisao_motor}
+- Repita os valores e classificações: FinScore {finscore_ajustado} ({classificacao_finscore}) e Serasa {serasa_score} ({classificacao_serasa})
+- Liste as **salvaguardas/covenants recomendados** (se aplicável): {covenants_texto}
+- Conclua com uma recomendação de monitoramento contínuo, se pertinente
 
 ---
 

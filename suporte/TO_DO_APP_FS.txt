@@ -784,6 +784,30 @@ Até aqui:
 [v. 0.8.17 (ia), de 05/10/2025] - versão pre-release-alpha
 ---
 
+=====Ajustes=====
+* ( ) Progress bar em mais etapas e melhorias visuais
+=====Novidades=====
+* ( ) Mais texto na seção 4 do parecer (Resultados)
+* ( ) Gráfico na seção 4 do parecer (Resultados)
+* ( ) Botões pós-parecer:
+    - ( ) Baixar Parecer (PDF)
+    - ( ) Copiar Parecer (clipboard)
+---
+Até aqui:
+[v. 0.8.18 (ia), de 06/10/2025]
+[v. 0.8.18a (ia), de 06/10/2025] - confirmações de funcionamento
+---
+
+=====Novidades=====
+* ( ) Transpor os resultados da seção /Parecer para a aba 'Resultado' em /Análise
+* ( ) Gerar o resultado a partir de /Análise/Resumo
+* ( ) Gerar parecer ser computado em segundo plano a partir do momento que se clica em 
+'Calcular FinScore' em /Lançamentos
+---
+Até aqui:
+[v. 0.8.19 (ia), de 06/10/2025]
+---
+
 ......................................................................................................................
 ============
 5. LOGIN
