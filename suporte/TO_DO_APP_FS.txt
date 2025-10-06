@@ -809,6 +809,7 @@ Até aqui:
 [v. 0.8.20 (ia), de 06/10/2025]
 [v. 0.8.20a (dev), de 06/10/2025] - tranferi (ia) para (dev) (testado e funcionando)
 [v. 0.8.20b (main), de 06/10/2025] - tranferi (dev) para (main)
+[v. 0.8.20c (main), de 06/10/2025] - conflito streamlit cloud packages.txt (removido)
 ---
 
 =====Ajustes=====
