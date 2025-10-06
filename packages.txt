@@ -1,0 +1,1 @@
+# xhtml2pdf não requer dependências do sistema

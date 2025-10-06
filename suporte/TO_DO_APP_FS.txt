@@ -785,17 +785,33 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Progress bar em mais etapas e melhorias visuais
-=====Novidades=====
-* ( ) Mais texto na seção 4 do parecer (Resultados)
-* ( ) Gráfico na seção 4 do parecer (Resultados)
-* ( ) Botões pós-parecer:
-    - ( ) Baixar Parecer (PDF)
+* (x) Botões pós-parecer:
     - (x) Remover botões copiar e enviar por email
 ---
 Até aqui:
 [v. 0.8.18 (ia), de 06/10/2025]
 [v. 0.8.18a (ia), de 06/10/2025] - confirmações de funcionamento
+---
+
+=====Novidades=====
+* (x) Botões pós-parecer:
+    - (x) Baixar Parecer (PDF) (xhtml2pdf)
+---
+Até aqui:
+[v. 0.8.19 (ia), de 06/10/2025]
+---
+
+=====Ajustes=====
+* ( ) Progress bar em mais etapas e melhorias visuais
+=====Novidades=====
+* ( ) Mais texto na seção 4 do parecer (Resultados)
+* ( ) Gráfico na seção 4 do parecer (Resultados)
+* ( ) Botões pós-parecer:
+    - ( ) Baixar Parecer (PDF) (playright)
+    - ( ) Seletor playright e xhtml2pdf
+---
+Até aqui:
+[v. 0.8.xx (ia), de xx/10/2025]
 ---
 
 =====Novidades=====
@@ -805,7 +821,7 @@ Até aqui:
 'Calcular FinScore' em /Lançamentos
 ---
 Até aqui:
-[v. 0.8.19 (ia), de 06/10/2025]
+[v. 0.8.xx (ia), de xx/10/2025]
 ---
 
 ......................................................................................................................

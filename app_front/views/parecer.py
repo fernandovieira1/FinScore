@@ -722,5 +722,66 @@ def render():
         col_left, col_center, col_right = st.columns([1, 1, 1])
         
         with col_center:
-            if st.button("💾 Exportar PDF", use_container_width=True, disabled=True):
-                st.info("Funcionalidade em desenvolvimento")
+            try:
+                import sys
+                import os
+                # Adicionar o diretório app_front ao path se necessário
+                app_front_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if app_front_dir not in sys.path:
+                    sys.path.insert(0, app_front_dir)
+                
+                from pdf.export_pdf import gerar_pdf_parecer
+                pdf_disponivel = True
+            except ImportError as e:
+                pdf_disponivel = False
+                import_error = str(e)
+            
+            if st.button("📃 Exportar PDF", use_container_width=True, disabled=not pdf_disponivel):
+                if pdf_disponivel:
+                    try:
+                        with st.spinner("Gerando PDF profissional..."):
+                            # Preparar metadados
+                            pdf_meta = {
+                                "empresa": meta.get("empresa", "Empresa"),
+                                "cnpj": meta.get("cnpj", "N/A"),
+                                "data_analise": meta.get("serasa_data", ""),
+                                "finscore_ajustado": f"{finscore_aj:.2f}" if finscore_aj is not None else "N/A",
+                                "classificacao_finscore": cls_fin or "N/A",
+                                "serasa_score": f"{serasa_score:.0f}" if serasa_score is not None else "N/A",
+                                "classificacao_serasa": cls_ser or "N/A",
+                                "decisao": resultado["decisao"]
+                            }
+                            
+                            # Gerar PDF
+                            pdf_bytes = gerar_pdf_parecer(
+                                conteudo=ss["parecer_gerado"],
+                                meta=pdf_meta,
+                                is_markdown=True
+                            )
+                            
+                            # Nome do arquivo
+                            empresa_safe = meta.get("empresa", "Empresa").replace(" ", "_")
+                            pdf_filename = f"Parecer_{empresa_safe}_{meta.get('cnpj', 'CNPJ').replace('.', '').replace('/', '').replace('-', '')}.pdf"
+                            
+                            # Botão de download
+                            st.download_button(
+                                label="📥 Baixar PDF",
+                                data=pdf_bytes,
+                                file_name=pdf_filename,
+                                mime="application/pdf",
+                                use_container_width=True
+                            )
+                            st.success("PDF gerado com sucesso!")
+                    except Exception as e:
+                        import traceback
+                        st.error(f"Erro ao gerar PDF: {str(e)}")
+                        with st.expander("🔍 Detalhes do erro"):
+                            st.code(traceback.format_exc())
+                        st.info("💡 **Soluções comuns:**\n" + 
+                                "1. Certifique-se que o Chromium está instalado: `python -m playwright install chromium`\n" +
+                                "2. Reinicie o app Streamlit\n" +
+                                "3. Verifique se o ambiente virtual está ativo")
+                else:
+                    if 'import_error' in locals():
+                        st.warning(f"Módulo PDF não disponível: {import_error}")
+                    st.info("📦 **Instale as dependências:**\n\n1. `pip install playwright jinja2 markdown-it-py`\n2. `python -m playwright install chromium`")

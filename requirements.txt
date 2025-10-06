@@ -17,6 +17,9 @@ scipy==1.11.4
 # Word/PDF Export (Fase 2)
 python-docx==1.1.2
 reportlab==4.2.2
+# PDF Export Profissional (A4)
+xhtml2pdf==0.2.16
+markdown-it-py==3.0.0
 # AI / LLMs (Fase 2)
 openai==1.37.0
 langchain==0.2.10
