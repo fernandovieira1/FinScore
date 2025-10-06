@@ -1,1 +1,5 @@
-# xhtml2pdf não requer dependências do sistema
+# Dependências do sistema para Playwright no Streamlit Cloud (Linux)
+# Chromium será instalado automaticamente pelo Playwright
+# Estas libs são necessárias para o Chromium funcionar
+libgbm1
+libasound2

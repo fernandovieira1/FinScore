@@ -732,6 +732,7 @@ def render():
                 
                 from pdf.export_pdf import gerar_pdf_parecer
                 pdf_disponivel = True
+                
             except ImportError as e:
                 pdf_disponivel = False
                 import_error = str(e)
@@ -752,11 +753,14 @@ def render():
                                 "decisao": resultado["decisao"]
                             }
                             
-                            # Gerar PDF
+                            # Gerar PDF (engine auto-detectado baseado na plataforma)
                             pdf_bytes = gerar_pdf_parecer(
                                 conteudo=ss["parecer_gerado"],
                                 meta=pdf_meta,
                                 is_markdown=True
+                                # engine=None detecta automaticamente:
+                                # Windows → xhtml2pdf
+                                # Linux/Mac → playwright (se disponível)
                             )
                             
                             # Nome do arquivo
@@ -765,7 +769,7 @@ def render():
                             
                             # Botão de download
                             st.download_button(
-                                label="📥 Baixar PDF",
+                                label="🗂️ Baixar PDF",
                                 data=pdf_bytes,
                                 file_name=pdf_filename,
                                 mime="application/pdf",

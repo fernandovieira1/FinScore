@@ -18,7 +18,10 @@ scipy==1.11.4
 python-docx==1.1.2
 reportlab==4.2.2
 # PDF Export Profissional (A4)
+# xhtml2pdf: Windows/Fallback (simples, multiplataforma)
 xhtml2pdf==0.2.16
+# playwright: Linux/Mac (qualidade superior, CSS moderno)
+playwright==1.48.0
 markdown-it-py==3.0.0
 # AI / LLMs (Fase 2)
 openai==1.37.0

@@ -801,6 +801,14 @@ Até aqui:
 [v. 0.8.19 (ia), de 06/10/2025]
 ---
 
+=====Novidades=====
+* (x) Botões pós-parecer:
+    - (x) Seletor automatico, conforme o SO, de playright e xhtml2pdf
+---
+Até aqui:
+[v. 0.8.20 (ia), de 06/10/2025]
+---
+
 =====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
 =====Novidades=====
@@ -808,7 +816,6 @@ Até aqui:
 * ( ) Gráfico na seção 4 do parecer (Resultados)
 * ( ) Botões pós-parecer:
     - ( ) Baixar Parecer (PDF) (playright)
-    - ( ) Seletor playright e xhtml2pdf
 ---
 Até aqui:
 [v. 0.8.xx (ia), de xx/10/2025]
