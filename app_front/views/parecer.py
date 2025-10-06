@@ -537,28 +537,113 @@ def render():
     # ========================================
     # SEÇÃO 1: PRÉ-VEREDITO DETERMINÍSTICO
     # ========================================
-   
-    col1, col2 = st.columns([2, 1])
     
-    with col1:
-        decisao_label = {
-            "aprovar": "✅ Aprovar",
-            "aprovar_com_ressalvas": "⚠️ Aprovar com Ressalvas",
-            "nao_aprovar": "❌ Não Aprovar"
-        }.get(resultado["decisao"], resultado["decisao"])
-        
-        st.metric("Decisão Final", decisao_label)
+    # Empresa/CNPJ centralizado
+    empresa = meta.get("empresa", "Empresa")
+    cnpj = meta.get("cnpj", "")
+    st.markdown(
+        f"<div style='text-align: center;'><span style='font-size: 1.5rem; color: #708090; font-weight: 400;'>{empresa} | {cnpj}</span></div>",
+        unsafe_allow_html=True
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    with col2:
-        if resultado.get("motivos"):
-            st.markdown("**Motivos:**")
-            for motivo in resultado["motivos"]:
-                st.markdown(f"- {motivo}")
-        
-        if resultado.get("covenants"):
-            st.markdown("**Salvaguardas a serem sopesadas:**")
-            for covenant in resultado["covenants"]:
-                st.markdown(f"- 📌 {covenant}")
+    # Header em duas colunas com estrutura de tabela
+    col1, col2 = st.columns([2, 1], gap="large")
+    
+    # Preparar valores
+    finscore_val = f"{finscore_aj:.2f}" if finscore_aj is not None else "N/A"
+    serasa_val = f"{serasa_score:.0f}" if serasa_score is not None else "N/A"
+    decisao_label = {
+        "aprovar": "✅ Aprovar",
+        "aprovar_com_ressalvas": "⚠️ Aprovar com Ressalvas",
+        "nao_aprovar": "❌ Não Aprovar"
+    }.get(resultado["decisao"], resultado["decisao"])
+    
+    # Críticas
+    if finscore_aj is not None:
+        if cls_fin == "Muito Abaixo do Risco":
+            critica_finscore = "Indicadores patrimoniais, econômicos e contábeis sugerem desempenho significativamente superior ao benchmark do setor."
+        elif cls_fin == "Levemente Abaixo do Risco":
+            critica_finscore = "Dados fornecidos apontam para desempenho levemente acima da média setorial em múltiplos indicadores."
+        elif cls_fin == "Neutro":
+            critica_finscore = "Indicadores apresentam-se consistentes com o esperado para empresas comparáveis do setor."
+        elif cls_fin == "Levemente Acima do Risco":
+            critica_finscore = "Há indícios de desempenho abaixo da média setorial, sugerindo necessidade de monitoramento."
+        else:
+            critica_finscore = "Indicadores sugerem desempenho significativamente inferior ao benchmark, com possíveis fragilidades estruturais."
+    else:
+        critica_finscore = "Dados insuficientes para análise do FinScore."
+    
+    if serasa_score is not None:
+        if cls_ser == "Excelente":
+            critica_serasa = "Pontuação indica histórico consistente com baixa probabilidade de inadimplência no horizonte de análise."
+        elif cls_ser == "Bom":
+            critica_serasa = "Pontuação sugere comportamento de crédito dentro de parâmetros aceitáveis, com risco moderado."
+        elif cls_ser == "Baixo":
+            critica_serasa = "Pontuação aponta para possíveis restrições no histórico, indicando maior probabilidade de inadimplência."
+        else:
+            critica_serasa = "Pontuação sugere histórico com restrições relevantes, compatível com risco elevado de inadimplência."
+    else:
+        critica_serasa = "Dados de Serasa não disponíveis."
+    
+    if resultado["decisao"] == "aprovar":
+        critica_decisao = "Dados analisados indicam perfil de risco compatível com aprovação, dentro dos parâmetros estabelecidos."
+    elif resultado["decisao"] == "aprovar_com_ressalvas":
+        critica_decisao = "Perfil sugere aprovação condicional, com recomendação de cláusulas restritivas e acompanhamento periódico."
+    else:
+        critica_decisao = "Indicadores analisados sugerem perfil de risco incompatível com os critérios de aprovação vigentes."
+    
+    # Renderizar em formato de tabela HTML para alinhamento perfeito
+    st.markdown(f"""
+    <style>
+        .parecer-table {{ 
+            background: #f5f7fb !important; 
+            border: 0 !important;
+            border-spacing: 0 !important;
+        }}
+        .parecer-table tr {{ 
+            background: #f5f7fb !important; 
+            border: 0 !important;
+        }}
+        .parecer-table td {{ 
+            background: #f5f7fb !important; 
+            border: 0 !important;
+            border-top: 0 !important;
+            border-bottom: 0 !important;
+            border-left: 0 !important;
+            border-right: 0 !important;
+        }}
+    </style>
+    <table class="parecer-table" style="width: 100%; border-collapse: collapse; background: #f5f7fb !important; border: 0 !important;">
+        <tr style="border: 0 !important; background: #f5f7fb !important;">
+            <td style="width: 60%; vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                <strong>FinScore:</strong><br>
+                {finscore_val} ({cls_fin or 'N/A'})
+            </td>
+            <td style="width: 40%; vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                {critica_finscore}
+            </td>
+        </tr>
+        <tr style="border: 0 !important; background: #f5f7fb !important;">
+            <td style="vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                <strong>Serasa:</strong><br>
+                {serasa_val} ({cls_ser or 'N/A'})
+            </td>
+            <td style="vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                {critica_serasa}
+            </td>
+        </tr>
+        <tr style="border: 0 !important; background: #f5f7fb !important;">
+            <td style="vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                <strong>Decisão Final:</strong><br>
+                {decisao_label}
+            </td>
+            <td style="vertical-align: top; padding: 12px 0; border: 0 !important; background: #f5f7fb !important;">
+                {critica_decisao}
+            </td>
+        </tr>
+    </table>
+    """, unsafe_allow_html=True)
 
     st.divider()
 

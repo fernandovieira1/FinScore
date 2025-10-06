@@ -5,7 +5,7 @@ from components.config import SIDEBAR_MENU, SLUG_MAP, DEBUG_MODE
 from components.state_manager import AppState
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
-LOGO = ASSETS / "logo_fin1a.png"
+LOGO = ASSETS / "logo_fin3a.png"
 
 
 def render_sidebar(current_page: str = "Home"):
