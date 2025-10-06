@@ -791,7 +791,7 @@ Até aqui:
 * ( ) Gráfico na seção 4 do parecer (Resultados)
 * ( ) Botões pós-parecer:
     - ( ) Baixar Parecer (PDF)
-    - ( ) Copiar Parecer (clipboard)
+    - (x) Remover botões copiar e enviar por email
 ---
 Até aqui:
 [v. 0.8.18 (ia), de 06/10/2025]

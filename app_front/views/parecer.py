@@ -719,17 +719,8 @@ def render():
         st.divider()
         
         # Ações pós-geração
-        col_action1, col_action2, col_action3 = st.columns(3)
+        col_left, col_center, col_right = st.columns([1, 1, 1])
         
-        with col_action1:
+        with col_center:
             if st.button("💾 Exportar PDF", use_container_width=True, disabled=True):
                 st.info("Funcionalidade em desenvolvimento")
-        
-        with col_action2:
-            if st.button("📧 Enviar por Email", use_container_width=True, disabled=True):
-                st.info("Funcionalidade em desenvolvimento")
-        
-        with col_action3:
-            if st.button("📋 Copiar Texto", use_container_width=True):
-                st.code(ss["parecer_gerado"], language=None)
-                st.caption("Use Ctrl+A e Ctrl+C para copiar")
