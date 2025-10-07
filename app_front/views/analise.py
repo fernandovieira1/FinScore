@@ -12,6 +12,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
+import pandas as pd
 import streamlit as st
 
 from components.llm_client import call_review_llm
@@ -455,6 +456,83 @@ def _todo_placeholder(nome: str):
 def _normalize_label(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     return normalized.encode("ascii", "ignore").decode("ascii").lower()
+
+
+def _format_column_name(col_name: str) -> str:
+    """
+    Formata nome de coluna: remove prefixos p_ ou r_, capitaliza palavras,
+    substitui underscore por espaço e corrige ortografia brasileira.
+    
+    Exemplo: 'p_Patrimonio_Liquido' -> 'Patrimônio Líquido'
+             'r_Lucro_Liquido' -> 'Lucro Líquido'
+    """
+    # Remove prefixos p_ ou r_
+    if col_name.startswith(('p_', 'r_')):
+        col_name = col_name[2:]
+    
+    # Substitui underscore por espaço
+    col_name = col_name.replace('_', ' ')
+    
+    # Capitaliza primeira letra de cada palavra
+    col_name = col_name.title()
+    
+    # Dicionário de correções ortográficas para padrão brasileiro
+    corrections = {
+        'Patrimonio': 'Patrimônio',
+        'Liquido': 'Líquido',
+        'Liquidez': 'Liquidez',
+        'Receita': 'Receita',
+        'Circulante': 'Circulante',
+        'Passivo': 'Passivo',
+        'Ativo': 'Ativo',
+        'Lucro': 'Lucro',
+        'Imobilizado': 'Imobilizado',
+        'Realizavel': 'Realizável',
+        'Divida': 'Dívida',
+        'Credito': 'Crédito',
+        'Debito': 'Débito',
+        'Capital': 'Capital',
+        'Medio': 'Médio',
+        'Periodo': 'Período',
+        'Analise': 'Análise',
+        'Operacional': 'Operacional',
+        'Indice': 'Índice',
+        'Indices': 'Índices',
+        'Despesa': 'Despesa',
+        'Despesas': 'Despesas',
+        'Impostos': 'Impostos',
+        'Juros': 'Juros',
+        'Depreciacao': 'Depreciação',
+        'Amortizacao': 'Amortização',
+        'Disponivel': 'Disponível',
+        'Estoque': 'Estoque',
+        'Fornecedor': 'Fornecedor',
+        'Fornecedores': 'Fornecedores',
+    }
+    
+    # Aplica correções palavra por palavra
+    words = col_name.split()
+    corrected_words = [corrections.get(word, word) for word in words]
+    
+    return ' '.join(corrected_words)
+
+
+def _format_currency_value(value) -> str:
+    """
+    Formata valor numérico como moeda brasileira com prefixo R$.
+    
+    Exemplo: 37531910 -> 'R$ 37.531.910,00'
+    """
+    if pd.isna(value):
+        return '-'
+    
+    try:
+        num_value = float(value)
+        # Formata com separador de milhares (.) e decimais (,)
+        formatted = f'R$ {num_value:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+        return formatted
+    except (ValueError, TypeError):
+        return str(value)
 
 
 def _split_indices_columns(df) -> dict:
@@ -1205,6 +1283,94 @@ def _render_indices_tables(df):
 
 
 
+def _render_dados_contabeis_tab_content():
+    """Renderiza a aba 'Dados Contábeis' com dados brutos formatados da planilha."""
+    ss = st.session_state
+    out = ss.get("out")
+    
+    if not out:
+        st.info("Calcule o FinScore em **Novo** para visualizar os dados contábeis.")
+        return
+    
+    df_raw = out.get("df_raw")
+    
+    if df_raw is None or df_raw.empty:
+        st.warning("Nenhum dado contábil disponível.")
+        return
+    
+    # Informações no topo
+    meta = ss.get("meta", {})
+    empresa = meta.get("empresa", "-")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Empresa</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{empresa}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    with col2:
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Total de Períodos</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(df_raw)}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    with col3:
+        # Contar colunas numéricas (exceto 'Ano')
+        numeric_cols = df_raw.select_dtypes(include=['number']).columns.tolist()
+        if 'ano' in [c.lower() for c in df_raw.columns]:
+            numeric_cols = [c for c in numeric_cols if c.lower() != 'ano']
+        
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Total de Contas</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(numeric_cols)}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    st.divider()
+    
+    # Criar cópia do dataframe para não modificar o original
+    df_display = df_raw.copy()
+    
+    # Limitar a 3 linhas
+    df_display = df_display.head(3)
+    
+    # Formatar nomes das colunas
+    df_display.columns = [_format_column_name(col) for col in df_display.columns]
+    
+    # Identificar colunas numéricas (exceto 'Ano' se existir)
+    numeric_cols_display = df_display.select_dtypes(include=['number']).columns.tolist()
+    if 'Ano' in numeric_cols_display:
+        numeric_cols_display.remove('Ano')
+    
+    # Formatar coluna Ano (se existir) - sem vírgulas ou pontos
+    if 'Ano' in df_display.columns:
+        df_display['Ano'] = df_display['Ano'].apply(lambda x: str(int(x)) if pd.notna(x) else '-')
+    
+    # Formatar valores numéricos como moeda
+    for col in numeric_cols_display:
+        df_display[col] = df_display[col].apply(_format_currency_value)
+    
+    # Exibir tabela formatada
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        hide_index=True
+    )
+
+
 def _render_tabelas_tab_content():
     ss = st.session_state
     out = ss.get("out")
@@ -1316,12 +1482,19 @@ def render():
         unsafe_allow_html=True,
     )
 
-    tab_scores, tab_graficos, tab_tabelas = st.tabs(["Scores", "Gráficos", "Tabelas"])
+    tab_dados, tab_graficos, tab_tabelas, tab_scores = st.tabs([
+        "Dados Contábeis", 
+        "Gráficos", 
+        "Tabelas",
+        "Scores"
+    ])
 
-    with tab_scores:
-        render_scores()
+    with tab_dados:
+        _render_dados_contabeis_tab_content()
     with tab_graficos:
         _render_graficos_tab_content()
     with tab_tabelas:
         _render_tabelas_tab_content()
+    with tab_scores:
+        render_scores()
 

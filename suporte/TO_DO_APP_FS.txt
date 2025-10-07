@@ -810,6 +810,16 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Reordenamento das abas em /Análise
+* (x) Importação de dados Excel e Google Sheets corrigir formatos (sempre float) e valores faltantes (como 0)
+=====Novidades=====
+* (x) Aba 'Dados Contábeis' em /Análise
+---
+Até aqui:
+[v. 0.8.21 (ia), de 07/10/2025]
+---
+
+=====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
@@ -823,7 +833,7 @@ Até aqui:
 
 =====Novidades=====
 * ( ) Transpor os resultados da seção /Parecer para a aba 'Resultado' em /Análise
-* ( ) Gerar o resultado a partir de /Análise/Resumo
+* ( ) Gerar o resultado a partir de /Análise/Resultado
 * ( ) Gerar parecer ser computado em segundo plano a partir do momento que se clica em 
 'Calcular FinScore' em /Lançamentos
 ---
