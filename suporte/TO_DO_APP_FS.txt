@@ -827,6 +827,13 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Conteúdo do Parecer readquado (seção Metodologia mais sintética)
+---
+Até aqui:
+[v. 0.8.23 (ia), de 08/10/2025]
+---
+
+=====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
