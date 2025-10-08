@@ -1,8 +1,10 @@
 # app_front/services/io_validation.py
 from typing import Any, Dict, Tuple, Optional
 import pandas as pd
+import numpy as np
 import streamlit as st
 from io import BytesIO
+import re
 
 def validar_cliente(meta: Dict[str, Any]) -> Dict[str, str]:
     e: Dict[str, str] = {}
@@ -40,6 +42,125 @@ def _sheet_name_case_insensitive(xls: pd.ExcelFile, wanted: str) -> Optional[str
             return s
     return None
 
+
+def _limpar_valor_numerico(valor):
+    """
+    Limpa e converte valores para float, tratando diversos formatos incorretos.
+    
+    Exemplos:
+    - "Rs 20" -> 20.0
+    - "R$ 1.234,56" -> 1234.56
+    - "1,234.56" -> 1234.56
+    - "  " -> 0.0
+    - "" -> 0.0
+    - None -> 0.0
+    """
+    # Se já é numérico, retorna como float
+    if isinstance(valor, (int, float)):
+        if pd.isna(valor) or np.isnan(valor) or np.isinf(valor):
+            return 0.0
+        return float(valor)
+    
+    # Se não é string, tenta converter
+    if not isinstance(valor, str):
+        try:
+            val = float(valor)
+            if pd.isna(val) or np.isnan(val) or np.isinf(val):
+                return 0.0
+            return val
+        except (ValueError, TypeError):
+            return 0.0
+    
+    # Limpa string
+    valor_limpo = str(valor).strip()
+    
+    # Se vazio, retorna 0
+    if not valor_limpo:
+        return 0.0
+    
+    # Remove prefixos comuns de moeda (R$, Rs, $, etc)
+    valor_limpo = re.sub(r'^[Rr][Ss]?\$?\s*', '', valor_limpo)
+    valor_limpo = re.sub(r'^\$\s*', '', valor_limpo)
+    
+    # Remove espaços
+    valor_limpo = valor_limpo.replace(' ', '')
+    
+    # Detecta formato brasileiro (1.234,56) vs inglês (1,234.56)
+    # Se tem ponto antes de vírgula, é formato brasileiro
+    if '.' in valor_limpo and ',' in valor_limpo:
+        idx_ponto = valor_limpo.rfind('.')
+        idx_virgula = valor_limpo.rfind(',')
+        
+        if idx_ponto < idx_virgula:
+            # Formato brasileiro: 1.234,56
+            valor_limpo = valor_limpo.replace('.', '').replace(',', '.')
+        else:
+            # Formato inglês: 1,234.56
+            valor_limpo = valor_limpo.replace(',', '')
+    elif ',' in valor_limpo:
+        # Só tem vírgula, assume formato brasileiro
+        valor_limpo = valor_limpo.replace(',', '.')
+    # Se só tem ponto, mantém como está (formato inglês)
+    
+    # Remove outros caracteres não numéricos (exceto ponto e sinal negativo)
+    valor_limpo = re.sub(r'[^\d.\-]', '', valor_limpo)
+    
+    # Tenta converter para float
+    try:
+        resultado = float(valor_limpo)
+        if pd.isna(resultado) or np.isnan(resultado) or np.isinf(resultado):
+            return 0.0
+        return resultado
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _padronizar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Padroniza o DataFrame importado:
+    - Converte colunas numéricas para float
+    - Preenche valores faltantes com 0
+    - Limpa typos e formatos incorretos
+    - Preserva coluna 'ano' sem alteração
+    """
+    if df is None or df.empty:
+        return df
+    
+    df_limpo = df.copy()
+    
+    # Identifica coluna de ano (case insensitive)
+    col_ano = None
+    for col in df_limpo.columns:
+        if str(col).lower() == 'ano':
+            col_ano = col
+            break
+    
+    # Para cada coluna (exceto ano)
+    for col in df_limpo.columns:
+        # Preserva coluna ano
+        if col == col_ano:
+            # Garante que ano é inteiro
+            try:
+                df_limpo[col] = pd.to_numeric(df_limpo[col], errors='coerce').fillna(0).astype(int)
+            except:
+                pass
+            continue
+        
+        # Para outras colunas, aplica limpeza e conversão para float
+        try:
+            # Aplica limpeza em cada valor
+            df_limpo[col] = df_limpo[col].apply(_limpar_valor_numerico)
+            # Garante tipo float
+            df_limpo[col] = df_limpo[col].astype(float)
+        except Exception:
+            # Se falhar, tenta conversão direta
+            try:
+                df_limpo[col] = pd.to_numeric(df_limpo[col], errors='coerce').fillna(0.0)
+            except:
+                pass
+    
+    return df_limpo
+
 def ler_planilha(upload_or_url) -> Tuple[Optional[pd.DataFrame], Optional[str], Optional[str]]:
     """
     Lê uma planilha Excel, priorizando o engine 'openpyxl' (xlsx).
@@ -56,7 +177,11 @@ def ler_planilha(upload_or_url) -> Tuple[Optional[pd.DataFrame], Optional[str], 
         xls = pd.ExcelFile(src, engine="openpyxl")
         aba = _sheet_name_case_insensitive(xls, "lancamentos") or xls.sheet_names[0]
         df = pd.read_excel(xls, sheet_name=aba, engine="openpyxl")
-        return df, aba, None
+        
+        # Aplica padronização e limpeza automática dos dados
+        df_limpo = _padronizar_dataframe(df)
+        
+        return df_limpo, aba, None
     except ImportError as e:
         # Dependência não encontrada no ambiente em execução
         msg = (

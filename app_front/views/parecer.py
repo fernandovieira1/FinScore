@@ -493,7 +493,7 @@ def _fix_formatting_issues(text: str) -> str:
 
 def render():
     ss = st.session_state
-    st.header("Parecer de Crédito")
+    st.markdown("### 🖊️ Parecer Técnico")
 
     if not ss.get("out"):
         st.info("Calcule o FinScore em **Lançamentos** para liberar o parecer.")
