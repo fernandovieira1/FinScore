@@ -151,29 +151,19 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 
 ## 2. Metodologia
 
-A decisão de crédito apresentada neste parecer não se baseia em impressões subjetivas ou análises superficiais, mas sim em uma **avaliação técnica estruturada** que combina dois instrumentos complementares: o **FinScore** (um índice proprietário baseado em dados contábeis) e o **Serasa Score** (um indicador externo de mercado baseado em histórico de crédito). A seguir, detalhamos como cada um desses instrumentos funciona, o que medem e como se integram para formar uma visão holística do risco de crédito.
+Este parecer fundamenta-se em uma **avaliação técnica estruturada** que combina dois instrumentos complementares: o **FinScore** (índice proprietário baseado em dados contábeis) e o **Serasa Score** (indicador externo de histórico de crédito).
 
 ### 2.1 FinScore
 
-O **FinScore** é um índice sintético que condensa, em um único número (escala de 0 a 1000), a saúde financeira da empresa. Pense nele como um "raio-X quantitativo" que captura simultaneamente a capacidade de pagar contas, a eficiência em gerar lucros, o equilíbrio entre dívidas e capital próprio, e a produtividade dos ativos. Inspirado em metodologias consagradas internacionalmente (como o Altman Z-Score), o FinScore foi desenvolvido para oferecer uma avaliação objetiva e comparável do risco de inadimplência.
+O **FinScore** (escala 0–1000) sintetiza a saúde financeira da empresa, capturando capacidade de pagamento, eficiência, endividamento e produtividade dos ativos. Inspirado no Altman Z-Score, oferece avaliação objetiva do risco de inadimplência.
 
-**Como o FinScore é calculado (5 etapas):**
+**Cálculo (5 etapas):**
 
-1. **Cálculo de Índices Contábeis**: A partir das demonstrações financeiras da empresa (balanço patrimonial e demonstração de resultados), são extraídos mais de 15 indicadores que cobrem quatro dimensões críticas:
-   - **Rentabilidade**: ROE (retorno sobre patrimônio), ROA (retorno sobre ativos), Margem Líquida, Margem EBITDA
-   - **Liquidez**: Liquidez Corrente, Liquidez Seca, Capital Circulante Líquido / Ativo Total
-   - **Endividamento**: Dívida Líquida / EBITDA, Passivo / Ativo, Cobertura de Juros
-   - **Eficiência Operacional**: Giro do Ativo, Prazo Médio de Recebimento (PMR), Prazo Médio de Pagamento (PMP)
-
-2. **Padronização Estatística**: Como esses indicadores possuem escalas diferentes (alguns são percentuais, outros múltiplos, outros dias), eles são padronizados (transformados em z-scores) para que possam ser comparados objetivamente. Isso garante que um indicador de liquidez tenha o mesmo "peso matemático" que um indicador de rentabilidade.
-
-3. **Redução de Dimensionalidade (PCA)**: Com mais de 15 indicadores, há muita informação — mas também redundância (por exemplo, ROE e ROA medem coisas parecidas). A Análise de Componentes Principais (PCA) identifica os **padrões fundamentais** que realmente importam, eliminando ruído e consolidando a informação em poucos fatores independentes.
-
-4. **Consolidação Temporal**: Para evitar que um único ano atípico (seja excepcionalmente bom ou ruim) distorça a avaliação, o FinScore considera até três exercícios consecutivos, mas com pesos diferentes: 60% para o ano mais recente, 25% para o ano anterior e 15% para o mais antigo. Isso equilibra a sensibilidade a mudanças recentes com a estabilidade histórica.
-
-5. **Escalonamento e Classificação**: O resultado final é transformado para a escala 0–1000 e classificado em faixas de risco. Quanto maior o FinScore, menor o risco de inadimplência.
-
-**Por que o FinScore é o indicador primário?** Porque ele reflete a **capacidade financeira estrutural** da empresa — ou seja, se ela tem recursos, gera lucro e está equilibrada financeiramente. Empresas com FinScore elevado tendem a atravessar crises com mais resiliência; empresas com FinScore baixo são vulneráveis a choques de receita ou custos.
+1. **Índices Contábeis**: Extração de 15+ indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
+2. **Padronização**: Transformação em z-scores para comparação objetiva entre dimensões.
+3. **PCA**: Redução de dimensionalidade eliminando redundâncias.
+4. **Consolidação Temporal**: Pesos 60% (ano recente), 25% (anterior), 15% (mais antigo).
+5. **Escalonamento**: Resultado convertido para escala 0–1000 e classificado em faixas de risco.
 
 **Tabela – Classificação FinScore**
 
@@ -185,15 +175,11 @@ O **FinScore** é um índice sintético que condensa, em um único número (esca
 | 125 – 250 | Levemente Acima do Risco | Atenção recomendada, sinais de fragilidade |
 | < 125 | Muito Acima do Risco | Risco elevado, análise detalhada necessária |
 
-**Exemplo prático:** Uma empresa com FinScore de 820 está na faixa "Levemente Abaixo do Risco", indicando que seus fundamentos financeiros são sólidos, mas não excepcionais. Isso se traduz, na prática, em baixa probabilidade de inadimplência, desde que não haja choques externos severos ou erros graves de gestão.
+O FinScore reflete a **capacidade estrutural** da empresa: recursos, lucratividade e equilíbrio financeiro. Empresas com escore elevado demonstram maior resiliência a crises; escores baixos indicam vulnerabilidade a choques externos.
 
 ### 2.2 Serasa Score
 
-O **Serasa Score** é um indicador externo amplamente utilizado no mercado brasileiro. Diferentemente do FinScore, que analisa **o que a empresa é** (sua estrutura financeira interna), o Serasa avalia **como a empresa se comporta** em suas relações de crédito: ela paga em dia? Tem protestos ou negativações? Honrou compromissos passados?
-
-O Serasa não tem acesso às demonstrações financeiras detalhadas da empresa; em vez disso, ele coleta informações de bureaus de crédito, bancos, fornecedores e registros públicos (cartórios, tribunais, etc.). Com base nesse histórico de comportamento, o Serasa atribui uma pontuação de 0 a 1000 que estima a probabilidade de inadimplência nos próximos meses.
-
-**Por que o Serasa é complementar?** Porque ele captura aspectos que o FinScore não consegue ver diretamente. Por exemplo: uma empresa pode ter demonstrações financeiras razoáveis (FinScore neutro), mas histórico de atrasos recorrentes (Serasa baixo), sinalizando problemas de gestão de caixa ou falta de compromisso com credores. Por outro lado, uma empresa pode ter FinScore elevado mas Serasa médio se passou por dificuldades no passado que já foram superadas — nesse caso, a convergência entre os escores reforça a avaliação positiva.
+O **Serasa Score** (0–1000) avalia **comportamento de crédito**: pagamentos em dia, protestos, negativações e histórico com credores. Complementa o FinScore ao capturar aspectos comportamentais não visíveis nas demonstrações contábeis.
 
 **Tabela – Classificação Serasa**
 
@@ -204,67 +190,32 @@ O Serasa não tem acesso às demonstrações financeiras detalhadas da empresa; 
 | 0 – 400 | Baixo | Histórico comprometido, atenção necessária (atrasos, negativações) |
 | Sem cadastro | Muito Baixo | Ausência de histórico de crédito (empresa nova ou sem relacionamento bancário) |
 
-**Exemplo prático:** Uma empresa com Serasa de 780 está na faixa "Bom", indicando que, historicamente, ela honra seus compromissos. Isso reforça a confiança de que, mesmo em momentos de aperto, ela priorizará o pagamento de credores.
+A convergência entre FinScore e Serasa reforça a avaliação. Divergências significativas demandam análise qualitativa adicional para compreender inconsistências entre capacidade financeira e histórico de pagamento.
 
 ### 2.3 Dados Contábeis e Índices Financeiros
 
-Embora o FinScore já condense mais de 15 indicadores em um único número, **a análise detalhada de cada indicador individualmente** é essencial para compreender **como** e **por que** a empresa atingiu aquele escore. Pense no FinScore como o "diagnóstico geral" e nos índices individuais como os "exames específicos" que explicam o diagnóstico.
+A análise detalhada dos índices que compõem o FinScore permite:
 
-**Por que detalhar os índices se eles já estão no FinScore?**
+1. **Identificar drivers de risco**: Qual dimensão (liquidez, rentabilidade, endividamento) impacta negativamente o escore.
+2. **Detectar vulnerabilidades ocultas**: Riscos específicos mesmo com escore geral aceitável.
+3. **Definir covenants personalizados**: Condições alinhadas aos riscos identificados.
+4. **Compreender tendências**: Trajetória de melhora ou deterioração ao longo do tempo.
 
-1. **Identificar drivers de risco**: O FinScore pode estar baixo, mas é fundamental saber **qual dimensão** está puxando o escore para baixo. É a liquidez? A rentabilidade? O endividamento? Cada dimensão exige estratégias de mitigação diferentes.
-
-2. **Detectar vulnerabilidades ocultas**: Uma empresa pode ter FinScore razoável, mas apresentar liquidez crítica — um risco que merece atenção imediata, mesmo que o escore geral seja aceitável.
-
-3. **Definir covenants personalizados**: Se a análise detalhada revelar que o endividamento está crescendo rapidamente, um covenant limitando novas dívidas faz sentido. Se a rentabilidade está caindo, um covenant exigindo margem mínima pode ser apropriado.
-
-4. **Compreender tendências**: Dois exercícios com os mesmos índices podem resultar em escores semelhantes, mas se um está melhorando e o outro piorando, as implicações são radicalmente diferentes. A análise temporal identifica trajetórias.
-
-Em síntese: os índices detalhados não substituem o FinScore, mas o **explicam e enriquecem**, oferecendo uma visão granular que fundamenta não apenas a decisão de crédito, mas também as condições e covenants necessários para mitigar riscos específicos.
+Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e covenants.
 
 ### 2.4 Critérios de Decisão
 
-A decisão de crédito apresentada neste parecer **não** se baseia em um único número isolado, mas sim na **convergência de múltiplas evidências** analisadas de forma integrada. Trata-se de uma avaliação holística que equilibra dados quantitativos objetivos (escores, índices) com interpretação qualitativa (contexto setorial, tendências temporais, particularidades da empresa). A seguir, explicamos como cada elemento contribui para a decisão final.
+A decisão final resulta da **convergência** entre:
 
-**1. FinScore (Indicador Primário)**
+**1. FinScore (Indicador Primário)**: Âncora da análise, orienta decisão inicial baseada em capacidade financeira estrutural.
 
-O FinScore é a **âncora** da análise. Ele sintetiza, de forma objetiva e estatisticamente rigorosa, a saúde financeira estrutural da empresa. Sua classificação em faixas de risco (Muito Abaixo do Risco, Neutro, Muito Acima do Risco, etc.) orienta a decisão inicial: empresas com FinScore elevado (>750) tendem a ser aprovadas; empresas com FinScore baixo (<250) tendem a ser reprovadas ou aprovadas com condições restritivas.
+**2. Serasa Score (Validação Cruzada)**: Valida histórico de comportamento de crédito. Divergências entre FinScore e Serasa demandam investigação qualitativa.
 
-**Por que o FinScore é o indicador primário?** Porque ele é construído sobre dados contábeis auditados (ou auditáveis), reflete capacidade financeira real, e permite comparação objetiva entre empresas de diferentes portes e setores.
+**3. Índices Detalhados**: Análise granular permite identificar drivers específicos de risco e personalizar covenants (ex: liquidez crítica exige covenant de manutenção de índices mínimos).
 
-**2. Serasa Score (Validação Cruzada)**
+**4. Contexto Qualitativo**: Tendências temporais, sazonalidade setorial e eventos atípicos complementam a análise quantitativa.
 
-O Serasa complementa o FinScore ao trazer a perspectiva do **histórico de comportamento de crédito**. Enquanto o FinScore diz "a empresa tem capacidade de pagar", o Serasa diz "a empresa costuma pagar". A convergência entre FinScore e Serasa reforça a confiabilidade da avaliação: se ambos são elevados, a aprovação é mais segura. Divergências significativas demandam investigação qualitativa:
-
-- **FinScore alto + Serasa baixo**: Pode indicar inadimplência recente já superada (capacidade recuperada, mas histórico ainda manchado) → Aprovação com ressalvas e covenants.
-- **FinScore baixo + Serasa alto**: Pode indicar deterioração financeira recente não captada pelo Serasa (que é retroativo) → Atenção redobrada, possível reprovação.
-
-**3. Índices Financeiros Detalhados (Critérios Complementares)**
-
-A análise granular de liquidez, endividamento, rentabilidade e eficiência operacional permite compreender **o que está por trás do FinScore**. Dois exemplos práticos:
-
-- Uma empresa pode ter FinScore neutro (500 pontos), mas liquidez crítica (Liquidez Corrente < 1,0) → Risco de insolvência de curto prazo, mesmo com escore geral aceitável → Necessário covenant de manutenção de liquidez mínima.
-- Uma empresa pode ter FinScore razoável (600 pontos), mas rentabilidade em queda livre (Margem Líquida caindo de 10% para 2% em dois anos) → Trajetória insustentável → Necessário monitoramento trimestral e covenant de margem mínima.
-
-Os índices detalhados também permitem personalizar covenants: se o problema é endividamento crescente, limita-se novas dívidas; se o problema é liquidez, exige-se manutenção de índices mínimos.
-
-**4. Contexto Temporal e Setorial (Interpretação Qualitativa)**
-
-Números não existem no vácuo. A ponderação temporal (60% ano recente, 25% anterior, 15% mais antigo) já está embutida no FinScore, mas a análise qualitativa considera:
-
-- **Tendências**: Uma empresa com FinScore 400 em crescimento (300 → 350 → 400) é menos arriscada que uma com FinScore 400 em queda (600 → 500 → 400).
-- **Sazonalidade**: Empresas de setores sazonais (turismo, agronegócio) podem ter índices voláteis que não refletem risco estrutural.
-- **Eventos atípicos**: Prejuízos isolados por investimentos estratégicos (abertura de filial, compra de ativo) diferem de prejuízos recorrentes por ineficiência operacional.
-
-**Síntese da Lógica Decisória:**
-
-A decisão final ({decisao_motor}) resulta da **convergência** entre:
-- O escore sintético (FinScore) → capacidade financeira estrutural
-- A validação externa (Serasa) → histórico de comportamento de crédito
-- A análise detalhada dos fundamentos financeiros (índices) → drivers específicos de risco
-- A interpretação qualitativa do contexto (tendências, setor, eventos atípicos) → nuances que números isolados não captam
-
-Este parecer apresenta não apenas uma recomendação, mas os **fundamentos técnicos, objetivos e rastreáveis** que a sustentam. A decisão pode ser revisitada, auditada ou contestada — e em todos os casos, os critérios estão claros e documentados.
+A decisão ({decisao_motor}) fundamenta-se em critérios técnicos, objetivos e auditáveis, garantindo transparência e rastreabilidade da avaliação.
 
 ---
 
@@ -385,7 +336,12 @@ Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estrutura
 
 **Primeiro parágrafo (Síntese da Análise Detalhada):** Resuma em 3-4 linhas os principais achados da seção "3. Análise Detalhada dos Indicadores", destacando os pontos mais relevantes identificados nas categorias de liquidez, endividamento, rentabilidade e eficiência. Mencione quais indicadores demonstraram maior solidez ou fragilidade.
 
-**Segundo parágrafo (Síntese dos Resultados):** Resuma em 3-4 linhas a seção "4. Resultados", consolidando a avaliação do FinScore, a pontuação Serasa, a decisão do motor de política e os principais motivos/covenants identificados. Explique como esses elementos se inter-relacionam para fundamentar a decisão final.
+**Segundo parágrafo (Síntese dos Resultados - Pontos Fortes e Fragilidades):** Com base na análise da seção "4. Resultados", identifique e resuma:
+- **Aspectos positivos**: Quais indicadores, dimensões ou escores demonstraram desempenho satisfatório ou acima da média? (ex: liquidez confortável, rentabilidade consistente, Serasa elevado, FinScore sólido)
+- **Aspectos de atenção**: Quais indicadores ou dimensões apresentaram fragilidades, deterioração temporal ou riscos que justificam monitoramento? (ex: endividamento crescente, margens declinantes, liquidez apertada)
+- **Ponderação geral**: Como o equilíbrio entre pontos fortes e fragilidades fundamenta a decisão de crédito ({decisao_motor}) e os covenants recomendados?
+
+Este parágrafo deve consolidar os comentários específicos da seção 4 em uma visão integrada, permitindo ao leitor compreender rapidamente o "saldo" da análise (se predominam aspectos positivos, negativos, ou se há equilíbrio com ressalvas).
 
 **Terceiro parágrafo (Decisão Final e Recomendações):** 
 - Reafirme formalmente a **decisão final**: {decisao_motor}
