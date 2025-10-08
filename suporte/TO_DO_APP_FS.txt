@@ -820,6 +820,13 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Formatação títulos abas em /Análise (ícones + texto)
+---
+Até aqui:
+[v. 0.8.22 (ia), de 07/10/2025]
+---
+
+=====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)

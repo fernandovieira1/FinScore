@@ -1196,8 +1196,8 @@ def _render_graficos_tab_content():
     indices_df = out.get("df_indices")
     row = _latest_row_dict(df)
 
-    st.header("1. Dados Contábeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
+    st.markdown("### 📔 Demonstrativos Contábeis")
+    st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_call_plot(
         df,
         [
@@ -1221,7 +1221,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.subheader("1.2 Contas de Resultado (DRE)")
+    st.markdown("#### 🧮 2. Demonstração de Resultado")
     operacional_rendered = render_receita_total(df)
     if _try_call_plot(df, ["render_custos", "render_depreciacao", "render_amortizacao"]):
         operacional_rendered = True
@@ -1241,7 +1241,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.header("2. Indices Contábeis")
+    st.markdown("#### 📊 3. Índices Contábeis")
     liquidez_rendered = _try_call_plot(df, ["render_liquidez_indices"])
     if not liquidez_rendered:
         _todo_placeholder("Liquidez")
@@ -1257,7 +1257,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.header("3. PCA")
+    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
     loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
     if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
@@ -1299,6 +1299,8 @@ def _render_dados_contabeis_tab_content():
         return
     
     # Informações no topo
+    st.markdown("### 📖 Contas")
+    
     meta = ss.get("meta", {})
     empresa = meta.get("empresa", "-")
     
@@ -1306,7 +1308,7 @@ def _render_dados_contabeis_tab_content():
     
     with col1:
         st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Empresa</p>",
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Nome da Empresa</p>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -1316,7 +1318,7 @@ def _render_dados_contabeis_tab_content():
     
     with col2:
         st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Total de Períodos</p>",
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Períodos</p>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -1331,7 +1333,7 @@ def _render_dados_contabeis_tab_content():
             numeric_cols = [c for c in numeric_cols if c.lower() != 'ano']
         
         st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;font-weight:bold;'>Total de Contas</p>",
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Total de Contas</p>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -1381,8 +1383,8 @@ def _render_tabelas_tab_content():
     indices_df = out.get("df_indices")
     top_indices_df = out.get("top_indices_df")
 
-    st.header("Dados Contábeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
+    st.markdown("### 📔 Demonstrativos Contábeis")
+    st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")
     if not _try_show_table(["table_passivos", "get_passivos_table"]):
@@ -1394,7 +1396,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.subheader("1.2 Contas de Resultado (DRE)")
+    st.markdown("#### 🧮 2. Demonstração de Resultado")
     if not _try_show_table([
         "table_operacional",
         "get_operacional_table",
@@ -1413,7 +1415,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.header("2. Indices Contábeis")
+    st.markdown("#### 📊 3. Indices Contábeis")
     liquidez_table = _try_show_table(["table_liquidez_indices"])
     if not liquidez_table:
         _todo_placeholder("Liquidez")
@@ -1429,7 +1431,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.header("3. PCA")
+    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
     pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
     if not pca_loadings_table:
         _todo_placeholder("Cargas (loadings)")
