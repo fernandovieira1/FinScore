@@ -1,5 +1,8 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import date
+from components.state_manager import AppState
+from components.config import SLUG_MAP
 
 def _empresa(ss):
     st.markdown("### 🏢 Empresa")
@@ -69,10 +72,7 @@ def _metricas(ss):
             unsafe_allow_html=True,
         )
 
-    # (sem divider aqui para ficar idêntico ao seu print “certo”)
-
-
-
+    # (sem divider aqui para ficar idêntico ao seu print "certo")
 
 
 def _datas(ss):
@@ -96,6 +96,110 @@ def _datas(ss):
         )
 
 
+def _botao_aprovar(ss):
+    """
+    Renderiza o botão 'Aprovar' que:
+    1) Libera a seção /Parecer
+    2) Redireciona automaticamente para /Parecer
+    """
+    st.markdown("<div style='margin-top:3rem;'></div>", unsafe_allow_html=True)
+    
+    # Verificar se já foi aprovado
+    parecer_liberado = ss.get("liberar_parecer", False)
+    
+    if parecer_liberado:
+        # Mostrar status de aprovação
+        st.success("✅ Análise aprovada. A seção **Parecer** está liberada para acesso.")
+        return
+    
+    # Botão centralizado com mesmo estilo dos outros botões
+    col = st.columns([3, 2, 3])[1]
+    with col:
+        # Container com ID próprio para CSS de alta especificidade
+        st.markdown('<div id="aprovar-analise-btn">', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <style>
+            /* CSS super específico para o botão Aprovar */
+            #aprovar-analise-btn .stButton > button,
+            #aprovar-analise-btn .stButton > button[data-testid="baseButton-secondary"],
+            #aprovar-analise-btn .stButton > button[kind="secondary"],
+            #aprovar-analise-btn .stButton > button[data-testid="baseButton-primary"],
+            #aprovar-analise-btn .stButton > button[kind="primary"] {
+                background: #5ea68d !important;
+                color: #fff !important;
+                font-weight: 600;
+                font-size: 1.05rem;
+                border-radius: 6px !important;
+                padding: 0.7rem 2.2rem !important;
+                border: none !important;
+                box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+                transition: background 0.2s;
+            }
+            #aprovar-analise-btn .stButton > button:hover {
+                background: #43866b !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Aprovar", key="btn_aprovar_analise", help="Liberar seção Parecer"):
+            # Liberar a seção Parecer no session_state
+            ss["liberar_parecer"] = True
+            
+            # Salvar no cache também para garantir persistência
+            cache = AppState._process_cache()
+            cache["liberar_parecer"] = True
+            
+            # Atualizar estado interno
+            ss.page = "Parecer"
+            
+            # SOLUÇÃO: Forçar navegação imediata modificando query_params (API nova)
+            # Isso garante que o próximo rerun já tenha a URL correta
+            current_sid = st.query_params.get("sid", "")
+            st.query_params.clear()
+            st.query_params["p"] = "parecer"
+            if current_sid:
+                st.query_params["sid"] = current_sid
+            
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Fallback robusto: força a cor via JS se algum tema ainda sobrescrever o CSS
+        components.html(
+            """
+            <script>
+            (function(){
+                function paint(){
+                    try{
+                        const btns = window.parent.document.querySelectorAll('button');
+                        for (const b of btns){
+                            const t = (b.innerText || b.textContent || '').trim();
+                            if (t === 'Aprovar'){
+                                b.style.background = '#5ea68d';
+                                b.style.color = '#ffffff';
+                                b.style.border = 'none';
+                                b.style.borderRadius = '6px';
+                                b.style.boxShadow = '0 2px 8px rgba(16,24,40,0.08)';
+                                b.onmouseenter = () => b.style.background = '#43866b';
+                                b.onmouseleave = () => b.style.background = '#5ea68d';
+                                return true;
+                            }
+                        }
+                    } catch(e){}
+                    return false;
+                }
+                let tries = 0;
+                const interval = setInterval(() => {
+                    if (paint() || tries++ > 50) clearInterval(interval);
+                }, 50);
+            })();
+            </script>
+            """,
+            height=0,
+        )
+
+
 def render():
     ss = st.session_state
 
@@ -105,7 +209,10 @@ def render():
         st.info("Calcule o FinScore em **Lançamentos → Dados** para liberar o resumo.")
         return
 
-    # Bloco Empresa + Bloco de Métricas (mesmo desenho do print “certo”)
+    # Bloco Empresa + Bloco de Métricas (mesmo desenho do print "certo")
     _empresa(ss)
     _metricas(ss)
     _datas(ss)
+    
+    # Botão Aprovar
+    _botao_aprovar(ss)

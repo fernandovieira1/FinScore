@@ -834,6 +834,14 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Botão 'Aprovar' em /Lançamentos/Scores
+* (x) Sequências da sidebar revisados e funcionando
+---
+Até aqui:
+[v. 0.8.24, de 09/10/2025]
+---
+
+=====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)

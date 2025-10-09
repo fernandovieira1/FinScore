@@ -376,10 +376,8 @@ def _sec_dados():
                     ss.out = out
                     ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
                     ss["liberar_analise"] = True
-                    ss["liberar_parecer"] = True
-                    # Ativa modo de cálculo (bloqueio retroativo)
-                    # from components.state_manager import AppState
-                    # Bloqueio retroativo removido: não é mais necessário ativar modo cálculo
+                    # Reseta a liberação do parecer para exigir nova aprovação
+                    ss["liberar_parecer"] = False
                     st.success("✅ Processamento concluído.")
                     # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
                     ss.page = "Análise"
