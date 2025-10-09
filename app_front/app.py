@@ -71,7 +71,7 @@ ROUTES = {
 
 # --------------- processamento de navegação ---------------
 
-# 1. Sincroniza a partir da URL (prioridade máxima)
+# 1. Sincroniza a partir da URL
 url_changed = AppState.sync_from_query_params()
 
 # 2. Renderiza a topbar
@@ -80,7 +80,7 @@ render_topbar(current_page=AppState.get_current_page())
 # 3. Renderiza a sidebar
 sidebar_page = render_sidebar(current_page=AppState.get_current_page())
 
-# 4. Processa navegação da sidebar (prioridade média)
+# 4. Processa navegação da sidebar
 if sidebar_page and sidebar_page in ROUTES:
     current_page = AppState.get_current_page()
     print(f"[DEBUG] app.py: sidebar_page={sidebar_page}, current_page={current_page}")

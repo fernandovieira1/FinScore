@@ -165,7 +165,8 @@ def render_sidebar(current_page: str = "Home"):
 
         liberar_lanc = bool(st.session_state.get("liberar_lancamentos"))
         liberar_analise = bool(st.session_state.get("liberar_analise")) or liberar_lanc
-        liberar_parecer = bool(st.session_state.get("liberar_parecer")) or liberar_lanc
+        # Parecer só é liberado quando o usuário clicar no botão "Aprovar" em /Análise/Scores
+        liberar_parecer = bool(st.session_state.get("liberar_parecer"))
 
         def is_locked(slug: str) -> bool:
             if slug == "lanc":

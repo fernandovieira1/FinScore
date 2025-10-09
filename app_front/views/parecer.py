@@ -449,6 +449,9 @@ def _fix_formatting_issues(text: str) -> str:
 
 def render():
     ss = st.session_state
+    
+    # Flags de navegação são processadas em app.py ANTES de chegar aqui
+    
     st.markdown("### 🖊️ Parecer Técnico")
 
     if not ss.get("out"):
@@ -623,7 +626,7 @@ def render():
     col_left, col_center, col_right = st.columns([1, 1, 1])
     
     with col_center:
-        gerar = st.button("Gerar Parecer IA", use_container_width=True, type="primary")
+        gerar = st.button("Gerar Parecer", use_container_width=True, type="primary")
     
     if gerar:
         # Criar barra de progresso
@@ -658,6 +661,17 @@ def render():
                 time.sleep(0.5)
                 progress_bar.empty()
                 status_text.empty()
+                
+                # Atualizar estado interno
+                ss.page = "Parecer"
+                
+                # SOLUÇÃO: Forçar navegação imediata modificando query_params (API nova)
+                current_sid = st.query_params.get("sid", "")
+                st.query_params.clear()
+                st.query_params["p"] = "parecer"
+                if current_sid:
+                    st.query_params["sid"] = current_sid
+                
                 st.rerun()
         except Exception as e:
             progress_bar.empty()

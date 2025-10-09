@@ -133,6 +133,11 @@ def _call_review_llm_with_throttle(artifact_id: str, payload: Dict[str, Any]) ->
 
 
 def _ensure_insight_polling() -> None:
+    # CRÍTICO: Só fazer polling se usuário ESTÁ em /Análise
+    # Não fazer rerun automático se usuário navegou para outra página
+    if st.query_params.get("p") != "analise":
+        return
+    
     tasks = _get_review_tasks()
     has_running = any((task or {}).get("status") in ("pending", "running") for task in tasks.values())
     timer_active = st.session_state.get(_INSIGHT_POLL_FLAG, False)
@@ -322,9 +327,10 @@ def _poll_review_tasks() -> None:
             rerun_needed = True
 
     if rerun_needed:
-        if st.query_params.get("p") != "analise":
-            st.query_params["p"] = "analise"
-        st.rerun()
+        # CRÍTICO: Só força redirect se usuário JÁ ESTÁ em /Análise
+        # Não arrancar usuário de outras páginas (ex: /Parecer)
+        if st.query_params.get("p") == "analise":
+            st.rerun()
 
 
 def _emit_captions(captions):
@@ -1453,12 +1459,15 @@ def _render_tabelas_tab_content():
 
 def render():
     ss = st.session_state
+    
+    # Flags de navegação são processadas em app.py ANTES de chegar aqui
+    
     ss.setdefault("analise_tab", "Scores")
     ss.setdefault("reviews", {})
     ss.setdefault("artifacts_meta", {})
 
-    if st.query_params.get("p") != "analise":
-        st.query_params["p"] = "analise"
+    # Removido: Não force p=analise aqui, pois interfere com navegação de outras páginas
+    # A navegação já é controlada pelo app.py e state_manager.py
 
     _poll_review_tasks()
     _ensure_insight_styles()

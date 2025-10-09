@@ -250,7 +250,11 @@ class AppState:
             if flag_key in ss:
                 cache[flag_key] = bool(ss[flag_key])
             elif flag_key in cache:
-                ss[flag_key] = cache[flag_key]
+                # Preservar flags do cache, exceto liberar_parecer que deve estar explicitamente em ss
+                if flag_key == "liberar_parecer":
+                    ss[flag_key] = cache.get(flag_key, False)
+                else:
+                    ss[flag_key] = cache[flag_key]
 
         for key in _PROCESS_DATA_KEYS:
             value = ss.get(key)
@@ -273,7 +277,8 @@ class AppState:
                 ss["liberar_lancamentos"] = True
             if cache.get("out") is not None:
                 ss["liberar_analise"] = True
-                ss["liberar_parecer"] = True
+                # Parecer só é liberado manualmente via botão "Aprovar" em /Análise/Scores
+                # NÃO liberar automaticamente aqui
 
         if payload:
             _GLOBAL_PROCESS_CACHE[token] = payload
