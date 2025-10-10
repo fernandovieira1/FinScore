@@ -151,17 +151,10 @@ def _botao_aprovar(ss):
             cache = AppState._process_cache()
             cache["liberar_parecer"] = True
             
-            # Atualizar estado interno
-            ss.page = "Parecer"
-            
-            # SOLUÇÃO: Forçar navegação imediata modificando query_params (API nova)
-            # Isso garante que o próximo rerun já tenha a URL correta
-            current_sid = st.query_params.get("sid", "")
-            st.query_params.clear()
-            st.query_params["p"] = "parecer"
-            if current_sid:
-                st.query_params["sid"] = current_sid
-            
+            # Atualizar estado centralizado de navegação
+            target_page = SLUG_MAP.get("parecer", "Parecer")
+            AppState.set_current_page(target_page, source="aprovar_btn", slug="parecer")
+            AppState.sync_to_query_params()
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         

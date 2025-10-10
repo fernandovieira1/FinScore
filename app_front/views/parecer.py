@@ -6,6 +6,8 @@ import streamlit as st
 
 from components.policy_engine import PolicyInputs, decide
 from components.llm_client import _invoke_model, MODEL_NAME
+from components.state_manager import AppState
+from components.config import SLUG_MAP
 
 # Usar temperatura 0 para máxima determinism e reduzir erros ortográficos
 PARECER_TEMPERATURE = 0.0
@@ -662,16 +664,10 @@ def render():
                 progress_bar.empty()
                 status_text.empty()
                 
-                # Atualizar estado interno
-                ss.page = "Parecer"
-                
-                # SOLUÇÃO: Forçar navegação imediata modificando query_params (API nova)
-                current_sid = st.query_params.get("sid", "")
-                st.query_params.clear()
-                st.query_params["p"] = "parecer"
-                if current_sid:
-                    st.query_params["sid"] = current_sid
-                
+                # Atualizar estado centralizado de navegação
+                target_page = SLUG_MAP.get("parecer", "Parecer")
+                AppState.set_current_page(target_page, source="parecer_gerar_btn", slug="parecer")
+                AppState.sync_to_query_params()
                 st.rerun()
         except Exception as e:
             progress_bar.empty()

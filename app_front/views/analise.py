@@ -22,8 +22,9 @@ from components.schemas import ReviewSchema
 try:
     from .scores import render as render_scores
 except Exception as e:
+    _import_scores_err = str(e)
     def render_scores():
-        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {_import_scores_err}")
 
 try:
     from .graficos import (
@@ -33,8 +34,9 @@ try:
         render_juros_lucro_receita,
     )
 except Exception as e:
+    _import_graficos_err = str(e)
     def prepare_graficos_data():
-        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {_import_graficos_err}")
         return None
 
     def render_ativo_passivo_circulante(_df):
@@ -57,8 +59,9 @@ try:
         get_pca_loadings_table,
     )
 except Exception as e:
+    _import_tabelas_err = str(e)
     def get_indices_table():
-        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {_import_tabelas_err}")
         return None
 
     def get_pca_scores_table():

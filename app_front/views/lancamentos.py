@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 from components.state_manager import AppState
+from components.config import SLUG_MAP
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore, ajustar_coluna_ano
 
@@ -380,8 +381,9 @@ def _sec_dados():
                     ss["liberar_parecer"] = False
                     st.success("✅ Processamento concluído.")
                     # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
-                    ss.page = "Análise"
-                    st.query_params["p"] = "analise"
+                    target_page = SLUG_MAP.get("analise", "Análise")
+                    AppState.set_current_page(target_page, source="calcular_btn", slug="analise")
+                    AppState.sync_to_query_params()
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erro no processamento: {e}")
