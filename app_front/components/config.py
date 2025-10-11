@@ -53,4 +53,4 @@ SIDEBAR_PAGES = [item["label"] for item in SIDEBAR_MENU]
 TOPBAR_PAGES = ["Home", "Definir1", "Definir2", "Guia Rápido"]
 
 # Configuração de debug
-DEBUG_MODE = False
+DEBUG_MODE = True

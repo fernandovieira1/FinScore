@@ -71,8 +71,18 @@ ROUTES = {
 
 # --------------- processamento de navegação ---------------
 
-# 1. Sincroniza a partir da URL
-url_changed = AppState.sync_from_query_params()
+# 1. Suprime navegação automática para 'analise' se _lock_parecer estiver ativo
+if st.session_state.get("_lock_parecer") or st.session_state.get("current_page") == "Parecer":
+    # Garante que a página permaneça em 'Parecer' após rerun e força URL
+    AppState.set_current_page("Parecer", source="lock_parecer", slug="parecer")
+    AppState.sync_to_query_params()
+    st.query_params["p"] = "parecer"
+    # Bloqueia navegação da sidebar por 2 segundos
+    AppState.skip_next_url_sync(target_slug="parecer", duration=2.0, blocked_slugs={"lanc", "analise"})
+    st.session_state.pop("_lock_parecer", None)
+else:
+    # 1. Sincroniza a partir da URL normalmente
+    url_changed = AppState.sync_from_query_params()
 
 # 2. Renderiza a topbar
 render_topbar(current_page=AppState.get_current_page())
@@ -118,16 +128,3 @@ except Exception as e:
     AppState.set_current_page("Home", 'error')
     view_home.render()
 
-# --------------- debug info ---------------
-if DEBUG_MODE:
-    with st.expander("🔧 Debug Info", expanded=False):
-        st.write(f"**Página atual:** {AppState.get_current_page()}")
-        st.write(f"**Sidebar retornou:** {sidebar_page}")
-        st.write(f"**Query param:** {st.query_params.get('p', None)}")
-        st.write(f"**Última navegação:** {st.session_state.get('last_navigation_time')}")
-        st.write(f"**Fonte:** {st.session_state.get('navigation_source')}")
-        st.write(f"**Mudança por URL:** {url_changed}")
-        # Ambiente Python e dependências
-        import sys, importlib.util as _u
-        st.write(f"**Python exec:** {sys.executable}")
-        st.write(f"**openpyxl disponível:** {_u.find_spec('openpyxl') is not None}")

@@ -752,18 +752,13 @@ def render():
                 time.sleep(0.5)
                 progress_placeholder.empty()
                 status_text.empty()
-
-                # Atualizar navegação mantendo o usuário em Parecer
+                update_progress(100, "✅ Parecer gerado com sucesso!")
+                # Travar navegação em /Parecer após rerun
+                ss["_lock_parecer"] = True
                 target_page = SLUG_MAP.get("parecer", "Parecer")
-                AppState.skip_next_url_sync(
-                    target_slug="parecer",
-                    duration=6.0,
-                    blocked_slugs={"analise", "lanc"},
-                )
-                AppState.set_current_page(target_page, source="parecer_gerar_btn", slug="parecer")
+                AppState.set_current_page(target_page, source="gerar_parecer_btn", slug="parecer")
                 AppState.sync_to_query_params()
                 st.query_params["p"] = "parecer"
-                update_progress(100, "✅ Parecer gerado com sucesso!")
                 st.rerun()
             else:
                 update_progress(100, "⚠️ Não foi possível gerar o parecer automaticamente.")

@@ -323,11 +323,8 @@ class AppState:
             if flag_key in ss:
                 cache[flag_key] = bool(ss[flag_key])
             elif flag_key in cache:
-                # Preservar flags do cache, exceto liberar_parecer que deve estar explicitamente em ss
-                if flag_key == "liberar_parecer":
-                    ss[flag_key] = cache.get(flag_key, False)
-                else:
-                    ss[flag_key] = cache[flag_key]
+                # Restaurar todos os flags do cache, inclusive liberar_parecer
+                ss[flag_key] = cache[flag_key]
 
         for key in _PROCESS_DATA_KEYS:
             value = ss.get(key)

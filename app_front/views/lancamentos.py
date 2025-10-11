@@ -377,12 +377,21 @@ def _sec_dados():
                     ss.out = out
                     ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
                     ss["liberar_analise"] = True
-                    # Reseta a liberação do parecer para exigir nova aprovação
+                    cache = AppState._process_cache()
+                    cache["liberar_analise"] = True
                     ss["liberar_parecer"] = False
+                    cache["liberar_parecer"] = False
+                    # Atualiza o cache global para garantir persistência
+                    from components.state_manager import _GLOBAL_PROCESS_CACHE
+                    token = AppState._ensure_client_token()
+                    _GLOBAL_PROCESS_CACHE[token] = dict(cache)
                     st.success("✅ Processamento concluído.")
-                    # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
-                    target_page = SLUG_MAP.get("analise", "Analise")
-                    AppState.skip_next_url_sync(target_slug="analise")
+                    # Navega para Análise de forma determinística
+                    target_page = SLUG_MAP.get("analise", "Análise")
+                    AppState.set_current_page(target_page, source="lanc_calcular_btn", slug="analise")
+                    AppState.sync_to_query_params()
+                    st.query_params["p"] = "analise"
+                    st.rerun()
                     AppState.set_current_page(target_page, source="lanc_calcular_btn", slug="analise")
                     AppState.sync_to_query_params()
                     st.query_params["p"] = "analise"

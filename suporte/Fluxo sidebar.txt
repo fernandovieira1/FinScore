@@ -1,4 +1,4 @@
-Sendo '/.' seção e abas e '[.]' botão, a ordem de execução deve ser esta:
+Sendo '/.' seção e abas e '[.]' botão, a ordem de execução da sidebar deve ser esta:
 
 1) /Novo >>> [iniciar] >>>
 2) /Lançamentos/Cliente >>> [Enviar Dados] >>> /Lançamentos/Dados >>> [Calcular FinScore] >>>

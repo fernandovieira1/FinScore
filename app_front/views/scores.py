@@ -144,25 +144,21 @@ def _botao_aprovar(ss):
             unsafe_allow_html=True,
         )
         if st.button("Aprovar", key="btn_aprovar_analise", help="Liberar seção Parecer"):
-            # Liberar a seção Parecer no session_state
-            ss["liberar_parecer"] = True
-            
-            # Salvar no cache também para garantir persistência
-            cache = AppState._process_cache()
-            cache["liberar_parecer"] = True
-            
-            # Atualizar estado e URL para avançar no fluxo
-            target_page = SLUG_MAP.get("parecer", "Parecer")
-            AppState.skip_next_url_sync(
-                target_slug="parecer",
-                duration=6.0,
-                blocked_slugs={"analise", "lanc"},
-            )
-            AppState.set_current_page(target_page, source="scores_aprovar_btn", slug="parecer")
-            AppState.sync_to_query_params()
-            st.query_params["p"] = "parecer"
-            
-            st.rerun()
+                # Liberar a seção Parecer no session_state e cache
+                ss["liberar_parecer"] = True
+                cache = AppState._process_cache()
+                cache["liberar_parecer"] = True
+                # Travar navegação em Parecer e bloquear sobrescritas de URL/sidebar no próximo ciclo
+                ss["_lock_parecer"] = True
+                try:
+                    # Em alguns ambientes, o método pode ainda não existir; envolver em try para segurança
+                    AppState.skip_next_url_sync(target_slug="parecer", duration=2.0, blocked_slugs={"lanc", "analise"})
+                except Exception:
+                    pass
+                # Navega para /Parecer e rerun (sem sincronizar URL aqui; app.py fará isso no início)
+                target_page = SLUG_MAP.get("parecer", "Parecer")
+                AppState.set_current_page(target_page, source="aprovar_btn", slug="parecer")
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Fallback robusto: força a cor via JS se algum tema ainda sobrescrever o CSS

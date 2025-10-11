@@ -844,10 +844,17 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Progress bar em mais etapas e melhorias visuais
+* (x) Progress bar em mais etapas e melhorias visuais
 ---
 Até aqui:
 [v. 0.8.25 (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* (x) Fluxo da sidebar de novo revisado e funcionando - mais determinístico agora
+---
+Até aqui:
+[v. 0.8.25a (ia), de 11/10/2025]
 ---
 
 =====Ajustes=====
