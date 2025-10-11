@@ -1,5 +1,6 @@
 import math
 import json
+import time
 from typing import Dict, Any, Optional
 
 import streamlit as st
@@ -472,6 +473,52 @@ def render():
         height=0,
     )
 
+    # CSS específico para barra de progresso desta view (aplicado uma única vez)
+    if not ss.get("_parecer_progress_css"):
+        st.markdown(
+            """
+            <style>
+            .parecer-progress{
+                margin-top:1.25rem!important;
+                margin-bottom:0.75rem!important;
+            }
+            .parecer-progress .stProgress > div{
+                height:14px;
+                border-radius:999px;
+                background:#f5f7fb;
+                border:1px solid #d8e2f8;
+                box-shadow:inset 0 1px 3px rgba(53,96,153,0.12);
+            }
+            .parecer-progress .stProgress > div > div{
+                border-radius:999px;
+                background:linear-gradient(90deg,#68a9ff 0%,#3e85f3 50%,#245561 100%);
+                transition:width .45s ease-in-out,filter .2s ease-in-out;
+                box-shadow:0 3px 9px rgba(59,130,246,0.35);
+                position:relative;
+                overflow:hidden;
+            }
+            .parecer-progress .stProgress > div > div::after{
+                content:\"\";position:absolute;inset:0;
+                background:linear-gradient(120deg,rgba(255,255,255,0) 35%,rgba(255,255,255,0.45) 50%,rgba(255,255,255,0) 65%);
+                mix-blend-mode:screen;
+                animation:parecer-sheen 1.8s ease-in-out infinite;
+            }
+            @keyframes parecer-sheen{
+                0%{transform:translateX(-80%);}
+                50%{transform:translateX(0%);}
+                100%{transform:translateX(80%);}
+            }
+            .parecer-progress-message p{
+                margin:0.15rem 0 0 0;
+                color:#315c93;
+                font-weight:600;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        ss["_parecer_progress_css"] = True
+
     st.markdown("### 🖊️ Parecer Técnico")
 
     if not ss.get("out"):
@@ -649,19 +696,44 @@ def render():
         gerar = st.button("Gerar Parecer", use_container_width=True, type="primary")
     
     if gerar:
-        # Criar barra de progresso
-        progress_bar = st.progress(0)
+        # Criar barra de progresso customizada
+        progress_placeholder = st.empty()
         status_text = st.empty()
+        with progress_placeholder.container():
+            st.markdown('<div class="parecer-progress">', unsafe_allow_html=True)
+            progress_bar = st.progress(0)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        def update_progress(pct: int, message: str) -> None:
+            bounded = max(0, min(100, pct))
+            progress_bar.progress(bounded)
+            status_text.markdown(f"<div class='parecer-progress-message'><p>{message}</p></div>", unsafe_allow_html=True)
+
+        update_progress(4, "⚙️ Preparando ambiente para geração do parecer...")
+        time.sleep(0.35)
         
         try:
+            # Etapas iniciais (feedback adicional para reduzir ansiedade)
+            pre_steps = [
+                (12, "📁 Inicializando pipeline de análise..."),
+                (22, "🧮 Validando dados contábeis e metadados..."),
+                (32, "🔗 Carregando estruturas auxiliares..."),
+            ]
+            for pct, message in pre_steps:
+                update_progress(pct, message)
+                time.sleep(0.4)
+
             # Etapa 1: Extrair dados
-            status_text.text("🔄 Extraindo dados consolidados...")
-            progress_bar.progress(30)
+            update_progress(44, "🔎 Extraindo dados consolidados...")
             analysis_data = _extract_analysis_data(o)
-            
+            time.sleep(0.4)
+
+            # Etapa intermediária (motor determinístico)
+            update_progress(58, "🧠 Aplicando motor de políticas e regras de crédito...")
+            time.sleep(0.4)
+
             # Etapa 2: Gerar parecer
-            status_text.text("🤖 Gerando parecer técnico com IA...")
-            progress_bar.progress(60)
+            update_progress(74, "🤖 Gerando narrativa técnica com IA...")
             parecer = _generate_parecer_ia(
                 decisao_motor=resultado["decisao"],
                 motivos_motor=resultado.get("motivos", []),
@@ -669,33 +741,35 @@ def render():
                 analysis_data=analysis_data,
                 meta_cliente=meta
             )
-            
+
             # Etapa 3: Finalizar
-            progress_bar.progress(100)
-            status_text.text("✅ Parecer gerado com sucesso!")
-            
+            update_progress(88, "📝 Finalizando formatação e salvando resultado...")
+            time.sleep(0.4)
+
             if parecer:
                 ss["parecer_gerado"] = parecer
                 # Limpar componentes de progresso após breve pausa
-                import time
                 time.sleep(0.5)
-                progress_bar.empty()
+                progress_placeholder.empty()
                 status_text.empty()
-                
+
                 # Atualizar navegação mantendo o usuário em Parecer
                 target_page = SLUG_MAP.get("parecer", "Parecer")
                 AppState.skip_next_url_sync(
                     target_slug="parecer",
-                    duration=15.0,
+                    duration=6.0,
                     blocked_slugs={"analise", "lanc"},
                 )
                 AppState.set_current_page(target_page, source="parecer_gerar_btn", slug="parecer")
                 AppState.sync_to_query_params()
                 st.query_params["p"] = "parecer"
-                
+                update_progress(100, "✅ Parecer gerado com sucesso!")
                 st.rerun()
+            else:
+                update_progress(100, "⚠️ Não foi possível gerar o parecer automaticamente.")
+                st.warning("Não recebemos resposta do modelo de IA. Tente novamente em instantes.")
         except Exception as e:
-            progress_bar.empty()
+            progress_placeholder.empty()
             status_text.empty()
             st.error(f"Erro ao gerar parecer: {e}")
     

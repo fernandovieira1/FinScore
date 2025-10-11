@@ -232,16 +232,17 @@ class AppState:
             except (TypeError, ValueError):
                 expires = 0.0
             if time.time() > expires:
-                st.session_state.pop(_NAV_LOCK_KEY, None)
+                AppState.clear_nav_lock()
             else:
-                target_slug = lock.get("slug")
                 blocked_slugs = set(lock.get("blocked") or ())
                 if slug in blocked_slugs:
                     return False
+                target_slug = lock.get("slug")
                 if target_slug and slug != target_slug:
-                    st.session_state.pop(_NAV_LOCK_KEY, None)
-                else:
-                    st.session_state.pop(_NAV_LOCK_KEY, None)
+                    return False
+                if target_slug and slug == target_slug:
+                    lock["slug"] = None
+                    lock["handled_at"] = time.time()
 
         target_page = SLUG_MAP.get(slug)
         if not target_page:

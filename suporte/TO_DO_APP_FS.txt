@@ -845,6 +845,13 @@ Até aqui:
 
 =====Ajustes=====
 * ( ) Progress bar em mais etapas e melhorias visuais
+---
+Até aqui:
+[v. 0.8.25 (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* ( ) xxxxxxxxxxx
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
 * ( ) Gráfico na seção 4 do parecer (Resultados)
