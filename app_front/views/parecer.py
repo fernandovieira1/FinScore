@@ -748,11 +748,16 @@ def render():
 
             if parecer:
                 ss["parecer_gerado"] = parecer
+                # Atualiza 100% ANTES de limpar placeholders (evita erro 'setIn' em elementos removidos)
+                try:
+                    update_progress(100, "✅ Parecer gerado com sucesso!")
+                except Exception:
+                    # Se a barra já foi removida por algum motivo, ignorar
+                    pass
                 # Limpar componentes de progresso após breve pausa
-                time.sleep(0.5)
+                time.sleep(0.3)
                 progress_placeholder.empty()
                 status_text.empty()
-                update_progress(100, "✅ Parecer gerado com sucesso!")
                 # Travar navegação em /Parecer após rerun
                 ss["_lock_parecer"] = True
                 target_page = SLUG_MAP.get("parecer", "Parecer")
