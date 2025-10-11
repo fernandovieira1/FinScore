@@ -839,6 +839,7 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.8.24, de 09/10/2025]
+[v. 0.8.24a, de 11/10/2025] - inconsistências no fluxo da sidebar
 ---
 
 =====Ajustes=====

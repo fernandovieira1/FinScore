@@ -20,6 +20,7 @@ _PROCESS_CACHE_KEY = "_cached_process_data"
 _PROCESS_DATA_KEYS = ("df", "out", "meta", "erros", "policy_inputs", "anos_rotulos")
 _PROCESS_FLAG_KEYS = ("liberar_lancamentos", "liberar_analise", "liberar_parecer")
 _CLIENT_TOKEN_KEY = "client_token"
+_SKIP_URL_SYNC_FLAG = "_skip_url_sync_once"
 
 _GLOBAL_PROCESS_CACHE: dict[str, dict[str, Any]] = {}
 
@@ -113,6 +114,11 @@ class AppState:
         return AppState._ensure_client_token()
 
     @staticmethod
+    def skip_next_url_sync() -> None:
+        """Prevent the next URL sync from overriding an explicit navigation."""
+        st.session_state[_SKIP_URL_SYNC_FLAG] = True
+
+    @staticmethod
     def _has_meaningful_value(value) -> bool:
         if value is None:
             return False
@@ -166,6 +172,9 @@ class AppState:
     @staticmethod
     def sync_from_query_params() -> bool:
         """Copy navigation state from the URL query parameters."""
+        if st.session_state.pop(_SKIP_URL_SYNC_FLAG, False):
+            return False
+
         page_param = st.query_params.get("p")
         if not page_param:
             return False
