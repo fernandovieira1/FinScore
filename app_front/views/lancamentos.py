@@ -382,7 +382,7 @@ def _sec_dados():
                     st.success("✅ Processamento concluído.")
                     # === NAVEGAÇÃO DIRETA PARA ANÁLISE ===
                     target_page = SLUG_MAP.get("analise", "Analise")
-                    AppState.skip_next_url_sync()
+                    AppState.skip_next_url_sync(target_slug="analise")
                     AppState.set_current_page(target_page, source="lanc_calcular_btn", slug="analise")
                     AppState.sync_to_query_params()
                     st.query_params["p"] = "analise"

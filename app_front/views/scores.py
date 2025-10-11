@@ -153,7 +153,11 @@ def _botao_aprovar(ss):
             
             # Atualizar estado e URL para avançar no fluxo
             target_page = SLUG_MAP.get("parecer", "Parecer")
-            AppState.skip_next_url_sync()
+            AppState.skip_next_url_sync(
+                target_slug="parecer",
+                duration=15.0,
+                blocked_slugs={"analise", "lanc"},
+            )
             AppState.set_current_page(target_page, source="scores_aprovar_btn", slug="parecer")
             AppState.sync_to_query_params()
             st.query_params["p"] = "parecer"

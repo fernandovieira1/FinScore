@@ -21,6 +21,8 @@ _PROCESS_DATA_KEYS = ("df", "out", "meta", "erros", "policy_inputs", "anos_rotul
 _PROCESS_FLAG_KEYS = ("liberar_lancamentos", "liberar_analise", "liberar_parecer")
 _CLIENT_TOKEN_KEY = "client_token"
 _SKIP_URL_SYNC_FLAG = "_skip_url_sync_once"
+_SKIP_SIDEBAR_FLAG = "_skip_sidebar_qp_once"
+_NAV_LOCK_KEY = "_nav_lock"
 
 _GLOBAL_PROCESS_CACHE: dict[str, dict[str, Any]] = {}
 
@@ -87,6 +89,11 @@ class AppState:
         if DEBUG_MODE:
             print(f"[AppState] page change: {previous} -> {page_name} (source={source}, slug={slug})")
 
+        if slug != "analise":
+            st.session_state.pop("_insight_polling_active", None)
+            st.session_state.pop("_insight_last_poll_ts", None)
+            st.session_state.pop("_review_tasks", None)
+
     @staticmethod
     def _process_cache() -> dict:
         return st.session_state.setdefault(_PROCESS_CACHE_KEY, {})
@@ -114,9 +121,46 @@ class AppState:
         return AppState._ensure_client_token()
 
     @staticmethod
-    def skip_next_url_sync() -> None:
+    def skip_next_url_sync(
+        target_slug: str | None = None,
+        duration: float = 2.5,
+        blocked_slugs: Optional[set[str]] = None,
+    ) -> None:
         """Prevent the next URL sync from overriding an explicit navigation."""
         st.session_state[_SKIP_URL_SYNC_FLAG] = True
+        st.session_state[_SKIP_SIDEBAR_FLAG] = True
+        st.session_state[_NAV_LOCK_KEY] = {
+            "slug": target_slug,
+            "expires": time.time() + max(0.5, duration),
+            "blocked": set(blocked_slugs or ()),
+        }
+
+    @staticmethod
+    def consume_sidebar_skip() -> bool:
+        """Return True once when sidebar should ignore query-param navigation."""
+        return bool(st.session_state.pop(_SKIP_SIDEBAR_FLAG, False))
+
+    @staticmethod
+    def clear_nav_lock() -> None:
+        """Remove temporary navigation locks."""
+        st.session_state.pop(_NAV_LOCK_KEY, None)
+        st.session_state.pop(_SKIP_SIDEBAR_FLAG, None)
+
+    @staticmethod
+    def is_slug_blocked(slug: str) -> bool:
+        """Check if a slug is temporarily blocked by the navigation lock."""
+        lock = st.session_state.get(_NAV_LOCK_KEY)
+        if not lock:
+            return False
+        try:
+            expires = float(lock.get("expires", 0.0))
+        except (TypeError, ValueError):
+            expires = 0.0
+        if time.time() > expires:
+            AppState.clear_nav_lock()
+            return False
+        blocked = set(lock.get("blocked") or ())
+        return slug in blocked
 
     @staticmethod
     def _has_meaningful_value(value) -> bool:
@@ -180,6 +224,25 @@ class AppState:
             return False
 
         slug = page_param[0] if isinstance(page_param, list) else page_param
+
+        lock = st.session_state.get(_NAV_LOCK_KEY)
+        if lock:
+            try:
+                expires = float(lock.get("expires", 0.0))
+            except (TypeError, ValueError):
+                expires = 0.0
+            if time.time() > expires:
+                st.session_state.pop(_NAV_LOCK_KEY, None)
+            else:
+                target_slug = lock.get("slug")
+                blocked_slugs = set(lock.get("blocked") or ())
+                if slug in blocked_slugs:
+                    return False
+                if target_slug and slug != target_slug:
+                    st.session_state.pop(_NAV_LOCK_KEY, None)
+                else:
+                    st.session_state.pop(_NAV_LOCK_KEY, None)
+
         target_page = SLUG_MAP.get(slug)
         if not target_page:
             return False

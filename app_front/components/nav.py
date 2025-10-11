@@ -227,11 +227,17 @@ def render_sidebar(current_page: str = "Home"):
         # Detecta cliques: como usamos links, deixamos a URL conduzir; o AppState
         # fará sync em app.py. Para manter API, checamos se o parâmetro mudou.
         # Se mudou, retornamos o label correspondente (para fluxo atual do app).
-        qp = st.query_params.get("p")
+        if AppState.consume_sidebar_skip():
+            qp = None
+        else:
+            qp = st.query_params.get("p")
         if qp:
             qp = qp[0] if isinstance(qp, list) else qp
             target_label = SLUG_MAP.get(qp)
             if target_label and target_label != current_page:
+                if AppState.is_slug_blocked(qp):
+                    return None
+                AppState.clear_nav_lock()
                 return target_label
         return None
             
