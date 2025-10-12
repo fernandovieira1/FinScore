@@ -9,7 +9,11 @@ for path in (str(APP_DIR), str(ROOT_DIR)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-st.set_page_config(page_title="FinScore", layout="wide")
+st.set_page_config(
+    page_title="FinScore", 
+    layout="wide",
+    page_icon=str(APP_DIR / "assets" / "logo_fin1a_fav.png")
+)
 
 from components import nav, render_sidebar, render_topbar  # noqa: E402
 from components.session_state import ensure_defaults  # noqa: E402

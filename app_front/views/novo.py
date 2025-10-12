@@ -22,13 +22,23 @@ def render() -> None:
     st.header("Novo Cálculo")
     st.markdown(
         """
-Para iniciar um novo ciclo do FinScore siga a sequência abaixo:
+Para dar início, siga os passos descritos:
 
-1. Clique em **Iniciar** para ir à etapa **Lançamentos**.
-2. Cadastre o cliente e informe o intervalo de anos da análise.
-3. Envie os dados contábeis (upload ou Google Sheets) e pressione **Calcular FinScore**.
-4. Revise os resultados em **Análise** e finalize em **Parecer**.
+1. Após clicar no botão **[Iniciar]**, logo abaixo, você será redirecionado para a seção **"Lançamentos"**.
+2. Em lançamentos, na aba **|Cliente|**, preencha as seguintes informações:
+    * Nome da empresa.
+    * CNPJ.
+        * Ano Inicial e Ano Final das demonstrações contábeis.
+
+   Em seguida, clique no botão **[Enviar Dados]**, localizado no final do formulário.
+3. Na aba **|Dados|**, faça o lançamento dos dados contábeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
+    * Se optar pelo upload de arquivo, certifique-se de que ele esteja no formato correto (.xlsx).
+4. Clique em **[Calcular FinScore]**.
+5. Avalie os resultados preliminares apresentados e emita o parecer técnico na seção **"Parecer"** após clicar no botão **[Aprovar]**.
+
+A análise será detalhada na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
         """
     )
 
-    st.button("Iniciar", key="btn_iniciar_novo_calculo", on_click=_on_iniciar)
+    _, col_button, _ = st.columns((1, 1, 1))
+    col_button.button("Iniciar", key="btn_iniciar_novo_calculo", on_click=_on_iniciar)

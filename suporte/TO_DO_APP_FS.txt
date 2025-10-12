@@ -878,6 +878,14 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Página /Home com ícones funcionais e elementos visuais mais polidos
+* (x) Favicon adicionada
+---
+Até aqui:
+[v. 0.8.28 (ia), de 12/10/2025]
+---
+
+=====Ajustes=====
 * ( ) xxxxxxxxxxx
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)

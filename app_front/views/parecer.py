@@ -486,7 +486,7 @@ def render():
             .parecer-progress .stProgress > div{
                 height:14px;
                 border-radius:999px;
-                background:#f5f7fb;
+                background:#F5F9FF;
                 border:1px solid #d8e2f8;
                 box-shadow:inset 0 1px 3px rgba(53,96,153,0.12);
             }
