@@ -3,8 +3,8 @@ import math
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-from components.state_manager import AppState
-from components.config import SLUG_MAP
+
+from components import nav
 from services.io_validation import validar_cliente, ler_planilha, check_minimo
 from services.finscore_service import run_finscore, ajustar_coluna_ano
 
@@ -67,7 +67,13 @@ def _auto_save_cliente():
     cnpj_raw = meta.get("cnpj", "")
     # Aplica máscara ANTES de exibir o campo
     cnpj_default = mascara_cnpj(cnpj_raw)
-    cnpj_input = st.text_input("CNPJ", value=cnpj_default, placeholder="00.000.000/0000-00", max_chars=18, key="cnpj_input")
+    cnpj_input = st.text_input(
+        "CNPJ",
+        value=cnpj_default,
+        placeholder="00.000.000/0000-00",
+        max_chars=18,
+        key="lanc_cnpj_input",
+    )
     cnpj = mascara_cnpj(cnpj_input)
     # Aceita apenas 4 dígitos para campo ano
     ai_val = meta.get("ano_inicial", "")
@@ -98,7 +104,7 @@ def _auto_save_cliente():
         "Serasa Score (0–1000)",
         value=str(int(float(serasa_val))) if str(serasa_val).replace(",", ".").replace(" ", "").replace(".0", "").isdigit() else "",
         placeholder="Ex.: 550",
-        key="serasa_score_input"
+        key="lanc_serasa_score"
     )
     # Só aceita número inteiro entre 0 e 1000
     try:
@@ -121,7 +127,13 @@ def _auto_save_cliente():
         # Aplica máscara DD/MM/YYYY
         return f"{v[:2]}/{v[2:4]}/{v[4:8]}"
     serasa_data_default = mascara_data_br(serasa_data_raw)
-    serasa_data_input = st.text_input("Data de Consulta ao Serasa", value=serasa_data_default, placeholder="DD/MM/YYYY", max_chars=10, key="serasa_data_input")
+    serasa_data_input = st.text_input(
+        "Data de Consulta ao Serasa",
+        value=serasa_data_default,
+        placeholder="DD/MM/YYYY",
+        max_chars=10,
+        key="lanc_serasa_data",
+    )
     def valida_data_br(data):
         if not data:
             return ""
@@ -327,11 +339,10 @@ def _sec_dados():
             ss.meta.pop("anos_rotulos", None)
         chec = check_minimo(ss.df)
         if chec["BP_faltando"] or chec["DRE_faltando"]:
-            st.warning("🔎 Checagem de campos mínimos (informativa):")
+            st.warning("Checagem de campos minimos (informativa):")
             st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
-        st.success("✅ Dados contábeis salvos.")
+        st.success("Dados contabeis salvos.")
         ss.out = None  # Limpa resultados se dados mudaram
-        AppState.drop_cached_process_data("out")
     else:
         _render_cached_data_preview()
 
@@ -377,31 +388,30 @@ def _sec_dados():
                     ss.out = out
                     ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
                     ss["liberar_analise"] = True
-                    cache = AppState._process_cache()
-                    cache["liberar_analise"] = True
                     ss["liberar_parecer"] = False
-                    cache["liberar_parecer"] = False
-                    # Atualiza o cache global para garantir persistência
-                    from components.state_manager import _GLOBAL_PROCESS_CACHE
-                    token = AppState._ensure_client_token()
-                    _GLOBAL_PROCESS_CACHE[token] = dict(cache)
-                    st.success("✅ Processamento concluído.")
-                    # Navega para Análise de forma determinística
-                    target_page = SLUG_MAP.get("analise", "Análise")
-                    AppState.set_current_page(target_page, source="lanc_calcular_btn", slug="analise")
-                    AppState.sync_to_query_params()
-                    st.query_params["p"] = "analise"
-                    st.rerun()
-                    AppState.set_current_page(target_page, source="lanc_calcular_btn", slug="analise")
-                    AppState.sync_to_query_params()
-                    st.query_params["p"] = "analise"
+                    ss["_flow_started"] = True
+                    for key in ("_lock_parecer", "_force_parecer", "_DIRECT_TO_PARECER"):
+                        ss.pop(key, None)
+                    st.success("Processamento concluido.")
+                    if not nav.go("analise"):
+                        nav.force("analise")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erro no processamento: {e}")
 
 def render():
     ss = st.session_state
-    # Removido o reset automático de novo_tab para preservar navegação interna (ex.: após 'Iniciar')
+    if not ss.get("_flow_started"):
+        nav.restart()
+        st.info("Clique em Iniciar na etapa Novo para preencher os lancamentos.")
+        st.rerun()
+        return
+
+    ss.setdefault("meta", {})
+    ss.setdefault("df", None)
+    ss.setdefault("out", None)
+    ss.setdefault("novo_tab", "Cliente")
+
 
     # ===== CSS específico desta view =====
     st.markdown(

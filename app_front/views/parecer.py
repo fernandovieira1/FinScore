@@ -8,8 +8,9 @@ import streamlit.components.v1 as components
 
 from components.policy_engine import PolicyInputs, decide
 from components.llm_client import _invoke_model, MODEL_NAME
-from components.state_manager import AppState
-from components.config import SLUG_MAP
+from components.navigation_flow import NavigationFlow
+from components.session_state import clear_flow_state
+from components import nav
 
 # Usar temperatura 0 para máxima determinism e reduzir erros ortográficos
 PARECER_TEMPERATURE = 0.0
@@ -758,12 +759,8 @@ def render():
                 time.sleep(0.3)
                 progress_placeholder.empty()
                 status_text.empty()
-                # Travar navegação em /Parecer após rerun
-                ss["_lock_parecer"] = True
-                target_page = SLUG_MAP.get("parecer", "Parecer")
-                AppState.set_current_page(target_page, source="gerar_parecer_btn", slug="parecer")
-                AppState.sync_to_query_params()
-                st.query_params["p"] = "parecer"
+                # Travar navegacao em /Parecer apos rerun
+                NavigationFlow.request_lock_parecer()
                 st.rerun()
             else:
                 update_progress(100, "⚠️ Não foi possível gerar o parecer automaticamente.")
@@ -774,7 +771,7 @@ def render():
             st.error(f"Erro ao gerar parecer: {e}")
     
     # Exibir parecer se já foi gerado
-    if "parecer_gerado" in ss:
+    if ss.get("parecer_gerado"):
         st.divider()
         
         # Container para o parecer com fundo destacado
@@ -854,3 +851,9 @@ def render():
                     if 'import_error' in locals():
                         st.warning(f"Módulo PDF não disponível: {import_error}")
                     st.info("📦 **Instale as dependências:**\n\n1. `pip install playwright jinja2 markdown-it-py`\n2. `python -m playwright install chromium`")
+        restart_col = st.columns([1, 1, 1])[1]
+        with restart_col:
+            if st.button("Iniciar novo ciclo", key="btn_novo_ciclo_parecer", use_container_width=True):
+                clear_flow_state()
+                nav.restart()
+                st.rerun()

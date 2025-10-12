@@ -16,14 +16,17 @@ import pandas as pd
 import streamlit as st
 
 from components.llm_client import call_review_llm
+from components.navigation_flow import NavigationFlow
 from components.schemas import ReviewSchema
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
     from .scores import render as render_scores
-except Exception as e:
+except Exception as exc:
+    _SCORES_IMPORT_ERROR = str(exc)
+
     def render_scores():
-        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {_SCORES_IMPORT_ERROR}")
 
 try:
     from .graficos import (
@@ -32,9 +35,11 @@ try:
         render_receita_total,
         render_juros_lucro_receita,
     )
-except Exception as e:
+except Exception as exc:
+    _GRAFICOS_IMPORT_ERROR = str(exc)
+
     def prepare_graficos_data():
-        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {_GRAFICOS_IMPORT_ERROR}")
         return None
 
     def render_ativo_passivo_circulante(_df):
@@ -56,9 +61,11 @@ try:
         get_top_indices_table,
         get_pca_loadings_table,
     )
-except Exception as e:
+except Exception as exc:
+    _TABELAS_IMPORT_ERROR = str(exc)
+
     def get_indices_table():
-        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {_TABELAS_IMPORT_ERROR}")
         return None
 
     def get_pca_scores_table():
@@ -98,6 +105,10 @@ _LLM_MIN_GAP = float(os.getenv("FINSCORE_LLM_MIN_GAP", "2.5"))
 _LLM_MAX_RETRIES = int(os.getenv("FINSCORE_LLM_MAX_RETRIES", "3"))
 
 _MAX_AUTO_ATTEMPTS = 2
+
+
+def _on_aprovar():
+    NavigationFlow.request_lock_parecer()
 
 
 def _get_review_tasks() -> Dict[str, Dict[str, Any]]:
@@ -1467,7 +1478,7 @@ def render():
     ss.setdefault("artifacts_meta", {})
 
     # Removido: Não force p=analise aqui, pois interfere com navegação de outras páginas
-    # A navegação já é controlada pelo app.py e state_manager.py
+    # A navegação já é controlada pelo app.py e novo módulo de sessão
 
     _poll_review_tasks()
     _ensure_insight_styles()
@@ -1508,4 +1519,15 @@ def render():
         _render_tabelas_tab_content()
     with tab_scores:
         render_scores()
+
+    if ss.get("out"):
+        st.divider()
+        col = st.columns([1, 1, 1])[1]
+        with col:
+            if ss.get("liberar_parecer"):
+                if st.button("Ir para Parecer", key="btn_ir_para_parecer", use_container_width=True):
+                    NavigationFlow.request_lock_parecer()
+                    st.rerun()
+            else:
+                st.button("Aprovar", key="btn_aprovar_analise", on_click=_on_aprovar, use_container_width=True)
 
