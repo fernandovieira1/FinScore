@@ -25,7 +25,7 @@ python.exe -m pip install --upgrade pip
 # **apenas a primeira vez
 pip install -r requirements.txt
 
-pip install -r "C:\Users\ferna\OneDrive\Desktop OneDrive\FinScore\requirements.txt"
+pip install -r "C:\Users\ferna\Desktop\FinScore\requirements.txt"
 
 -------------------
 # (V) Passos I, II e IV (IGNORAR se fez em separado)

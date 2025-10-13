@@ -813,7 +813,91 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) Progress bar em mais etapas e melhorias visuais
+* (x) Reordenamento das abas em /Análise
+* (x) Importação de dados Excel e Google Sheets corrigir formatos (sempre float) e valores faltantes (como 0)
+=====Novidades=====
+* (x) Aba 'Dados Contábeis' em /Análise
+---
+Até aqui:
+[v. 0.8.21 (ia), de 07/10/2025]
+---
+
+=====Ajustes=====
+* (x) Formatação títulos abas em /Análise (ícones + texto)
+---
+Até aqui:
+[v. 0.8.22 (ia), de 07/10/2025]
+---
+
+=====Ajustes=====
+* (x) Conteúdo do Parecer readquado (seção Metodologia mais sintética)
+---
+Até aqui:
+[v. 0.8.23 (ia), de 08/10/2025]
+---
+
+=====Ajustes=====
+* (x) Botão 'Aprovar' em /Lançamentos/Scores
+* (x) Sequências da sidebar revisados e funcionando
+---
+Até aqui:
+[v. 0.8.24, de 09/10/2025]
+[v. 0.8.24a, de 11/10/2025] - inconsistências no fluxo da sidebar
+[v. 0.8.24b, de 11/10/2025] - fluxo da sidebar ok (finalmente!!)
+---
+
+=====Ajustes=====
+* (x) Progress bar em mais etapas e melhorias visuais
+---
+Até aqui:
+[v. 0.8.25 (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* (x) Fluxo da sidebar de novo revisado e funcionando - mais determinístico agora
+---
+Até aqui:
+[v. 0.8.25a (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* (x) Mensagem “Bad message format — 'setIn' cannot be called on an ElementNode”  ao gerar parecer removida
+* (x) Fluxo da sidebar revisado e funcionando (5 vezes depois de desde [v. 0.8.25a (ia), de 11/10/2025])
+=====Novidades=====
+* (x) Novo visual e estrutura da Página inicial (home.py)
+---
+Até aqui:
+[v. 0.8.26 (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* (x) Fluxo da sidebar refeito após novas instabilidades (10 horas de tentativas)
+* (x) Gerenciamento do fluxo da sidebar via session_state.py
+* (x) Em tese, problema resolvido (quase enlouqueci) - race condition com restos de navegação a cada ciclo e
+código mal otimizado e redundante.
+---
+Até aqui:
+[v. 0.8.27 (ia), de 11/10/2025]
+---
+
+=====Ajustes=====
+* (x) Página /Home com ícones funcionais e elementos visuais mais polidos
+* (x) Favicon adicionada
+---
+Até aqui:
+[v. 0.8.28 (ia), de 12/10/2025]
+---
+
+=====Ajustes=====
+* (x) Padronização e harmomia visual com ícones e títulos em h3 (centralizados ou à esquerda)
+* (x) Testes feitos em todos os links e no cálculo de parecer da sidebar
+---
+Até aqui:
+[v. 0.8.29 (ia), de 12/10/2025]
+---
+
+=====Ajustes=====
+* ( ) xxxxxxxxxxx
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
 * ( ) Gráfico na seção 4 do parecer (Resultados)
@@ -826,7 +910,7 @@ Até aqui:
 
 =====Novidades=====
 * ( ) Transpor os resultados da seção /Parecer para a aba 'Resultado' em /Análise
-* ( ) Gerar o resultado a partir de /Análise/Resumo
+* ( ) Gerar o resultado a partir de /Análise/Resultado
 * ( ) Gerar parecer ser computado em segundo plano a partir do momento que se clica em 
 'Calcular FinScore' em /Lançamentos
 ---

@@ -12,17 +12,21 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
+import pandas as pd
 import streamlit as st
 
 from components.llm_client import call_review_llm
+from components.navigation_flow import NavigationFlow
 from components.schemas import ReviewSchema
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
     from .scores import render as render_scores
-except Exception as e:
+except Exception as exc:
+    _SCORES_IMPORT_ERROR = str(exc)
+
     def render_scores():
-        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'scores.py' (render). Detalhe: {_SCORES_IMPORT_ERROR}")
 
 try:
     from .graficos import (
@@ -31,9 +35,11 @@ try:
         render_receita_total,
         render_juros_lucro_receita,
     )
-except Exception as e:
+except Exception as exc:
+    _GRAFICOS_IMPORT_ERROR = str(exc)
+
     def prepare_graficos_data():
-        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'graficos.py'. Detalhe: {_GRAFICOS_IMPORT_ERROR}")
         return None
 
     def render_ativo_passivo_circulante(_df):
@@ -55,9 +61,11 @@ try:
         get_top_indices_table,
         get_pca_loadings_table,
     )
-except Exception as e:
+except Exception as exc:
+    _TABELAS_IMPORT_ERROR = str(exc)
+
     def get_indices_table():
-        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {e}")
+        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {_TABELAS_IMPORT_ERROR}")
         return None
 
     def get_pca_scores_table():
@@ -99,6 +107,10 @@ _LLM_MAX_RETRIES = int(os.getenv("FINSCORE_LLM_MAX_RETRIES", "3"))
 _MAX_AUTO_ATTEMPTS = 2
 
 
+def _on_aprovar():
+    NavigationFlow.request_lock_parecer()
+
+
 def _get_review_tasks() -> Dict[str, Dict[str, Any]]:
     return st.session_state.setdefault("_review_tasks", {})
 
@@ -132,6 +144,11 @@ def _call_review_llm_with_throttle(artifact_id: str, payload: Dict[str, Any]) ->
 
 
 def _ensure_insight_polling() -> None:
+    # CRÍTICO: Só fazer polling se usuário ESTÁ em /Análise
+    # Não fazer rerun automático se usuário navegou para outra página
+    if st.query_params.get("p") != "analise":
+        return
+    
     tasks = _get_review_tasks()
     has_running = any((task or {}).get("status") in ("pending", "running") for task in tasks.values())
     timer_active = st.session_state.get(_INSIGHT_POLL_FLAG, False)
@@ -321,9 +338,10 @@ def _poll_review_tasks() -> None:
             rerun_needed = True
 
     if rerun_needed:
-        if st.query_params.get("p") != "analise":
-            st.query_params["p"] = "analise"
-        st.rerun()
+        # CRÍTICO: Só força redirect se usuário JÁ ESTÁ em /Análise
+        # Não arrancar usuário de outras páginas (ex: /Parecer)
+        if st.query_params.get("p") == "analise":
+            st.rerun()
 
 
 def _emit_captions(captions):
@@ -455,6 +473,83 @@ def _todo_placeholder(nome: str):
 def _normalize_label(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
     return normalized.encode("ascii", "ignore").decode("ascii").lower()
+
+
+def _format_column_name(col_name: str) -> str:
+    """
+    Formata nome de coluna: remove prefixos p_ ou r_, capitaliza palavras,
+    substitui underscore por espaço e corrige ortografia brasileira.
+    
+    Exemplo: 'p_Patrimonio_Liquido' -> 'Patrimônio Líquido'
+             'r_Lucro_Liquido' -> 'Lucro Líquido'
+    """
+    # Remove prefixos p_ ou r_
+    if col_name.startswith(('p_', 'r_')):
+        col_name = col_name[2:]
+    
+    # Substitui underscore por espaço
+    col_name = col_name.replace('_', ' ')
+    
+    # Capitaliza primeira letra de cada palavra
+    col_name = col_name.title()
+    
+    # Dicionário de correções ortográficas para padrão brasileiro
+    corrections = {
+        'Patrimonio': 'Patrimônio',
+        'Liquido': 'Líquido',
+        'Liquidez': 'Liquidez',
+        'Receita': 'Receita',
+        'Circulante': 'Circulante',
+        'Passivo': 'Passivo',
+        'Ativo': 'Ativo',
+        'Lucro': 'Lucro',
+        'Imobilizado': 'Imobilizado',
+        'Realizavel': 'Realizável',
+        'Divida': 'Dívida',
+        'Credito': 'Crédito',
+        'Debito': 'Débito',
+        'Capital': 'Capital',
+        'Medio': 'Médio',
+        'Periodo': 'Período',
+        'Analise': 'Análise',
+        'Operacional': 'Operacional',
+        'Indice': 'Índice',
+        'Indices': 'Índices',
+        'Despesa': 'Despesa',
+        'Despesas': 'Despesas',
+        'Impostos': 'Impostos',
+        'Juros': 'Juros',
+        'Depreciacao': 'Depreciação',
+        'Amortizacao': 'Amortização',
+        'Disponivel': 'Disponível',
+        'Estoque': 'Estoque',
+        'Fornecedor': 'Fornecedor',
+        'Fornecedores': 'Fornecedores',
+    }
+    
+    # Aplica correções palavra por palavra
+    words = col_name.split()
+    corrected_words = [corrections.get(word, word) for word in words]
+    
+    return ' '.join(corrected_words)
+
+
+def _format_currency_value(value) -> str:
+    """
+    Formata valor numérico como moeda brasileira com prefixo R$.
+    
+    Exemplo: 37531910 -> 'R$ 37.531.910,00'
+    """
+    if pd.isna(value):
+        return '-'
+    
+    try:
+        num_value = float(value)
+        # Formata com separador de milhares (.) e decimais (,)
+        formatted = f'R$ {num_value:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+        return formatted
+    except (ValueError, TypeError):
+        return str(value)
 
 
 def _split_indices_columns(df) -> dict:
@@ -1118,8 +1213,8 @@ def _render_graficos_tab_content():
     indices_df = out.get("df_indices")
     row = _latest_row_dict(df)
 
-    st.header("1. Dados Contábeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
+    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
+    st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_call_plot(
         df,
         [
@@ -1143,7 +1238,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.subheader("1.2 Contas de Resultado (DRE)")
+    st.markdown("#### 🧮 2. Demonstração de Resultado")
     operacional_rendered = render_receita_total(df)
     if _try_call_plot(df, ["render_custos", "render_depreciacao", "render_amortizacao"]):
         operacional_rendered = True
@@ -1163,7 +1258,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.header("2. Indices Contábeis")
+    st.markdown("#### 📊 3. Índices Contábeis")
     liquidez_rendered = _try_call_plot(df, ["render_liquidez_indices"])
     if not liquidez_rendered:
         _todo_placeholder("Liquidez")
@@ -1179,7 +1274,7 @@ def _render_graficos_tab_content():
 
     st.divider()
 
-    st.header("3. PCA")
+    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
     loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
     if not loadings_rendered:
         _todo_placeholder("Cargas (loadings)")
@@ -1205,6 +1300,96 @@ def _render_indices_tables(df):
 
 
 
+def _render_dados_contabeis_tab_content():
+    """Renderiza a aba 'Dados Contábeis' com dados brutos formatados da planilha."""
+    ss = st.session_state
+    out = ss.get("out")
+    
+    if not out:
+        st.info("Calcule o FinScore em **Novo** para visualizar os dados contábeis.")
+        return
+    
+    df_raw = out.get("df_raw")
+    
+    if df_raw is None or df_raw.empty:
+        st.warning("Nenhum dado contábil disponível.")
+        return
+    
+    # Informações no topo
+    st.markdown("<h3 style='text-align: left;'>📖 Contas</h3>", unsafe_allow_html=True)
+    
+    meta = ss.get("meta", {})
+    empresa = meta.get("empresa", "-")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Nome da Empresa</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{empresa}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    with col2:
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Períodos</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(df_raw)}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    with col3:
+        # Contar colunas numéricas (exceto 'Ano')
+        numeric_cols = df_raw.select_dtypes(include=['number']).columns.tolist()
+        if 'ano' in [c.lower() for c in df_raw.columns]:
+            numeric_cols = [c for c in numeric_cols if c.lower() != 'ano']
+        
+        st.markdown(
+            "<p style='text-align:center;margin-bottom:0.25rem;'>Total de Contas</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(numeric_cols)}</h3>",
+            unsafe_allow_html=True,
+        )
+    
+    st.divider()
+    
+    # Criar cópia do dataframe para não modificar o original
+    df_display = df_raw.copy()
+    
+    # Limitar a 3 linhas
+    df_display = df_display.head(3)
+    
+    # Formatar nomes das colunas
+    df_display.columns = [_format_column_name(col) for col in df_display.columns]
+    
+    # Identificar colunas numéricas (exceto 'Ano' se existir)
+    numeric_cols_display = df_display.select_dtypes(include=['number']).columns.tolist()
+    if 'Ano' in numeric_cols_display:
+        numeric_cols_display.remove('Ano')
+    
+    # Formatar coluna Ano (se existir) - sem vírgulas ou pontos
+    if 'Ano' in df_display.columns:
+        df_display['Ano'] = df_display['Ano'].apply(lambda x: str(int(x)) if pd.notna(x) else '-')
+    
+    # Formatar valores numéricos como moeda
+    for col in numeric_cols_display:
+        df_display[col] = df_display[col].apply(_format_currency_value)
+    
+    # Exibir tabela formatada
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        hide_index=True
+    )
+
+
 def _render_tabelas_tab_content():
     ss = st.session_state
     out = ss.get("out")
@@ -1215,8 +1400,8 @@ def _render_tabelas_tab_content():
     indices_df = out.get("df_indices")
     top_indices_df = out.get("top_indices_df")
 
-    st.header("Dados Contábeis (brutos)")
-    st.subheader("1.1 Contas Patrimoniais (Balanço Patrimonial)")
+    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
+    st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")
     if not _try_show_table(["table_passivos", "get_passivos_table"]):
@@ -1228,7 +1413,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.subheader("1.2 Contas de Resultado (DRE)")
+    st.markdown("#### 🧮 2. Demonstração de Resultado")
     if not _try_show_table([
         "table_operacional",
         "get_operacional_table",
@@ -1247,7 +1432,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.header("2. Indices Contábeis")
+    st.markdown("#### 📊 3. Indices Contábeis")
     liquidez_table = _try_show_table(["table_liquidez_indices"])
     if not liquidez_table:
         _todo_placeholder("Liquidez")
@@ -1263,7 +1448,7 @@ def _render_tabelas_tab_content():
 
     st.divider()
 
-    st.header("3. PCA")
+    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
     pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
     if not pca_loadings_table:
         _todo_placeholder("Cargas (loadings)")
@@ -1285,12 +1470,15 @@ def _render_tabelas_tab_content():
 
 def render():
     ss = st.session_state
+    
+    # Flags de navegação são processadas em app.py ANTES de chegar aqui
+    
     ss.setdefault("analise_tab", "Scores")
     ss.setdefault("reviews", {})
     ss.setdefault("artifacts_meta", {})
 
-    if st.query_params.get("p") != "analise":
-        st.query_params["p"] = "analise"
+    # Removido: Não force p=analise aqui, pois interfere com navegação de outras páginas
+    # A navegação já é controlada pelo app.py e novo módulo de sessão
 
     _poll_review_tasks()
     _ensure_insight_styles()
@@ -1316,12 +1504,30 @@ def render():
         unsafe_allow_html=True,
     )
 
-    tab_scores, tab_graficos, tab_tabelas = st.tabs(["Scores", "Gráficos", "Tabelas"])
+    tab_dados, tab_graficos, tab_tabelas, tab_scores = st.tabs([
+        "Dados Contábeis", 
+        "Gráficos", 
+        "Tabelas",
+        "Scores"
+    ])
 
-    with tab_scores:
-        render_scores()
+    with tab_dados:
+        _render_dados_contabeis_tab_content()
     with tab_graficos:
         _render_graficos_tab_content()
     with tab_tabelas:
         _render_tabelas_tab_content()
+    with tab_scores:
+        render_scores()
+
+    if ss.get("out"):
+        st.divider()
+        col = st.columns([1, 1, 1])[1]
+        with col:
+            if ss.get("liberar_parecer"):
+                if st.button("Ir para Parecer", key="btn_ir_para_parecer", use_container_width=True):
+                    NavigationFlow.request_lock_parecer()
+                    st.rerun()
+            else:
+                st.button("Aprovar", key="btn_aprovar_analise", on_click=_on_aprovar, use_container_width=True)
 

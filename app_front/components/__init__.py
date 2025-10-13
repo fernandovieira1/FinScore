@@ -1,11 +1,8 @@
 # components/__init__.py
-"""
-Package initialization for components
-"""
-from .config import SLUG_MAP, SIDEBAR_PAGES, TOPBAR_PAGES, DEBUG_MODE
-from .state_manager import AppState
-from .nav import render_sidebar
-from .topbar import render_topbar
+"""Shared component exports."""
 
-# Aliases para compatibilidade
-PAGES = SIDEBAR_PAGES
+from .config import DEBUG_MODE  # noqa: F401
+from . import nav  # re-export module for `from components import nav`
+from .nav import render_sidebar, sync_from_url, current  # noqa: F401
+from .topbar import render_topbar  # noqa: F401
+from .navigation_flow import NavigationFlow  # noqa: F401

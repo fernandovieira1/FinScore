@@ -1,133 +1,99 @@
-# app.py
 from pathlib import Path
 import sys
+
 import streamlit as st
 
-# ---------------- path setup ----------------
 APP_DIR = Path(__file__).resolve().parent
 ROOT_DIR = APP_DIR.parent
-for p in (str(APP_DIR), str(ROOT_DIR)):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+for path in (str(APP_DIR), str(ROOT_DIR)):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
-# --------------- config ---------------
-st.set_page_config(page_title="FinScore", layout="wide")
+st.set_page_config(
+    page_title="FinScore", 
+    layout="wide",
+    page_icon=str(APP_DIR / "assets" / "logo_fin1a_fav.png")
+)
 
-# --------------- imports ---------------
-from app_front.views import estoque
-from components import AppState, render_sidebar, render_topbar, DEBUG_MODE
-from components.config import TOPBAR_PAGES, SIDEBAR_PAGES
-from components.theme import inject_global_css
+from components import nav, render_sidebar, render_topbar  # noqa: E402
+from components.session_state import ensure_defaults  # noqa: E402
+from components.theme import inject_global_css  # noqa: E402
 
-# Import das views
-from views import analise as view_analise
-from views import lancamentos as view_lancamentos
-from views import parecer, sobre, contato
-from views import guia_rapido
-from views import faq as view_faq
-from views import glossario as view_glossario
-from app_front.views import cadastros
-from views import home as view_home
-from views import novo as view_novo
-from views import processo as view_processo
+from views import analise as view_analise  # noqa: E402
+from views import lancamentos as view_lancamentos  # noqa: E402
+from views import parecer as view_parecer  # noqa: E402
+from views import novo as view_novo  # noqa: E402
+from views import sobre, contato, guia_rapido  # noqa: E402
+from views import faq as view_faq  # noqa: E402
+from views import glossario as view_glossario  # noqa: E402
+from views import home as view_home  # noqa: E402
+from views import processo as view_processo  # noqa: E402
+from app_front.views import cadastros  # noqa: E402
+from app_front.views import estoque  # noqa: E402
 
-# --------------- carregar CSS externo ---------------
-def load_css():
-    # O CSS está na pasta styles dentro de app_front
+
+def _load_css() -> None:
     css_path = APP_DIR / "styles" / "main.css"
     if css_path.exists():
-        with open(css_path, "r", encoding="utf-8") as f:
-            css_content = f.read()
-        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
-    else:
-        st.warning("Arquivo CSS não encontrado. Usando estilo padrão.")
+        st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
-# --------------- tema / css ---------------
-load_css()
+
+_load_css()
 inject_global_css()
+ensure_defaults()
+nav.sync_from_url()
 
-# --------------- inicialização do estado ---------------
-AppState.initialize()
 
-# Preserva os dados ao navegar entre as páginas
-AppState.preserve_data_across_pages()
+def _enforce_flow() -> None:
+    slug = nav.current()
+    ss = st.session_state
 
-# --------------- definição das rotas ---------------
-ROUTES = {
-    "Home": view_home.render,
-    "Processo": view_processo.render,     # <-- NOVO
-    "Novo": view_novo.render,
-    "Definir1": estoque.render,
-    "Definir2": cadastros.render,
-    "Guia Rápido": guia_rapido.render,
-    "FAQ": view_faq.render,
-    "Glossário": view_glossario.render,
-    "Lançamentos": view_lancamentos.render,
-    "Análise": view_analise.render,
-    "Parecer": parecer.render,
-    "Sobre": sobre.render,
-    "Contato": contato.render,
+    if slug == "lanc" and not ss.get("_flow_started"):
+        nav.force("novo")
+        st.rerun()
+
+    if slug == "analise" and not ss.get("liberar_analise"):
+        nav.force("lanc" if ss.get("_flow_started") else "novo")
+        st.rerun()
+
+    if slug == "parecer" and not ss.get("liberar_parecer"):
+        nav.force("analise" if ss.get("liberar_analise") else "novo")
+        st.rerun()
+
+
+_enforce_flow()
+
+CURRENT_SLUG = nav.current()
+TOPBAR_HIGHLIGHTS = {
+    "home": "Home",
+    "def1": "Estoque",
+    "def2": "Cadastros",
+    "guia": "Guia Rápido",
 }
 
-# --------------- processamento de navegação ---------------
+render_topbar(current_page=TOPBAR_HIGHLIGHTS.get(CURRENT_SLUG))
+render_sidebar(CURRENT_SLUG)
 
-# 1. Sincroniza a partir da URL (prioridade máxima)
-url_changed = AppState.sync_from_query_params()
+ROUTES = {
+    "home": view_home.render,
+    "proc": view_processo.render,
+    "novo": view_novo.render,
+    "lanc": view_lancamentos.render,
+    "analise": view_analise.render,
+    "parecer": view_parecer.render,
+    "sobre": sobre.render,
+    "contato": contato.render,
+    "guia": guia_rapido.render,
+    "faq": view_faq.render,
+    "glossario": view_glossario.render,
+    "def1": estoque.render,
+    "def2": cadastros.render,
+}
 
-# 2. Renderiza a topbar
-render_topbar(current_page=AppState.get_current_page())
+render_function = ROUTES.get(CURRENT_SLUG)
+if render_function is None:
+    fallback_slug = "home"
+    nav.force(fallback_slug)
+    render_function = ROUTES[fallback_slug]
 
-# 3. Renderiza a sidebar
-sidebar_page = render_sidebar(current_page=AppState.get_current_page())
-
-# 4. Processa navegação da sidebar (prioridade média)
-if sidebar_page and sidebar_page in ROUTES:
-    current_page = AppState.get_current_page()
-    print(f"[DEBUG] app.py: sidebar_page={sidebar_page}, current_page={current_page}")
-    if sidebar_page != current_page:
-        if not AppState.should_ignore_navigation('sidebar'):
-            print(f"[DEBUG] app.py: Navegação permitida para {sidebar_page}")
-            AppState.set_current_page(sidebar_page, 'sidebar')
-            AppState.sync_to_query_params()
-            st.rerun()
-
-# 5. Sincroniza para a URL (mantém consistência)
-AppState.sync_to_query_params()
-
-# Remove hash da URL (estético)
-st.markdown("""
-<script>
-try {
-  if (window.location.hash) {
-    history.replaceState('', document.title, window.location.pathname + window.location.search);
-  }
-} catch(e) {}
-</script>
-""", unsafe_allow_html=True)
-
-# --------------- renderização da página ---------------
-
-
-try:
-    current_page = AppState.get_current_page()
-    render_function = ROUTES.get(current_page, view_home.render)
-    render_function()
-except Exception as e:
-    st.error(f"Erro ao renderizar {current_page}: {str(e)}")
-    # Fallback para Home em caso de erro
-    AppState.set_current_page("Home", 'error')
-    view_home.render()
-
-# --------------- debug info ---------------
-if DEBUG_MODE:
-    with st.expander("🔧 Debug Info", expanded=False):
-        st.write(f"**Página atual:** {AppState.get_current_page()}")
-        st.write(f"**Sidebar retornou:** {sidebar_page}")
-        st.write(f"**Query param:** {st.query_params.get('p', None)}")
-        st.write(f"**Última navegação:** {st.session_state.get('last_navigation_time')}")
-        st.write(f"**Fonte:** {st.session_state.get('navigation_source')}")
-        st.write(f"**Mudança por URL:** {url_changed}")
-        # Ambiente Python e dependências
-        import sys, importlib.util as _u
-        st.write(f"**Python exec:** {sys.executable}")
-        st.write(f"**openpyxl disponível:** {_u.find_spec('openpyxl') is not None}")
+render_function()

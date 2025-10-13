@@ -8,7 +8,7 @@ TAB_LABELS = ["🧭 Metodologia", "📚 Glossário", "❓ FAQ"]
 def _sec_metodologia():
     import pandas as pd
 
-    st.header("Metodologia")
+    st.markdown("<h3 style='text-align: left;'>🛞 Metodologia</h3>", unsafe_allow_html=True)
     st.markdown("""
 O FinScore é um índice sintético (0–1000) que busca deduzir a higidez patrimonial, econômica, financeira e o risco de crédito de uma empresa, a partir da análise quantitativa de suas demonstrações contábeis recentes. O método foi desenhado para ser objetivo, comparável entre empresas e sensível a mudanças de tendência, consoante a variância temporal dos dados.
 
@@ -111,7 +111,7 @@ Essa ponderação permite que o FinScore seja sensível a mudanças recentes, se
     """)
 
 def _sec_glossario():
-    st.subheader("Glossário")
+    st.markdown("<h3 style='text-align: left;'>📇 Glossário</h3>", unsafe_allow_html=True)
     # Dicionário do glossário (A-Z)
     glossario = {
         "A": [
@@ -331,8 +331,7 @@ def _sec_faq():
     }
     </style>
     """, unsafe_allow_html=True)
-    st.subheader("FAQ")
-    st.markdown("*Perguntas Frequentes sobre o FinScore e sua aplicação na análise de crédito*")
+    st.markdown("<h3 style='text-align: left;'>🛣️ Questões mais frequentes</h3>", unsafe_allow_html=True)
 
     faqs = [
         ("O que é o FinScore e como ele difere de outros escores de crédito?",

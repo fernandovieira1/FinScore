@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import date
 
 def _empresa(ss):
-    st.markdown("### 🏢 Empresa")
+    st.markdown("<h3 style='text-align: left;'>🏢 Empresa</h3>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -69,10 +69,7 @@ def _metricas(ss):
             unsafe_allow_html=True,
         )
 
-    # (sem divider aqui para ficar idêntico ao seu print “certo”)
-
-
-
+    # (sem divider aqui para ficar idêntico ao seu print "certo")
 
 
 def _datas(ss):
@@ -96,16 +93,18 @@ def _datas(ss):
         )
 
 
+
 def render():
     ss = st.session_state
 
     # Se ainda não processou, apenas orienta
     if not ss.get("out"):
         _empresa(ss)
-        st.info("Calcule o FinScore em **Lançamentos → Dados** para liberar o resumo.")
+        st.info("Calcule o FinScore em **Lancamentos -> Dados** para liberar o resumo.")
         return
 
-    # Bloco Empresa + Bloco de Métricas (mesmo desenho do print “certo”)
+    # Bloco Empresa + Bloco de Métricas (mesmo desenho do print "certo")
     _empresa(ss)
     _metricas(ss)
     _datas(ss)
+    

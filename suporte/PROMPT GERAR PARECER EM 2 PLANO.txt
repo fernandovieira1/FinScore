@@ -1,0 +1,85 @@
+PROMPT GERAR PARECER EM SEGUNDO PLANO
+----------------------------------------
+
+não faça nada, apenas me responda se:
+
+* Seria possível deixar a geração do parecer com IA (em /Parecer >>> botão 'Gerar Parecer IA') rodando em segundo plano a partir do momento em que eu calculo o finscore (em /Lançamentos >>> botão 'Calcular FinScore')
+
+Se sim:
+
+* A opçao de clicar no botõa 'Gerar Parecer IA' em /Parecer cotinuaria disponível e, se o processamento ainda não tivesse terminado, ele não fosse reiniciado e continuasse normalmente até gerar o parecer final.
+
+Repito: não faça nada, apenas me diga se e como isso seria possível e funcionaria
+
+
+***************** /// *****************
+Implemente a geração automática do Parecer IA em background quando o FinScore for calculado.
+
+REQUISITOS:
+
+1. **Refatoração da infraestrutura de background tasks:**
+   - Mova as funções de gerenciamento de tasks de `analise.py` para um novo arquivo `services/background_tasks.py`:
+     - `_get_review_tasks()`
+     - `_call_review_llm_with_throttle()`
+     - `_ensure_insight_polling()`
+     - `_start_review_task()` (se existir)
+     - Todas as constantes relacionadas (_REVIEW_EXECUTOR, _LLM_CALL_LOCK, etc.)
+   - Atualize os imports em `analise.py` para usar o novo módulo
+
+2. **Trigger automático em /Lançamentos:**
+   - No arquivo onde o botão "Calcular FinScore" está implementado
+   - Após o cálculo bem-sucedido do FinScore (quando `ss.out` é populado)
+   - Inicie automaticamente a tarefa de geração do parecer:
+     ```python
+     from services.background_tasks import start_review_task
+     
+     # Construir payload com dados necessários para o parecer
+     payload = {
+         "meta": ss.meta,
+         "out": ss.out,
+         "df_indices": ss.df_indices,  # se disponível
+         # outros dados necessários
+     }
+     start_review_task("parecer_ia", payload)
+     ```
+   - Mostrar feedback discreto ao usuário: "✅ FinScore calculado! Parecer IA sendo gerado em segundo plano..."
+
+3. **Adaptação da view /Parecer:**
+   - Verificar se já existe uma tarefa "parecer_ia" rodando ou concluída
+   - Lógica do botão "Gerar Parecer IA":
+     ```python
+     task = get_review_tasks().get("parecer_ia")
+     
+     if task and task["status"] in ("pending", "running"):
+         st.info("⏳ Parecer sendo gerado em segundo plano...")
+         render_task_progress(task)
+         ensure_insight_polling()  # manter polling ativo
+     elif task and task["status"] == "done":
+         render_review_result(task)
+         # Botão opcional para regerar
+         if st.button("🔄 Gerar Novo Parecer"):
+             # limpar tarefa anterior e reiniciar
+     else:
+         if st.button("Gerar Parecer IA"):
+             # construir payload e iniciar tarefa
+             start_review_task("parecer_ia", payload)
+     ```
+
+4. **Garantias de funcionamento:**
+   - Proteção contra múltiplas chamadas simultâneas (usar task ID "parecer_ia" único)
+   - Manter throttling e rate limiting já existentes
+   - Sistema de polling para atualização automática em todas as views
+   - Persistência do resultado no session_state até nova análise
+
+5. **Melhorias de UX:**
+   - Indicador visual no menu lateral quando parecer está sendo gerado
+   - Badge ou ícone na aba "Parecer" indicando status (processando/pronto)
+   - Preservar resultado do parecer mesmo ao navegar entre abas
+
+IMPORTANTE:
+- Não duplicar código: reutilizar infraestrutura existente de `analise.py`
+- Manter compatibilidade: botão manual em /Parecer continua funcionando
+- Testar: calcular FinScore → navegar para /Parecer → verificar que não reinicia se já estiver rodando
+
+***************** /// *****************
+

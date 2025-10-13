@@ -1,17 +1,25 @@
-# app_front/views/novo.py
-
 import streamlit as st
-import streamlit.components.v1 as components
-from components.state_manager import AppState
-from components.config import SLUG_MAP
 
-def render():
-    st.header("Novo Cálculo")
-    has_active_process = AppState.has_active_process()
-    if has_active_process:
-        st.warning("Ha um cálculo em andamento. Clicar em Iniciar limpara os dados atuais e reiniciara a analise.")
+from components import nav
+from components.session_state import reset_for_new_cycle
+
+_NAV_KEYS = ("_lock_parecer", "_force_parecer", "_DIRECT_TO_PARECER", "liberar_parecer", "_button_nav_active")
 
 
+def _reset_nav_flags() -> None:
+    for key in _NAV_KEYS:
+        st.session_state.pop(key, None)
+
+
+def _on_iniciar() -> None:
+    reset_for_new_cycle()
+    _reset_nav_flags()
+    if not nav.go("lanc"):
+        nav.force("lanc")
+
+
+def render() -> None:
+    st.markdown("<h3 style='text-align: center;'>📃 Novo Cálculo</h3>", unsafe_allow_html=True)
     st.markdown(
         """
 Para dar início, siga os passos descritos:
@@ -26,82 +34,12 @@ Para dar início, siga os passos descritos:
 3. Na aba **|Dados|**, faça o lançamento dos dados contábeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
     * Se optar pelo upload de arquivo, certifique-se de que ele esteja no formato correto (.xlsx).
 4. Clique em **[Calcular FinScore]**.
+5. Avalie os resultados preliminares apresentados e emita o parecer técnico na seção **"Parecer"** após clicar no botão **[Aprovar]**.
 
 A análise será detalhada na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
-*(melhorar esse final)*
-
-        """,
-        unsafe_allow_html=True
+        """
     )
 
-    st.write("")
-    # Botão centralizado com o mesmo estilo do "Calcular FinScore" (verde)
-    col = st.columns([3, 2, 3])[1]
-    with col:
-        # Container com ID próprio para CSS de alta especificidade
-        st.markdown('<div id="novo-iniciar-btn">', unsafe_allow_html=True)
-        st.markdown(
-            """
-            <style>
-            /* CSS super específico para o botão Iniciar */
-            #novo-iniciar-btn .stButton > button,
-            #novo-iniciar-btn .stButton > button[data-testid="baseButton-secondary"],
-            #novo-iniciar-btn .stButton > button[kind="secondary"],
-            #novo-iniciar-btn .stButton > button[data-testid="baseButton-primary"],
-            #novo-iniciar-btn .stButton > button[kind="primary"] {
-                background: #5ea68d !important;
-                color: #fff !important;
-                font-weight: 600;
-                font-size: 1.05rem;
-                border-radius: 6px !important;
-                padding: 0.7rem 2.2rem !important;
-                border: none !important;
-                box-shadow: 0 2px 8px rgba(16,24,40,0.08);
-                transition: background 0.2s;
-            }
-            #novo-iniciar-btn .stButton > button:hover {
-                background: #43866b !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Iniciar", key="btn_iniciar", help="Ir para lancamentos"):
-            AppState.reset_process_data()
-            st.session_state["liberar_lancamentos"] = True
-            target_page = SLUG_MAP.get("lanc", "Lancamentos")
-            AppState.set_current_page(target_page, source="novo_iniciar_btn", slug="lanc")
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        # Fallback robusto: forca a cor via JS se algum tema ainda sobrescrever o CSS
-        components.html(
-                """
-                <script>
-                (function(){
-                    function paint(){
-                        try{
-                            const btns = window.parent.document.querySelectorAll('button');
-                            for (const b of btns){
-                                const t = (b.innerText || b.textContent || '').trim();
-                                if (t === 'Iniciar'){
-                                    b.style.background = '#5ea68d';
-                                    b.style.color = '#ffffff';
-                                    b.style.border = 'none';
-                                    b.style.borderRadius = '6px';
-                                    b.style.boxShadow = '0 2px 8px rgba(16,24,40,0.08)';
-                                    b.onmouseenter = () => b.style.background = '#43866b';
-                                    b.onmouseleave = () => b.style.background = '#5ea68d';
-                                    return true;
-                                }
-                            }
-                        } catch(e){}
-                        return false;
-                    }
-                    let tries = 0;
-                    const iv = setInterval(()=>{ if(paint() || tries++ > 25){ clearInterval(iv); } }, 120);
-                    setTimeout(paint, 0);
-                })();
-                </script>
-                """,
-                height=0,
-        )
+    _, col_button, _ = st.columns([1, 1, 1])
+    with col_button:
+        st.button("Iniciar", key="btn_iniciar_novo_calculo", on_click=_on_iniciar, use_container_width=True)

@@ -1,7 +1,7 @@
 import streamlit as st
 
 def render():
-    st.header("Cadastros")
+    st.markdown("<h3 style='text-align: left;'>📟 Cadastros</h3>", unsafe_allow_html=True)
     st.markdown(
         """
         Usuários, Empresas e outros -- a definir.
