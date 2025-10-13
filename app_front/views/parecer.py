@@ -479,37 +479,74 @@ def render():
         st.markdown(
             """
             <style>
-            .parecer-progress{
+                                    .parecer-progress{
+
                 margin-top:1.25rem!important;
+
                 margin-bottom:0.75rem!important;
+
             }
-            .parecer-progress .stProgress > div{
+
+            .parecer-progress-track{
+
+                width:100%;
+
                 height:14px;
+
                 border-radius:999px;
-                background:#F5F9FF;
-                border:1px solid #d8e2f8;
-                box-shadow:inset 0 1px 3px rgba(53,96,153,0.12);
-            }
-            .parecer-progress .stProgress > div > div{
-                border-radius:999px;
-                background:linear-gradient(90deg,#68a9ff 0%,#3e85f3 50%,#245561 100%);
-                transition:width .45s ease-in-out,filter .2s ease-in-out;
-                box-shadow:0 3px 9px rgba(59,130,246,0.35);
-                position:relative;
+
+                background:#ffffff;
+
+                border:1px solid #e0e7ff;
+
+                box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);
+
                 overflow:hidden;
+
             }
-            .parecer-progress .stProgress > div > div::after{
-                content:\"\";position:absolute;inset:0;
-                background:linear-gradient(120deg,rgba(255,255,255,0) 35%,rgba(255,255,255,0.45) 50%,rgba(255,255,255,0) 65%);
-                mix-blend-mode:screen;
-                animation:parecer-sheen 1.8s ease-in-out infinite;
+
+            .parecer-progress-fill{
+
+                display:block;
+
+                height:100%;
+
+                border-radius:999px;
+
+                background:#3b82f6 !important;
+
+                transition:width .45s ease-in-out;
+
+                box-shadow:0 2px 6px rgba(59,130,246,0.4);
+
+                position:relative;
+
+                opacity:1 !important;
+
             }
-            @keyframes parecer-sheen{
-                0%{transform:translateX(-80%);}
-                50%{transform:translateX(0%);}
-                100%{transform:translateX(80%);}
+
+            .parecer-progress-fill::after{
+
+                content:"";
+
+                position:absolute;
+
+                inset:0;
+
+                background:linear-gradient(120deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.6) 50%,rgba(255,255,255,0) 100%);
+
+                animation:parecer-sheen 1.5s ease-in-out infinite;
+
+                border-radius:999px;
+
             }
-            .parecer-progress-message p{
+
+            @keyframes parecer-sheen {
+                0% { transform: translateX(-150%); }
+                100% { transform: translateX(150%); }
+            }
+
+.parecer-progress-message p{
                 margin:0.15rem 0 0 0;
                 color:#315c93;
                 font-weight:600;
@@ -520,7 +557,7 @@ def render():
         )
         ss["_parecer_progress_css"] = True
 
-    st.markdown("### 🖊️ Parecer Técnico")
+    st.markdown("<h3 style='text-align: center;'>📜 Parecer Técnico</h3>", unsafe_allow_html=True)
 
     if not ss.get("out"):
         st.info("Calcule o FinScore em **Lançamentos** para liberar o parecer.")
@@ -699,15 +736,26 @@ def render():
     if gerar:
         # Criar barra de progresso customizada
         progress_placeholder = st.empty()
-        status_text = st.empty()
         with progress_placeholder.container():
-            st.markdown('<div class="parecer-progress">', unsafe_allow_html=True)
-            progress_bar = st.progress(0)
-            st.markdown('</div>', unsafe_allow_html=True)
+            progress_visual = st.empty()
+            status_text = st.empty()
+
+        def _render_progress_bar(percent: int) -> None:
+            bounded = max(0, min(100, percent))
+            progress_visual.markdown(
+                f"""
+                <div class="parecer-progress">
+                    <div class="parecer-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{bounded}">
+                        <span class="parecer-progress-fill" style="width:{bounded}%;"></span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         def update_progress(pct: int, message: str) -> None:
             bounded = max(0, min(100, pct))
-            progress_bar.progress(bounded)
+            _render_progress_bar(bounded)
             status_text.markdown(f"<div class='parecer-progress-message'><p>{message}</p></div>", unsafe_allow_html=True)
 
         update_progress(4, "⚙️ Preparando ambiente para geração do parecer...")

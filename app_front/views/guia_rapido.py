@@ -2,7 +2,7 @@
 import streamlit as st
 
 def render():
-    st.header("FinScore")
+    st.markdown("<h3 style='text-align: left;'>🔦 Conheça o FinScore</h3>", unsafe_allow_html=True)
     st.markdown(
         """
 O FinScore é um índice que quantifica a saúde financeira de uma empresa, integrando dados contábeis para avaliar 

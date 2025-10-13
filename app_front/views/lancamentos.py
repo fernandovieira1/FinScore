@@ -264,7 +264,7 @@ def _render_cached_data_preview():
 
 
 def _sec_cliente():
-    st.header("Dados do Cliente")
+    st.markdown("<h3 style='text-align: center;'>⌨️ Dados do Cliente</h3>", unsafe_allow_html=True)
     _auto_save_cliente()
     st.write("")
     st.markdown("""
@@ -302,7 +302,7 @@ def _sec_dados():
         del st.session_state["_navigate_to"]
     
     # ... resto do código existente ...
-    st.header("Dados Contábeis")
+    st.markdown("<h3 style='text-align: center;'>📏 Dados Contábeis</h3>", unsafe_allow_html=True)
     modo = st.radio(
         "Como deseja fornecer os dados contábeis?",
         ["Upload de arquivo Excel", "Link do Google Sheets"],

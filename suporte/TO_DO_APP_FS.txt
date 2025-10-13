@@ -886,6 +886,14 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Padronização e harmomia visual com ícones e títulos em h3 (centralizados ou à esquerda)
+* (x) Testes feitos em todos os links e no cálculo de parecer da sidebar
+---
+Até aqui:
+[v. 0.8.29 (ia), de 12/10/2025]
+---
+
+=====Ajustes=====
 * ( ) xxxxxxxxxxx
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)

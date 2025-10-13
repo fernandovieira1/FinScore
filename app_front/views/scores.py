@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import date
 
 def _empresa(ss):
-    st.markdown("### 🏢 Empresa")
+    st.markdown("<h3 style='text-align: left;'>🏢 Empresa</h3>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
 
     with col1:

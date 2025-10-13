@@ -1213,7 +1213,7 @@ def _render_graficos_tab_content():
     indices_df = out.get("df_indices")
     row = _latest_row_dict(df)
 
-    st.markdown("### 📔 Demonstrativos Contábeis")
+    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
     st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_call_plot(
         df,
@@ -1316,7 +1316,7 @@ def _render_dados_contabeis_tab_content():
         return
     
     # Informações no topo
-    st.markdown("### 📖 Contas")
+    st.markdown("<h3 style='text-align: left;'>📖 Contas</h3>", unsafe_allow_html=True)
     
     meta = ss.get("meta", {})
     empresa = meta.get("empresa", "-")
@@ -1400,7 +1400,7 @@ def _render_tabelas_tab_content():
     indices_df = out.get("df_indices")
     top_indices_df = out.get("top_indices_df")
 
-    st.markdown("### 📔 Demonstrativos Contábeis")
+    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
     st.markdown("#### 🪙 1. Balanço Patrimonial")
     if not _try_show_table(["table_ativos", "get_ativos_table"]):
         _todo_placeholder("Ativos")

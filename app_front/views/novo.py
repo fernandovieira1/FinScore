@@ -19,7 +19,7 @@ def _on_iniciar() -> None:
 
 
 def render() -> None:
-    st.header("Novo Cálculo")
+    st.markdown("<h3 style='text-align: center;'>📃 Novo Cálculo</h3>", unsafe_allow_html=True)
     st.markdown(
         """
 Para dar início, siga os passos descritos:
@@ -40,5 +40,6 @@ A análise será detalhada na seção **"Análise"** e você poderá visualizar 
         """
     )
 
-    _, col_button, _ = st.columns((1, 1, 1))
-    col_button.button("Iniciar", key="btn_iniciar_novo_calculo", on_click=_on_iniciar)
+    _, col_button, _ = st.columns([1, 1, 1])
+    with col_button:
+        st.button("Iniciar", key="btn_iniciar_novo_calculo", on_click=_on_iniciar, use_container_width=True)

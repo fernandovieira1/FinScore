@@ -1,7 +1,7 @@
 import streamlit as st
 
 def render():
-    st.header("Estoque")
+    st.markdown("<h3 style='text-align: left;'>📦 Estoque</h3>", unsafe_allow_html=True)
     st.markdown(
         """
         Informações sobre a base de dados - processos/propostas cadastradas.

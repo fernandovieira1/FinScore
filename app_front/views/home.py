@@ -99,7 +99,7 @@ def render() -> None:
 
   # --- Conte\u00fado adicional ---
   st.divider()
-  st.markdown("<h3 style='text-align: center;'>&#128202; Avalie seu cliente</h3>", unsafe_allow_html=True)
+  st.markdown("<h3 style='text-align: center;'>&#128200; Avalie seu cliente</h3>", unsafe_allow_html=True)
 
   c1, c2, c3 = st.columns(3)
   with c1:
