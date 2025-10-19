@@ -116,7 +116,7 @@ def _build_parecer_prompt(
     # Extrair dados para variáveis no prompt
     finscore_ajustado = analysis_data.get("finscore_ajustado", "N/A")
     classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
-    serasa_score = analysis_data.get("serasa_score", "N/A")
+    serasa_score = analysis_data.get("serasa", "N/A")  # Corrigido: era "serasa_score"
     classificacao_serasa = analysis_data.get("classificacao_serasa", "N/A")
     covenants_texto = ', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant específico'
     
@@ -335,6 +335,15 @@ Identifique e discuta:
 
 Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estruturais preocupantes, ou solidez suficiente para dispensar cláusulas restritivas mais rígidas.
 
+### 4.4 Opinião (Síntese Visual)
+
+**Nota:** Esta subseção será preenchida automaticamente com um gráfico comparativo visual dos escores Serasa e FinScore, contextualizando as classificações obtidas em 4.1, 4.2 e 4.3.
+
+Em 2-3 frases, sintetize:
+- O alinhamento (ou divergência) entre FinScore e Serasa
+- Se os resultados confirmam ou contradizem a análise detalhada dos indicadores
+- Uma avaliação geral sobre o perfil de risco da empresa
+
 ---
 
 ## 5. Considerações Finais
@@ -377,7 +386,7 @@ def _generate_parecer_ia(
     meta_cliente: Dict[str, Any]
 ) -> Optional[str]:
     """
-    Gera o parecer narrativo usando IA.
+    Gera o parecer narrativo usando IA e injeta o minichart na seção 4.4.
     """
     system_prompt = (
         "Você é um analista de crédito sênior. Escreva pareceres técnicos objetivos e bem estruturados. "
@@ -396,9 +405,71 @@ def _generate_parecer_ia(
     try:
         response = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
         response = _fix_formatting_issues(response)
+        
+        # Injetar minichart na seção 4.4
+        response = _inject_minichart(response, analysis_data)
+        
         return response
     except Exception as e:
         st.error(f"Erro ao gerar parecer: {e}")
+        return None
+
+
+def _inject_minichart(parecer: str, analysis_data: Dict[str, Any]) -> str:
+    """
+    Injeta o minichart visual comparativo na seção 4.4 do parecer.
+    """
+    import re
+    from services.chart_renderer import (
+        gerar_minichart_serasa_finscore,
+        obter_valores_faixas_serasa,
+        obter_valores_faixas_finscore
+    )
+    
+    try:
+        # Extrair valores
+        serasa_score = analysis_data.get("serasa", 0)
+        finscore_score = analysis_data.get("finscore_ajustado", 0)
+        cls_serasa = analysis_data.get("classificacao_serasa", "N/A")
+        cls_finscore = analysis_data.get("classificacao_finscore", "N/A")
+        
+        # Obter valores das faixas baseado nas classificações
+        serasa_vals = obter_valores_faixas_serasa(cls_serasa)
+        finscore_vals = obter_valores_faixas_finscore(cls_finscore)
+        
+        # Gerar minichart em base64
+        chart_base64 = gerar_minichart_serasa_finscore(
+            serasa_score=float(serasa_score),
+            finscore_score=float(finscore_score),
+            serasa_vals=serasa_vals,
+            finscore_vals=finscore_vals,
+            return_base64=True
+        )
+        
+        # Construir markdown com imagem embutida
+        chart_markdown = f"\n\n![Comparativo Serasa vs FinScore](data:image/png;base64,{chart_base64})\n\n"
+        
+        # Procurar pela seção 4.4 e injetar o gráfico logo após o título
+        # Padrão: ### 4.4 Opinião (Síntese Visual)
+        pattern = r'(###\s+4\.4\s+Opinião\s*\(Síntese Visual\).*?\n\n)'
+        
+        def replacer(match):
+            return match.group(1) + chart_markdown
+        
+        parecer_modificado = re.sub(pattern, replacer, parecer, count=1, flags=re.DOTALL)
+        
+        # Se não encontrou o padrão, adicionar antes da seção 5
+        if parecer_modificado == parecer:
+            pattern_secao5 = r'(##\s+5\.\s+Considerações Finais)'
+            fallback_chart = f"\n\n### 4.4 Opinião (Síntese Visual)\n\n{chart_markdown}\n"
+            parecer_modificado = re.sub(pattern_secao5, fallback_chart + r'\1', parecer, count=1)
+        
+        return parecer_modificado
+        
+    except Exception as e:
+        st.warning(f"Não foi possível gerar o gráfico comparativo: {e}")
+        return parecer
+
         return None
 
 

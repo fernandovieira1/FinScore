@@ -894,6 +894,15 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Parecer com Gráficos (chart_renderer, test_chart_renderer)
+---
+Até aqui:
+[v. 0.8.29a (ia), de 19/10/2025]
+---
+
+
+
+=====Ajustes=====
 * (x) Config Linux para playright
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
