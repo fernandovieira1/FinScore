@@ -894,15 +894,17 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) xxxxxxxxxxx
+* (x) Config Linux para playright
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
 * ( ) Gráfico na seção 4 do parecer (Resultados)
-* ( ) Botões pós-parecer:
-    - ( ) Baixar Parecer (PDF) (playright)
+* ( ) playright:
+    - ( ) Verificar se está funcionando no Linux
+    - ( ) Baixar Parecer
+    - ( ) Configurar pdf (cabeçalho e rodapé)
 ---
 Até aqui:
-[v. 0.8.xx (ia), de xx/10/2025]
+[v. 0.8.30 (ia), de 18/10/2025]
 ---
 
 =====Novidades=====
