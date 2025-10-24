@@ -49,6 +49,25 @@ def go(target: str) -> bool:
     """
     target = target or "home"
     origin = current()
+    ss = st.session_state
+
+    if ss.get("_lock_parecer") and target in {"novo", "lanc"}:
+        if target == "novo":
+            ss["_nav_block_message"] = (
+                "⚠️ Um parecer já foi gerado e permanece em cache. "
+                "Usar o botão 'Iniciar' na seção Novo reiniciará o processo e apagará os dados atuais. "
+                "Se desejar começar de novo, utilize o botão 'Iniciar novo ciclo' ao final do parecer."
+            )
+        else:
+            ss["_nav_block_message"] = (
+                "⚠️ Os lançamentos ficam protegidos após a geração do parecer. "
+                "Inicie um novo ciclo para editar ou reenviar os dados contábeis."
+            )
+        return False
+
+    if ss.get("_lock_parecer") and origin == "parecer" and target == "analise":
+        _set(target)
+        return True
 
     if target == origin:
         _set(target)

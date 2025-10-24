@@ -35,6 +35,49 @@ def _safe_float(value):
     return number
 
 
+def _safe_int(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+def _expected_intro_paragraphs(meta_cliente: Dict[str, Any]) -> tuple[str, str]:
+    empresa = meta_cliente.get("empresa", "N/A")
+    cnpj = meta_cliente.get("cnpj", "N/A")
+
+    ano_inicial_meta = _safe_int(meta_cliente.get("ano_inicial"))
+    ano_final_meta = _safe_int(meta_cliente.get("ano_final"))
+
+    anos_disponiveis: list[int] = []
+    if ano_inicial_meta is not None and ano_final_meta is not None:
+        if ano_final_meta >= ano_inicial_meta:
+            anos_disponiveis = list(range(ano_inicial_meta, ano_final_meta + 1))
+        else:
+            anos_disponiveis = [ano_inicial_meta, ano_final_meta]
+    elif ano_inicial_meta is not None:
+        anos_disponiveis = [ano_inicial_meta]
+    elif ano_final_meta is not None:
+        anos_disponiveis = [ano_final_meta]
+
+    anos_texto = ", ".join(str(ano) for ano in anos_disponiveis) if anos_disponiveis else "N/A"
+    serasa_data_texto = str(meta_cliente.get("serasa_data") or "N/A").strip() or "N/A"
+
+    paragrafo1 = (
+        f"Trata-se de análise da situação econômica, contábil e patrimonial da empresa {empresa}, "
+        f"CNPJ {cnpj}, para fins de análise de riscos e oportunidades em operação de crédito."
+    )
+
+    paragrafo2 = (
+        "Foram utilizados como fontes de informações as demonstrações contábeis referentes aos anos "
+        f"{anos_texto}, que serviram para cálculo e análise do FinScore, conforme metodologia detalhada "
+        "adiante, bem como o score Serasa, consultado em "
+        f"{serasa_data_texto}."
+    )
+
+    return paragrafo1, paragrafo2
+
+
 def _latest_indices_row(out_dict):
     df = out_dict.get("df_indices") if out_dict else None
     if df is None or getattr(df, "empty", True):
@@ -112,6 +155,7 @@ def _build_parecer_prompt(
     """
     empresa = meta_cliente.get("empresa", "N/A")
     cnpj = meta_cliente.get("cnpj", "N/A")
+    intro_paragrafo1, intro_paragrafo2 = _expected_intro_paragraphs(meta_cliente)
     
     # Extrair dados para variáveis no prompt
     finscore_ajustado = analysis_data.get("finscore_ajustado", "N/A")
@@ -142,15 +186,13 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 
 ## 1. Introdução
 
-**Primeiro parágrafo:** Apresente a empresa ({empresa}, CNPJ {cnpj}) e o objetivo do parecer: avaliar sua capacidade de crédito com base nos indicadores financeiros e no FinScore.
+**Primeiro parágrafo (copie exatamente o texto abaixo e mantenha-o como um parágrafo isolado, sem conectores adicionais):**
+{intro_paragrafo1}
 
-**Segundo parágrafo (Síntese Executiva):** Em 5–8 linhas, apresente:
-- Destaques principais: FinScore e Serasa (valores e classificações)
-- Pontos fortes e eventuais fragilidades identificadas
-- Conclusão direta sobre a decisão de crédito ({decisao_motor}), com justificativa objetiva
-- Indicação se há ou não covenants necessários
+**Segundo parágrafo (copie exatamente o texto abaixo e mantenha-o como um parágrafo isolado, separado por linha em branco):**
+{intro_paragrafo2}
 
-**Terceiro parágrafo (Estrutura do Parecer):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e covenants, se aplicáveis.
+**Terceiro parágrafo (Estrutura do Parecer – escreva em um parágrafo separado):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e covenants, se aplicáveis.
 
 ---
 
@@ -199,12 +241,12 @@ A convergência entre FinScore e Serasa reforça a avaliação. Divergências si
 
 ### 2.3 Dados Contábeis e Índices Financeiros
 
-A análise detalhada dos índices que compõem o FinScore permite:
+De forma complementar, a análise contextualizada e detalhada dos índices que compõem o FinScore permite:
 
-1. **Identificar drivers de risco**: Qual dimensão (liquidez, rentabilidade, endividamento) impacta negativamente o escore.
-2. **Detectar vulnerabilidades ocultas**: Riscos específicos mesmo com escore geral aceitável.
-3. **Definir covenants personalizados**: Condições alinhadas aos riscos identificados.
-4. **Compreender tendências**: Trajetória de melhora ou deterioração ao longo do tempo.
+1. **Identificar fatores de risco**: A identificação precisa de qual dimensão financeira (liquidez, rentabilidade ou endividamento) exerce impacto negativo no escore permite direcionar ações corretivas específicas e priorizadas, otimizando recursos e reduzindo o custo de capital ao mitigar os pontos críticos que mais deterioram a avaliação de crédito.
+2. **Detectar vulnerabilidades ocultas**: A identificação de riscos específicos, mesmo quando o escore geral aparenta solidez, possibilita antecipar problemas latentes que poderiam se materializar em crises futuras, garantindo maior segurança operacional sem sacrificar oportunidades de rentabilizar o negócio ou comprometer a concessão de crédito.
+3. **Sugestão de garantias de crédito**: A elaboração de cláusulas contratuais (covenants) customizadas e alinhadas aos riscos específicos identificados estabelece gatilhos de alerta precoce e mecanismos de proteção proporcionais ao perfil real do tomador, equilibrando proteção institucional com condições comercialmente viáveis.
+4. **Compreender tendências**: A análise da trajetória temporal dos indicadores financeiros revela se a empresa está em ciclo de fortalecimento ou deterioração, permitindo decisões proativas de renovação, aumento de garantias ou encerramento de exposição antes que reversões negativas se consolidem em perdas efetivas.
 
 Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e covenants.
 
@@ -337,9 +379,9 @@ Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estrutura
 
 ### 4.4 Opinião (Síntese Visual)
 
-**Nota:** Esta subseção será preenchida automaticamente com um gráfico comparativo visual dos escores Serasa e FinScore, contextualizando as classificações obtidas em 4.1, 4.2 e 4.3.
+**Parágrafo inicial (Síntese Executiva Visual):** Antes do gráfico, redija 5–8 linhas apresentando os valores e classificações de FinScore e Serasa, os principais pontos fortes e fragilidades identificados, a decisão de crédito ({decisao_motor}) com justificativa objetiva e se há covenants necessários. Esta síntese substitui o antigo parágrafo-resumo da Introdução e deve servir como leitura prévia ao gráfico.
 
-Em 2-3 frases, sintetize:
+**Parágrafo posterior (Comentário Analítico):** Em 2-3 frases, sintetize:
 - O alinhamento (ou divergência) entre FinScore e Serasa
 - Se os resultados confirmam ou contradizem a análise detalhada dos indicadores
 - Uma avaliação geral sobre o perfil de risco da empresa
@@ -374,6 +416,7 @@ Este parágrafo deve consolidar os comentários específicos da seção 4 em uma
 ✓ Múltiplos: 2,5x (não 2,5)
 ✓ Máximo 1000 palavras
 ✓ A decisão {decisao_motor} é FINAL e INALTERÁVEL
+✓ Em cada seção ou tópico, finalize com um parágrafo iniciado por conjunção conclusiva (ex: “Em suma”, “Em resumo”, “Portanto”, “Logo”, “Destarte”)
 """
     return prompt.strip()
 
@@ -404,7 +447,7 @@ def _generate_parecer_ia(
     
     try:
         response = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
-        response = _fix_formatting_issues(response)
+        response = _fix_formatting_issues(response, meta_cliente)
         
         # Injetar minichart na seção 4.4
         response = _inject_minichart(response, analysis_data)
@@ -473,7 +516,129 @@ def _inject_minichart(parecer: str, analysis_data: Dict[str, Any]) -> str:
         return None
 
 
-def _fix_formatting_issues(text: str) -> str:
+def _ensure_concluding_connectors(text: str) -> str:
+    """
+    Garante que o último parágrafo de cada seção/tópico se inicie com uma
+    conjunção conclusiva ou locução equivalente.
+    """
+    import re
+
+    connectors = [
+        "Em suma",
+        "Em resumo",
+        "Portanto",
+        "Logo",
+        "Destarte",
+        "Assim",
+        "Dessa forma",
+        "Consequentemente",
+        "Por conseguinte",
+        "Deste modo",
+    ]
+    connectors_lower = [c.casefold() for c in connectors]
+    connector_index = 0
+
+    def next_connector() -> str:
+        nonlocal connector_index
+        connector = connectors[connector_index % len(connectors)]
+        connector_index += 1
+        return connector
+
+    def lowercase_first_alpha(sentence: str) -> str:
+        for idx, ch in enumerate(sentence):
+            if ch.isalpha():
+                return sentence[:idx] + ch.lower() + sentence[idx + 1 :]
+        return sentence
+
+    lines = text.split("\n")
+    heading_indexes = [idx for idx, line in enumerate(lines) if line.strip().startswith("#")]
+    heading_indexes.append(len(lines))
+
+    for i in range(len(heading_indexes) - 1):
+        start = heading_indexes[i]
+        end = heading_indexes[i + 1]
+        if end - start <= 1:
+            continue
+
+        section = lines[start + 1:end]
+        paragraphs = []
+        cursor = 0
+
+        while cursor < len(section):
+            if section[cursor].strip() == "":
+                cursor += 1
+                continue
+
+            para_start = cursor
+            while cursor < len(section) and section[cursor].strip() != "":
+                cursor += 1
+            para_end = cursor
+            paragraphs.append((para_start, para_end))
+
+        for para_start, para_end in reversed(paragraphs):
+            first_line = section[para_start]
+            stripped = first_line.lstrip()
+            if not stripped:
+                continue
+            if stripped.startswith(("!", "|", "```")):
+                continue
+            if stripped[0] in "-*+>":
+                continue
+            if re.match(r"^\d+[.)]", stripped):
+                continue
+
+            lowered = stripped.casefold()
+            if any(lowered.startswith(conn) for conn in connectors_lower):
+                break
+
+            leading = first_line[: len(first_line) - len(stripped)]
+            connector = next_connector()
+            new_sentence = lowercase_first_alpha(stripped)
+            section[para_start] = f"{leading}{connector}, {new_sentence}"
+            break
+
+        lines[start + 1:end] = section
+
+    return "\n".join(lines)
+
+
+def _enforce_intro_paragraphs(text: str, meta_cliente: Optional[Dict[str, Any]]) -> str:
+    import re
+
+    if not meta_cliente:
+        return text
+
+    p1, p2 = _expected_intro_paragraphs(meta_cliente)
+    pattern = r"(##\s+1\.\s+Introdução\s+)(.*?)(\n##\s+2\.)"
+    match = re.search(pattern, text, flags=re.DOTALL)
+    if not match:
+        return text
+
+    body = match.group(2)
+    paragraphs = [seg.strip() for seg in re.split(r"\n\s*\n", body) if seg.strip()]
+    remaining = paragraphs[2:] if len(paragraphs) > 2 else []
+    if not remaining:
+        remaining = [
+            "Este parecer está organizado nas próximas seções: (i) a metodologia do FinScore e Serasa; "
+            "(ii) a análise detalhada dos indicadores financeiros por categoria; (iii) a análise de risco e scoring; "
+            "e (iv) as considerações finais com recomendações e covenants."
+        ]
+
+    new_body_parts = [p1, p2] + remaining
+    new_body = "\n\n".join(new_body_parts).strip()
+
+    suffix = text[match.end(2):]
+    prefix = text[:match.start(2)]
+
+    if not suffix.startswith("\n"):
+        new_body = new_body + "\n\n"
+    else:
+        new_body = new_body + "\n"
+
+    return prefix + new_body + suffix
+
+
+def _fix_formatting_issues(text: str, meta_cliente: Optional[Dict[str, Any]] = None) -> str:
     """
     Pós-processamento MINIMALISTA: apenas correções essenciais comprovadas.
     Temperatura 0 já reduz drasticamente erros ortográficos.
@@ -519,8 +684,10 @@ def _fix_formatting_issues(text: str) -> str:
     
     # 6) Espaços antes de pontuação
     text = re.sub(r' +([,.;:!?])', r'\1', text)
+
+    text = _enforce_intro_paragraphs(text, meta_cliente)
     
-    return text
+    return _ensure_concluding_connectors(text)
 
 
 def render():
@@ -550,77 +717,56 @@ def render():
         st.markdown(
             """
             <style>
-                                    .parecer-progress{
-
-                margin-top:1.25rem!important;
-
-                margin-bottom:0.75rem!important;
-
+            .parecer-progress {
+                margin: 1.25rem 0 0.75rem 0 !important;
             }
-
-            .parecer-progress-track{
-
-                width:100%;
-
-                height:14px;
-
-                border-radius:999px;
-
-                background:#ffffff;
-
-                border:1px solid #e0e7ff;
-
-                box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);
-
-                overflow:hidden;
-
+            .parecer-progress-track {
+                position: relative;
+                width: 100%;
+                font-size: clamp(1.6rem, 2.8vw, 2.05rem);
+                height: 1em;
+                border-radius: 999px;
+                background: #ffffff;
+                border: 1px solid #e0e7ff;
+                box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+                overflow: hidden;
             }
-
-            .parecer-progress-fill{
-
-                display:block;
-
-                height:100%;
-
-                border-radius:999px;
-
-                background:#3b82f6 !important;
-
-                transition:width .45s ease-in-out;
-
-                box-shadow:0 2px 6px rgba(59,130,246,0.4);
-
-                position:relative;
-
-                opacity:1 !important;
-
+            .parecer-progress-fill {
+                display: block;
+                height: 100%;
+                border-radius: inherit;
+                background: linear-gradient(90deg, #0f9d58, #34c759);
+                transition: width .45s ease-in-out;
+                position: relative;
             }
-
-            .parecer-progress-fill::after{
-
-                content:"";
-
-                position:absolute;
-
-                inset:0;
-
-                background:linear-gradient(120deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.6) 50%,rgba(255,255,255,0) 100%);
-
-                animation:parecer-sheen 1.5s ease-in-out infinite;
-
-                border-radius:999px;
-
+            .parecer-progress-fill::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
+                animation: parecer-sheen 1.6s ease-in-out infinite;
+                border-radius: inherit;
             }
-
+            .parecer-progress-label {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.46em;
+                color: #0f5132;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
             @keyframes parecer-sheen {
                 0% { transform: translateX(-150%); }
                 100% { transform: translateX(150%); }
             }
-
-.parecer-progress-message p{
-                margin:0.15rem 0 0 0;
-                color:#315c93;
-                font-weight:600;
+            .parecer-progress-message p {
+                margin: 0.15rem 0 0 0;
+                color: #6b7280;
+                font-weight: 600;
+                font-style: italic;
             }
             </style>
             """,
@@ -816,8 +962,9 @@ def render():
             progress_visual.markdown(
                 f"""
                 <div class="parecer-progress">
-                    <div class="parecer-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{bounded}">
+                    <div class="parecer-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{bounded}" aria-valuetext="{bounded}% concluído">
                         <span class="parecer-progress-fill" style="width:{bounded}%;"></span>
+                        <span class="parecer-progress-label">{bounded}%</span>
                     </div>
                 </div>
                 """,
@@ -827,7 +974,7 @@ def render():
         def update_progress(pct: int, message: str) -> None:
             bounded = max(0, min(100, pct))
             _render_progress_bar(bounded)
-            status_text.markdown(f"<div class='parecer-progress-message'><p>{message}</p></div>", unsafe_allow_html=True)
+            status_text.markdown(f"<div class='parecer-progress-message'><p><em>{message}</em></p></div>", unsafe_allow_html=True)
 
         update_progress(4, "⚙️ Preparando ambiente para geração do parecer...")
         time.sleep(0.35)
@@ -853,7 +1000,9 @@ def render():
             time.sleep(0.4)
 
             # Etapa 2: Gerar parecer
-            update_progress(74, "🤖 Gerando narrativa técnica com IA...")
+            progresso_base = "🤖 Gerando narrativa da análise econômica, contábil e patrimonial da empresa..."
+            update_progress(74, progresso_base)
+
             parecer = _generate_parecer_ia(
                 decisao_motor=resultado["decisao"],
                 motivos_motor=resultado.get("motivos", []),
@@ -880,6 +1029,7 @@ def render():
                 status_text.empty()
                 # Travar navegacao em /Parecer apos rerun
                 NavigationFlow.request_lock_parecer()
+                st.session_state["_pending_nav_target"] = "parecer"
                 st.rerun()
             else:
                 update_progress(100, "⚠️ Não foi possível gerar o parecer automaticamente.")

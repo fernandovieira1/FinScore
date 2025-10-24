@@ -904,6 +904,24 @@ Até aqui:
 
 =====Ajustes=====
 * (x) Config Linux para playright
+---
+Até aqui:
+[v. 0.8.30 (ia), de 18/10/2025]
+---
+
+=====Ajustes=====
+* (x) Config Linux para playright
+* (x) Gráficos em /Parecer escapando da margem imaginária do texto e tabelas ao aparecer em html.
+* (x) Seções com último parágrafo encerrando com conjunções conclusivas
+* (x) Diversos ajustes no texto/prompt das seções 1, 2 e 3 do parecer.
+---
+Até aqui:
+[v. 0.8.31 (ia), de 24/10/2025]
+---
+
+=====Ajustes=====
+* (x) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
+* (x) Revisão da seção 4 do parecer (Resultados)
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
 * ( ) Gráfico na seção 4 do parecer (Resultados)
@@ -913,7 +931,7 @@ Até aqui:
     - ( ) Configurar pdf (cabeçalho e rodapé)
 ---
 Até aqui:
-[v. 0.8.30 (ia), de 18/10/2025]
+[v. 0.8.3x (ia), de xx/10/2025]
 ---
 
 =====Novidades=====

@@ -43,6 +43,12 @@ inject_global_css()
 ensure_defaults()
 nav.sync_from_url()
 
+pending_target = st.session_state.pop("_pending_nav_target", None)
+if pending_target:
+    nav.force(pending_target)
+
+_nav_warning = st.session_state.pop("_nav_block_message", None)
+
 
 def _enforce_flow() -> None:
     slug = nav.current()
@@ -56,7 +62,7 @@ def _enforce_flow() -> None:
         nav.force("lanc" if ss.get("_flow_started") else "novo")
         st.rerun()
 
-    if slug == "parecer" and not ss.get("liberar_parecer"):
+    if slug == "parecer" and not ss.get("liberar_parecer") and not ss.get("_lock_parecer"):
         nav.force("analise" if ss.get("liberar_analise") else "novo")
         st.rerun()
 
@@ -95,5 +101,8 @@ if render_function is None:
     fallback_slug = "home"
     nav.force(fallback_slug)
     render_function = ROUTES[fallback_slug]
+
+if _nav_warning:
+    st.warning(_nav_warning)
 
 render_function()

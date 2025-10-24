@@ -38,6 +38,8 @@ def ensure_defaults() -> None:
         if key not in ss:
             ss[key] = _clone_default(value)
     ss.setdefault("page", "home")
+    ss.setdefault("_pending_nav_target", None)
+    ss.pop("_DIRECT_TO_PARECER", None)
 
 
 def clear_flow_state() -> None:
@@ -52,6 +54,8 @@ def clear_flow_state() -> None:
 
     for key in _TRANSIENT_KEYS:
         ss.pop(key, None)
+
+    ss.pop("_nav_block_message", None)
 
     ss["meta"] = {}
     ss["erros"] = {}

@@ -19,6 +19,13 @@ def _on_iniciar() -> None:
 
 
 def render() -> None:
+    ss = st.session_state
+    if ss.get("_lock_parecer") and ss.get("parecer_gerado"):
+        st.warning(
+            "⚠️ Um parecer está atualmente armazenado em cache. Ao clicar em "
+            "'Iniciar' um novo ciclo será iniciado e todos os dados lançados "
+            "até o momento serão descartados."
+        )
     st.markdown("<h3 style='text-align: center;'>📃 Novo Cálculo</h3>", unsafe_allow_html=True)
     st.markdown(
         """
@@ -28,15 +35,16 @@ Para dar início, siga os passos descritos:
 2. Em lançamentos, na aba **|Cliente|**, preencha as seguintes informações:
     * Nome da empresa.
     * CNPJ.
-        * Ano Inicial e Ano Final das demonstrações contábeis.
+        * Ano Inicial das demonstrações contábeis.
+    * O valor e data da consulta ao Serasa do cliente..
 
    Em seguida, clique no botão **[Enviar Dados]**, localizado no final do formulário.
 3. Na aba **|Dados|**, faça o lançamento dos dados contábeis, que podem ser enviados via upload de arquivo, link do Google Sheets ou diretamente na plataforma.
     * Se optar pelo upload de arquivo, certifique-se de que ele esteja no formato correto (.xlsx).
 4. Clique em **[Calcular FinScore]**.
-5. Avalie os resultados preliminares apresentados e emita o parecer técnico na seção **"Parecer"** após clicar no botão **[Aprovar]**.
+5. Avalie os resultados preliminares apresentados e emita o Parecer Técnico na seção **"Parecer"**, após aprovar sua emissão, em **"Análise"**.
 
-A análise será detalhada na seção **"Análise"** e você poderá visualizar o parecer na seção **"Parecer"**.
+Além de ser gerado e visualizado na seção própria, o Parecer poderá ser exportado e feito seu download.
         """
     )
 

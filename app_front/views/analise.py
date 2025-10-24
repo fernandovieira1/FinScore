@@ -18,6 +18,7 @@ import streamlit as st
 from components.llm_client import call_review_llm
 from components.navigation_flow import NavigationFlow
 from components.schemas import ReviewSchema
+from components import nav
 
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
@@ -1524,10 +1525,7 @@ def render():
         st.divider()
         col = st.columns([1, 1, 1])[1]
         with col:
-            if ss.get("liberar_parecer"):
-                if st.button("Ir para Parecer", key="btn_ir_para_parecer", use_container_width=True):
-                    NavigationFlow.request_lock_parecer()
-                    st.rerun()
-            else:
-                st.button("Aprovar", key="btn_aprovar_analise", on_click=_on_aprovar, use_container_width=True)
-
+            if st.button("Aprovar", key="btn_aprovar_analise", use_container_width=True):
+                NavigationFlow.request_lock_parecer()
+                st.session_state["_pending_nav_target"] = "parecer"
+                st.rerun()

@@ -351,3 +351,12 @@ button[kind="primary"]:hover,
     background: #4a8f77 !important;
     color: white !important;
 }
+
+/* Mantém o gráfico do parecer dentro da largura disponível */
+[data-testid="stMarkdownContainer"] img[alt="Comparativo Serasa vs FinScore"] {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
