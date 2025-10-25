@@ -932,6 +932,20 @@ Até aqui:
 ---
 
 =====Ajustes=====
+* (x) Parecer PDF:
+    - ( ) Cabeçalho e rodapé
+    - (x) Margens
+    - (x) Fonte
+    - (x) Tamanho da fonte
+    - (x) Espaçamento entre linhas
+    - (x) Quebras de página
+    - ( ) Gráficos centralizados
+---
+Até aqui:
+[v. 0.8.33a (ia), de 25/10/2025] - cabeçalho em andamento
+---
+
+=====Ajustes=====
 * ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
 * ( ) Revisão da seção 4 do parecer (Resultados)
 =====Novidades=====

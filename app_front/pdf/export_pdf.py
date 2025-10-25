@@ -12,6 +12,7 @@ import os
 import sys
 import platform
 import asyncio
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional, Literal
@@ -234,6 +235,16 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     page_css = _get_css_for_engine(engine)
     fonts_html = _get_fonts_for_engine(engine)
     font_families = _get_font_families_for_engine(engine)
+
+    logo_path = Path(__file__).resolve().parents[1] / "assets" / "logo_assertif_cab.png"
+    if logo_path.exists():
+        try:
+            logo_b64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
+            logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" />'
+        except Exception:
+            logo_html = "<strong>Assertif</strong>"
+    else:
+        logo_html = "<strong>Assertif</strong>"
     
     # Template HTML completo
     html = f"""<!DOCTYPE html>
@@ -335,50 +346,43 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
            ======================================== */
         .documento-header {{
             text-align: center;
-            margin-bottom: 24pt;
-            padding-bottom: 12pt;
-            border-bottom: 2px solid #444;
+            margin: 6pt 0 24pt;
+            padding: 18pt 0 14pt;
+            border-top: 1.5px solid #d8d8d8;
+            border-bottom: 1px solid #c7c7c7;
         }}
         
-        .documento-header h1 {{
-            margin-bottom: 8pt;
+        .documento-header-logo img {{
+            max-width: 180px;
+            width: 100%;
+            display: block;
+            margin: 0 auto 12pt;
+        }}
+        
+        .documento-header-title p {{
+            font-family: {font_families['sans']};
+            color: #111;
+            font-weight: 700;
+            margin: 3pt 0;
+            text-align: center;
+        }}
+        
+        .documento-header-title .titulo-principal {{
+            font-size: 16pt;
+        }}
+        
+        .documento-header-title .titulo-secundario {{
+            font-size: 13pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        
+        .documento-header-title .titulo-cnpj {{
+            font-size: 11pt;
         }}
         
         .documento-meta {{
-            font-size: 10pt;
-            color: #555;
-            line-height: 1.4;
-        }}
-        
-        .documento-meta p {{
-            text-align: center;
-            margin: 2pt 0;
-        }}
-        
-        /* ========================================
-           RESUMO EXECUTIVO (destaque)
-           ======================================== */
-        .resumo-executivo {{
-            background: #f5f5f5;
-            border-left: 4px solid #5ea68d;
-            padding: 12pt;
-            margin: 16pt 0;
-            page-break-inside: avoid;
-        }}
-        
-        .resumo-executivo h3 {{
-            margin-top: 0;
-            color: #5ea68d;
-        }}
-        
-        .decisao-box {{
-            background: white;
-            border: 2px solid #444;
-            padding: 8pt;
-            margin: 8pt 0;
-            text-align: center;
-            font-weight: 700;
-            font-size: 14pt;
+            display: none;
         }}
         
         /* ========================================
@@ -489,17 +493,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }}
         
         /* ========================================
-           CABEÇALHO E RODAPÉ FIXOS
+           RODAPÉ FIXO
            ======================================== */
-        .pdf-header {{
-            text-align: center;
-            font-size: 9pt;
-            color: #666;
-            padding: 10pt 0;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20pt;
-        }}
-        
         .pdf-footer {{
             position: fixed;
             bottom: 0;
@@ -515,30 +510,15 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     </style>
 </head>
 <body>
-    <!-- Cabeçalho fixo PDF -->
-    <div class="pdf-header">
-        <strong>Parecer de Crédito - Confidencial</strong>
-    </div>
-    
     <!-- Cabeçalho do Documento -->
     <header class="documento-header">
-        <h1>Parecer de Crédito</h1>
-        <div class="documento-meta">
-            <p><strong>{empresa}</strong></p>
-            <p>CNPJ: {cnpj}</p>
-            <p>Data da Análise: {data_analise}</p>
+        <div class="documento-header-logo">{logo_html}</div>
+        <div class="documento-header-title">
+            <p class="titulo-principal">Parecer de Crédito</p>
+            <p class="titulo-secundario">{empresa}</p>
+            <p class="titulo-cnpj">CNPJ: {cnpj}</p>
         </div>
     </header>
-    
-    <!-- Resumo Executivo (destaque) -->
-    <section class="resumo-executivo">
-        <h3>Resumo Executivo</h3>
-        <p><strong>FinScore:</strong> {finscore} ({classificacao_fs})</p>
-        <p><strong>Serasa Score:</strong> {serasa} ({classificacao_ser})</p>
-        <div class="decisao-box">
-            DECISÃO: {decisao_texto}
-        </div>
-    </section>
     
     <!-- Corpo do Parecer -->
     <main>
