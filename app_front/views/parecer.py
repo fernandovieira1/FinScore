@@ -1,10 +1,13 @@
 import math
 import json
 import time
+import uuid
+import base64
 from typing import Dict, Any, Optional
 
 import streamlit as st
 import streamlit.components.v1 as components
+import requests
 
 from components.policy_engine import PolicyInputs, decide
 from components.llm_client import _invoke_model, MODEL_NAME
@@ -23,6 +26,25 @@ RANK_FINSCORE = {
     "Levemente Acima do Risco": 4,
     "Muito Acima do Risco": 5,
 }
+
+
+def _format_metric(value, decimals: int = 2, suffix: str = "") -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, AttributeError):
+        return "N/A"
+    formatted = f"{number:.{decimals}f}"
+    if suffix:
+        formatted = f"{formatted}{suffix}"
+    return formatted
+
+
+def _format_currency(value) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, AttributeError):
+        return "N/A"
+    return f"R$ {number:,.0f}".replace(",", ".")
 
 
 def _safe_float(value):
@@ -421,6 +443,106 @@ Este parágrafo deve consolidar os comentários específicos da seção 4 em uma
     return prompt.strip()
 
 
+def _generate_fake_parecer(
+    decisao_motor: str,
+    motivos_motor: list,
+    covenants_motor: list,
+    analysis_data: Dict[str, Any],
+    meta_cliente: Dict[str, Any]
+) -> str:
+    empresa = meta_cliente.get("empresa", "Empresa")
+    cnpj = meta_cliente.get("cnpj", "N/A")
+    intro1, intro2 = _expected_intro_paragraphs(meta_cliente)
+    intro3 = (
+        "Este parecer foi produzido no modo de contingência para permitir testes da interface e do PDF "
+        "quando o serviço de IA estiver temporariamente indisponível."
+    )
+
+    finscore_ajustado = _format_metric(analysis_data.get("finscore_ajustado"))
+    classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
+    serasa_score = _format_metric(analysis_data.get("serasa"), decimals=0)
+    classificacao_serasa = analysis_data.get("classificacao_serasa", "N/A")
+
+    indicadores = [
+        ("Liquidez", "Liquidez Corrente", _format_metric(analysis_data.get("liquidez_corrente"))),
+        ("Liquidez", "Liquidez Seca", _format_metric(analysis_data.get("liquidez_seca"))),
+        ("Estrutura", "Endividamento", _format_metric(analysis_data.get("endividamento"))),
+        ("Estrutura", "Alavancagem (DL/EBITDA)", _format_metric(analysis_data.get("alavancagem"))),
+        ("Rentabilidade", "ROE", _format_metric(analysis_data.get("roe"), suffix="%")),
+        ("Rentabilidade", "ROA", _format_metric(analysis_data.get("roa"), suffix="%")),
+        ("Margens", "Margem Líquida", _format_metric(analysis_data.get("margem_liquida"), suffix="%")),
+        ("Margens", "Margem EBITDA", _format_metric(analysis_data.get("margem_ebitda"), suffix="%")),
+        ("Eficiência", "PMR (dias)", _format_metric(analysis_data.get("pmr"), decimals=0)),
+        ("Eficiência", "PMP (dias)", _format_metric(analysis_data.get("pmp"), decimals=0)),
+        ("Eficiência", "Giro do Ativo", _format_metric(analysis_data.get("giro_ativo"))),
+    ]
+
+    indicadores_table = "| Categoria | Indicador | Valor |\n| --- | --- | --- |\n"
+    for categoria, nome, valor in indicadores:
+        indicadores_table += f"| {categoria} | {nome} | {valor} |\n"
+
+    motivos_md = "\n".join(f"- {motivo}" for motivo in motivos_motor) if motivos_motor else "- Motor determinístico não forneceu motivos detalhados."
+    covenants_md = ", ".join(covenants_motor) if covenants_motor else "Monitoramento trimestral dos indicadores de liquidez e alavancagem."
+
+    receita_total = _format_currency(analysis_data.get("receita_total"))
+    lucro_liquido = _format_currency(analysis_data.get("lucro_liquido"))
+    ativo_total = _format_currency(analysis_data.get("ativo_total"))
+    patrimonio_liquido = _format_currency(analysis_data.get("patrimonio_liquido"))
+
+    fake_text = f"""
+> ⚠️ Parecer simulado para desenvolvimento. Utilize apenas para validar layout, navegação e exportação em PDF.
+
+## 1. Introdução
+
+{intro1}
+
+{intro2}
+
+{intro3}
+
+## 2. Metodologia
+
+O FinScore consolida indicadores de liquidez, estrutura de capital, rentabilidade e eficiência para traduzir o risco da empresa em escala de 0 a 100. O score Serasa informando {serasa_score} complementa a visão de mercado. Ambos os referenciais foram combinados com regras determinísticas para apoiar a decisão final.
+
+## 3. Indicadores-Chave
+
+{indicadores_table}
+
+**Base patrimonial mais recente**
+
+- Receita total: {receita_total}
+- Lucro líquido: {lucro_liquido}
+- Ativo total: {ativo_total}
+- Patrimônio líquido: {patrimonio_liquido}
+
+## 4. Análise de Risco
+
+### 4.1 Síntese dos Scores
+
+- FinScore ajustado: **{finscore_ajustado} ({classificacao_finscore})**
+- Score Serasa: **{serasa_score} ({classificacao_serasa})**
+- Decisão determinística aplicada: **{decisao_motor.upper()}**
+
+### 4.2 Motivos determinísticos
+
+{motivos_md}
+
+### 4.3 Requisitos e Covenants
+
+- {covenants_md}
+
+### 4.4 Opinião (Síntese Visual)
+
+Esta seção traz o comparativo visual automático entre Serasa e FinScore para documentar o equilíbrio de risco percebido internamente vs. mercado.
+
+## 5. Considerações Finais
+
+Mesmo em modo offline, recomenda-se manter a decisão registrada e acompanhar mensalmente os indicadores críticos. Assim que o serviço de IA for restabelecido, gere um parecer definitivo para arquivamento oficial.
+"""
+
+    return fake_text.strip()
+
+
 def _generate_parecer_ia(
     decisao_motor: str,
     motivos_motor: list,
@@ -446,16 +568,28 @@ def _generate_parecer_ia(
     ]
     
     try:
-        response = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
-        response = _fix_formatting_issues(response, meta_cliente)
-        
-        # Injetar minichart na seção 4.4
-        response = _inject_minichart(response, analysis_data)
-        
-        return response
+        response_text = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
+    except requests.exceptions.HTTPError as http_err:  # type: ignore[attr-defined]
+        status_code = http_err.response.status_code if http_err.response is not None else None
+        if status_code == 429:
+            st.warning("Limite da API de IA atingido. Gerando parecer simulado para testes...")
+            response_text = _generate_fake_parecer(
+                decisao_motor,
+                motivos_motor,
+                covenants_motor,
+                analysis_data,
+                meta_cliente,
+            )
+        else:
+            st.error(f"Erro ao gerar parecer: {http_err}")
+            return None
     except Exception as e:
         st.error(f"Erro ao gerar parecer: {e}")
         return None
+
+    response_text = _fix_formatting_issues(response_text, meta_cliente)
+    response_text = _inject_minichart(response_text, analysis_data)
+    return response_text
 
 
 def _inject_minichart(parecer: str, analysis_data: Dict[str, Any]) -> str:
@@ -1098,13 +1232,27 @@ def render():
                             empresa_safe = meta.get("empresa", "Empresa").replace(" ", "_")
                             pdf_filename = f"Parecer_{empresa_safe}_{meta.get('cnpj', 'CNPJ').replace('.', '').replace('/', '').replace('-', '')}.pdf"
                             
-                            # Botão de download
-                            st.download_button(
-                                label="🗂️ Baixar PDF",
-                                data=pdf_bytes,
-                                file_name=pdf_filename,
-                                mime="application/pdf",
-                                use_container_width=True
+                            b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+                            components.html(
+                                f"""
+                                <html>
+                                <body>
+                                <script>
+                                (function() {{
+                                    const link = document.createElement('a');
+                                    link.href = 'data:application/pdf;base64,{b64_pdf}';
+                                    link.download = '{pdf_filename}';
+                                    link.style.display = 'none';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    setTimeout(() => document.body.removeChild(link), 1000);
+                                }})();
+                                </script>
+                                </body>
+                                </html>
+                                """,
+                                height=0,
+                                width=0,
                             )
                             st.success("PDF gerado com sucesso!")
                     except Exception as e:

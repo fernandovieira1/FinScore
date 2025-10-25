@@ -900,8 +900,6 @@ Até aqui:
 [v. 0.8.29a (ia), de 19/10/2025]
 ---
 
-
-
 =====Ajustes=====
 * (x) Config Linux para playright
 ---
@@ -920,14 +918,26 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* (x) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
-* (x) Revisão da seção 4 do parecer (Resultados)
+* (x) Emissão de parecer fictício quando chave OpenAI resultar em falha
+* (x) Orientação das setinhas aberta/fechada em /Processo alteradas
+* (x) Removido o botão 'Baixar PDF', com a exportação sendo automática após clicar em 'Exportar para PDF'
+=====Novidades=====
+* (x) Gráfico na seção 4 do parecer (Resultados)
+* (x) playright:
+    - (x) Verificar se está funcionando no Linux
+    - (x) Baixar Parecer
+---
+Até aqui:
+[v. 0.8.32 (ia), de 24/10/2025]
+---
+
+=====Ajustes=====
+* ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
+* ( ) Revisão da seção 4 do parecer (Resultados)
 =====Novidades=====
 * ( ) Mais texto na seção 4 do parecer (Resultados)
 * ( ) Gráfico na seção 4 do parecer (Resultados)
 * ( ) playright:
-    - ( ) Verificar se está funcionando no Linux
-    - ( ) Baixar Parecer
     - ( ) Configurar pdf (cabeçalho e rodapé)
 ---
 Até aqui:

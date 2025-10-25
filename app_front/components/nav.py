@@ -170,8 +170,15 @@ def render_sidebar(current_slug: str) -> None:
             .fs-menu summary { position: relative; }
             .fs-menu summary::marker { display: none; }
             .fs-menu summary::-webkit-details-marker { display: none; }
-            .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; color: #235561 !important; }
-            details[open] > summary .caret { transform: rotate(180deg); }
+            .fs-menu summary .caret {
+                position: absolute;
+                right: 10px;
+                transition: transform .2s ease;
+                color: #235561 !important;
+                
+                display: inline-block;
+            }
+            details[open] > summary .caret { transform: rotate(-90deg); }
             </style>
             """,
             unsafe_allow_html=True,
@@ -290,7 +297,7 @@ def render_sidebar(current_slug: str) -> None:
 
                 if children:
                     html.append(
-                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▾</span></summary>'
+                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">◂</span></summary>'
                     )
                     for child in children:
                         c_label, c_slug = child["label"], child["slug"]
