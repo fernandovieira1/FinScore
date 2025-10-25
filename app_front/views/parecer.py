@@ -15,7 +15,7 @@ from components.navigation_flow import NavigationFlow
 from components.session_state import clear_flow_state
 from components import nav
 
-# Usar temperatura 0 para máxima determinism e reduzir erros ortográficos
+# Usar temperatura 0 para máxima determinismo e reduzir erros ortográficos
 PARECER_TEMPERATURE = 0.0
 
 RANK_SERASA = {"Excelente": 1, "Bom": 2, "Baixo": 3, "Muito Baixo": 4}
@@ -457,6 +457,11 @@ def _generate_fake_parecer(
         "Este parecer foi produzido no modo de contingência para permitir testes da interface e do PDF "
         "quando o serviço de IA estiver temporariamente indisponível."
     )
+    intro_estrutura = (
+        "A seguir, o documento apresenta a metodologia aplicada (FinScore e Serasa), a análise detalhada "
+        "dos indicadores financeiros por categoria, os resultados consolidados com avaliação de riscos e, "
+        "por fim, as considerações finais com recomendações e eventuais covenants."
+    )
 
     finscore_ajustado = _format_metric(analysis_data.get("finscore_ajustado"))
     classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
@@ -477,17 +482,48 @@ def _generate_fake_parecer(
         ("Eficiência", "Giro do Ativo", _format_metric(analysis_data.get("giro_ativo"))),
     ]
 
-    indicadores_table = "| Categoria | Indicador | Valor |\n| --- | --- | --- |\n"
-    for categoria, nome, valor in indicadores:
-        indicadores_table += f"| {categoria} | {nome} | {valor} |\n"
-
     motivos_md = "\n".join(f"- {motivo}" for motivo in motivos_motor) if motivos_motor else "- Motor determinístico não forneceu motivos detalhados."
     covenants_md = ", ".join(covenants_motor) if covenants_motor else "Monitoramento trimestral dos indicadores de liquidez e alavancagem."
+
+    liquidez_corrente = indicadores[0][2]
+    liquidez_seca = indicadores[1][2]
+    ccl_ativo = _format_metric(analysis_data.get("ccl_ativo"))
+    endividamento = indicadores[2][2]
+    alavancagem = indicadores[3][2]
+    cobertura_juros = _format_metric(analysis_data.get("cobertura_juros"))
+    roe = indicadores[4][2]
+    roa = indicadores[5][2]
+    margem_liquida = indicadores[6][2]
+    margem_ebitda = indicadores[7][2]
+    pmr = indicadores[8][2]
+    pmp = indicadores[9][2]
+    giro_ativo = indicadores[10][2]
 
     receita_total = _format_currency(analysis_data.get("receita_total"))
     lucro_liquido = _format_currency(analysis_data.get("lucro_liquido"))
     ativo_total = _format_currency(analysis_data.get("ativo_total"))
     patrimonio_liquido = _format_currency(analysis_data.get("patrimonio_liquido"))
+    passivo_total = _format_currency(analysis_data.get("passivo_total"))
+
+    dados_patrimoniais_table = (
+        "| Indicador | Valor |\n"
+        "|-----------|------:|\n"
+        f"| Receita Total | {receita_total} |\n"
+        f"| Lucro Líquido | {lucro_liquido} |\n"
+        f"| Ativo Total | {ativo_total} |\n"
+        f"| Patrimônio Líquido | {patrimonio_liquido} |\n"
+        f"| Passivo Total | {passivo_total} |\n"
+    )
+
+    indicadores_monitoramento = "\n".join(
+        [
+            f"- Liquidez Corrente em {liquidez_corrente} para acompanhar eventual aperto de caixa.",
+            f"- Alavancagem em {alavancagem}x para evitar degradação da cobertura de serviço da dívida.",
+            f"- Margem EBITDA em {margem_ebitda} para medir geração operacional.",
+            f"- PMR em {pmr} dias e PMP em {pmp} dias para monitorar o ciclo financeiro.",
+            f"- Cobertura de juros em {cobertura_juros} para assegurar folga frente a custos financeiros.",
+        ]
+    )
 
     fake_text = f"""
 > ⚠️ Parecer simulado para desenvolvimento. Utilize apenas para validar layout, navegação e exportação em PDF.
@@ -500,44 +536,135 @@ def _generate_fake_parecer(
 
 {intro3}
 
+{intro_estrutura}
+
+---
+
 ## 2. Metodologia
 
-O FinScore consolida indicadores de liquidez, estrutura de capital, rentabilidade e eficiência para traduzir o risco da empresa em escala de 0 a 100. O score Serasa informando {serasa_score} complementa a visão de mercado. Ambos os referenciais foram combinados com regras determinísticas para apoiar a decisão final.
+Este parecer fundamenta-se em uma **avaliação técnica estruturada** que combina dois instrumentos complementares: o **FinScore** (índice proprietário baseado em dados contábeis) e o **Serasa Score** (indicador externo de histórico de crédito).
 
-## 3. Indicadores-Chave
+### 2.1 FinScore
 
-{indicadores_table}
+O **FinScore** (escala 0–1000) sintetiza a saúde financeira da empresa, capturando capacidade de pagamento, eficiência, endividamento e produtividade dos ativos. Inspirado no Altman Z-Score, oferece avaliação objetiva do risco de inadimplência.
 
-**Base patrimonial mais recente**
+**Cálculo (5 etapas):**
 
-- Receita total: {receita_total}
-- Lucro líquido: {lucro_liquido}
-- Ativo total: {ativo_total}
-- Patrimônio líquido: {patrimonio_liquido}
+1. **Índices Contábeis**: Extração de 15+ indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
+2. **Padronização**: Transformação em z-scores para comparação objetiva entre dimensões.
+3. **PCA**: Redução de dimensionalidade eliminando redundâncias.
+4. **Consolidação Temporal**: Pesos 60% (ano recente), 25% (anterior), 15% (mais antigo).
+5. **Escalonamento**: Resultado convertido para escala 0–1000 e classificado em faixas de risco.
 
-## 4. Análise de Risco
+**Tabela – Classificação FinScore**
 
-### 4.1 Síntese dos Scores
+| Faixa de Pontuação | Classificação de Risco | Interpretação |
+|-------------------:|:-----------------------|:--------------|
+| > 875 | Muito Abaixo do Risco | Perfil financeiro excepcional, risco mínimo |
+| 750 – 875 | Levemente Abaixo do Risco | Situação confortável, baixo risco |
+| 250 – 750 | Neutro | Situação intermediária, sem sinais claros de excelência ou fragilidade |
+| 125 – 250 | Levemente Acima do Risco | Atenção recomendada, sinais de fragilidade |
+| < 125 | Muito Acima do Risco | Risco elevado, análise detalhada necessária |
 
-- FinScore ajustado: **{finscore_ajustado} ({classificacao_finscore})**
-- Score Serasa: **{serasa_score} ({classificacao_serasa})**
-- Decisão determinística aplicada: **{decisao_motor.upper()}**
+### 2.2 Serasa Score
 
-### 4.2 Motivos determinísticos
+O **Serasa Score** (0–1000) avalia **comportamento de crédito**: pagamentos em dia, protestos, negativações e histórico com credores. Complementa o FinScore ao capturar aspectos comportamentais não visíveis nas demonstrações contábeis.
+
+**Tabela – Classificação Serasa**
+
+| Faixa de Pontuação | Classificação | Significado |
+|-------------------:|:--------------|:------------|
+| 851 – 1000 | Excelente | Histórico de crédito exemplar, paga em dia, sem restrições |
+| 701 – 850 | Bom | Comportamento de pagamento satisfatório, baixo risco |
+| 0 – 400 | Baixo | Histórico comprometido, atenção necessária (atrasos, negativações) |
+| Sem cadastro | Muito Baixo | Ausência de histórico de crédito (empresa nova ou sem relacionamento bancário) |
+
+A convergência entre FinScore e Serasa reforça a avaliação. Divergências significativas demandam análise qualitativa adicional para compreender inconsistências entre capacidade financeira e histórico de pagamento.
+
+### 2.3 Dados Contábeis e Índices Financeiros
+
+De forma complementar, a análise contextualizada e detalhada dos índices que compõem o FinScore permite identificar fatores de risco, detectar vulnerabilidades ocultas, desenhar covenants proporcionais e compreender tendências temporais. Os índices não substituem o FinScore: **explicam e fundamentam** o escore consolidado.
+
+### 2.4 Critérios de Decisão
+
+A decisão final resulta da convergência entre FinScore ({finscore_ajustado}), Serasa ({serasa_score}), indicadores detalhados e contexto qualitativo. Essa combinação garante transparência, rastreabilidade e aderência às políticas de crédito.
+
+---
+
+## 3. Análise Detalhada dos Indicadores
+
+Esta seção disseca os indicadores financeiros nas dimensões de liquidez, endividamento, rentabilidade, eficiência e porte patrimonial. Os valores servem como base factual para a conclusão expressa na decisão {decisao_motor}.
+
+### 3.1 Liquidez
+
+**Indicadores analisados:** Liquidez Corrente ({liquidez_corrente}), Liquidez Seca ({liquidez_seca}) e CCL/Ativo Total ({ccl_ativo}).
+
+**Contexto e implicações práticas:** Os valores apontam como a empresa equilibra ativos e passivos de curto prazo. Portanto, a combinação atual indica que a companhia dispõe de {liquidez_corrente} em recursos circulantes para cada unidade de dívida imediata, enquanto a liquidez seca de {liquidez_seca} revela o colchão disponível sem estoques. O CCL equivalente a {ccl_ativo} do ativo total confirma se há capital próprio sustentando o giro e orienta a necessidade (ou não) de capital de giro adicional.
+
+### 3.2 Endividamento e Estrutura de Capital
+
+**Indicadores analisados:** Endividamento total ({endividamento}), Alavancagem DL/EBITDA ({alavancagem}) e Cobertura de Juros ({cobertura_juros}).
+
+**Contexto e implicações práticas:** A relação dívida/ativo em {endividamento} sinaliza a dependência de capital de terceiros. A alavancagem de {alavancagem}x indica quantos anos de EBITDA seriam necessários para amortizar a dívida líquida, enquanto a cobertura de juros em {cobertura_juros} vezes demonstra a folga operacional frente às despesas financeiras. Logo, a análise conjunta mostra se a empresa suporta novas linhas ou se precisa de covenants restritivos.
+
+### 3.3 Rentabilidade
+
+**Indicadores analisados:** ROE ({roe}), ROA ({roa}), Margem Líquida ({margem_liquida}) e Margem EBITDA ({margem_ebitda}).
+
+**Contexto e implicações práticas:** Os retornos sobre patrimônio e ativos, combinados às margens, indicam capacidade de geração de caixa e remuneração dos sócios. Em resumo, os percentuais atuais ilustram se o negócio remunera adequadamente o risco e se possui elasticidade para absorver oscilações de custos ou receita.
+
+### 3.4 Eficiência Operacional
+
+**Indicadores analisados:** PMR ({pmr} dias), PMP ({pmp} dias) e Giro do Ativo ({giro_ativo}).
+
+**Contexto e implicações práticas:** O PMR revela a velocidade de recebimento, o PMP sinaliza o poder de negociação com fornecedores e o giro do ativo mostra a produtividade dos investimentos. Logo, o ciclo financeiro resultante ({pmr} vs {pmp}) indica se a empresa financia clientes com capital próprio ou se consegue gerar folga de caixa.
+
+### 3.5 Dados Patrimoniais e de Resultado
+
+**Principais indicadores:**
+
+{dados_patrimoniais_table}
+
+**Contexto e implicações práticas:** A tabela evidencia o porte do negócio em termos de receita e base patrimonial. Portanto, a leitura conjunta dos valores demonstra se a estrutura é compatível com o nível de endividamento atual e quais amortecedores patrimoniais existem para suportar choques.
+
+---
+
+## 4. Resultados
+
+Esta seção consolida os escores quantitativos e interpreta como FinScore e Serasa traduzem os dados analisados anteriormente, destacando riscos que podem demandar salvaguardas contratuais.
+
+### 4.1 FinScore
+
+O FinScore ajustado de **{finscore_ajustado} ({classificacao_finscore})** reflete a combinação dos indicadores avaliados. Logo, o resultado confirma que a situação financeira descrita nas seções de liquidez, estrutura, rentabilidade e eficiência sustenta o patamar atual de risco e orienta a manutenção/ajuste de limites.
+
+### 4.2 Serasa
+
+O Serasa Score de **{serasa_score} ({classificacao_serasa})** complementa a análise ao capturar o histórico de pagamentos. Em resumo, o comportamento externo está alinhado à leitura contábil, reforçando (ou relativizando) o FinScore conforme a proximidade entre as classificações.
+
+### 4.3 Riscos da Operação
 
 {motivos_md}
 
-### 4.3 Requisitos e Covenants
+**Covenants sugeridos:** {covenants_md}
 
-- {covenants_md}
+**Indicadores críticos para monitoramento:**
+{indicadores_monitoramento}
+
+Portanto, a decisão determinística **{decisao_motor.upper()}** permanece aderente às evidências e pode ser acompanhada pelos gatilhos listados.
 
 ### 4.4 Opinião (Síntese Visual)
 
-Esta seção traz o comparativo visual automático entre Serasa e FinScore para documentar o equilíbrio de risco percebido internamente vs. mercado.
+Esta subseção reserva espaço para o gráfico comparativo entre FinScore e Serasa. Utilize-o para comunicar visualmente o equilíbrio de risco, mantendo a fundamentação descrita nas etapas anteriores.
+
+---
 
 ## 5. Considerações Finais
 
-Mesmo em modo offline, recomenda-se manter a decisão registrada e acompanhar mensalmente os indicadores críticos. Assim que o serviço de IA for restabelecido, gere um parecer definitivo para arquivamento oficial.
+**Síntese da análise detalhada:** As leituras de liquidez ({liquidez_corrente}/{liquidez_seca}), estrutura ({endividamento}, {alavancagem}), rentabilidade ({roe}, {margem_liquida}) e eficiência ({pmr} dias vs {pmp} dias) formam o núcleo da avaliação e explicam a decisão {decisao_motor}.
+
+**Aspectos positivos e pontos de atenção:** Pontos fortes incluem a combinação entre FinScore {finscore_ajustado} e Serasa {serasa_score}, além da produtividade indicada pelo giro {giro_ativo}. Entre as fragilidades, acompanhe alavancagem ({alavancagem}) e margem EBITDA ({margem_ebitda}) para evitar deterioração. Portanto, o saldo é equilibrado com viés {classificacao_finscore}.
+
+**Decisão final e recomendações:** Reitera-se a decisão **{decisao_motor}**, respaldada pelos escores (FinScore {finscore_ajustado} / Serasa {serasa_score}) e pelos motivos determinísticos. Recomenda-se manter os covenants: {covenants_md}. Logo, monitore periodicamente os indicadores destacados enquanto o serviço de IA não retorna, substituindo este texto pelo parecer definitivo assim que possível.
 """
 
     return fake_text.strip()

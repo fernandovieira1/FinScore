@@ -43,6 +43,8 @@ if IS_WINDOWS:
 else:
     DEFAULT_ENGINE = 'playwright' if PLAYWRIGHT_AVAILABLE else 'xhtml2pdf'
 
+FOOTER_BRAND = "Assertif Soluções Financeiras"
+
 
 def get_available_engines() -> list:
     """
@@ -105,29 +107,24 @@ def _get_css_for_engine(engine: str) -> str:
         return """
         @page {
             size: A4;
-            margin: 2.5cm 2.5cm 3cm 2.5cm;
+            margin: 2.4cm 2.3cm 2.8cm 2.3cm;
             
             @top-center {
-                content: "Parecer de Crédito - Confidencial";
-                font-family: Arial, sans-serif;
-                font-size: 9pt;
-                color: #666;
-                padding-bottom: 5pt;
-                border-bottom: 1px solid #ddd;
+                content: "";
             }
             
             @bottom-left {
-                content: "Confidencial – Uso Interno";
-                font-family: Arial, sans-serif;
+                content: "Assertif Soluções Financeiras";
+                font-family: "Source Sans 3", Arial, sans-serif;
                 font-size: 9pt;
-                color: #666;
+                color: #4a4a4a;
             }
             
             @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-family: Arial, sans-serif;
+                content: counter(page) " / " counter(pages);
+                font-family: "Source Sans 3", Arial, sans-serif;
                 font-size: 9pt;
-                color: #666;
+                color: #4a4a4a;
             }
         }
         """
@@ -136,7 +133,7 @@ def _get_css_for_engine(engine: str) -> str:
         return """
         @page {
             size: A4;
-            margin: 2.5cm;
+            margin: 2.4cm 2.3cm 2.8cm 2.3cm;
         }
         """
 
@@ -275,9 +272,13 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         
         body {{
             font-family: {font_families['serif']};
-            color: #222;
-            line-height: 1.5;
+            color: #2c2c2c;
+            line-height: 1.6;
             background: white;
+        }}
+        
+        main {{
+            margin-top: 12pt;
         }}
         
         /* ========================================
@@ -298,31 +299,31 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }}
         
         h2 {{
-            font-size: 14pt;
-            margin-top: 18pt;
-            margin-bottom: 8pt;
-            color: #111;
-            border-bottom: 1px solid #444;
-            padding-bottom: 4pt;
+            font-size: 15pt;
+            margin-top: 24pt;
+            margin-bottom: 10pt;
+            color: #1f4e79;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
         
         h3 {{
             font-size: 13pt;
-            margin-top: 14pt;
+            margin-top: 16pt;
             margin-bottom: 6pt;
-            color: #111;
+            color: #1f4e79;
         }}
         
         h4 {{
             font-size: 12pt;
-            margin-top: 10pt;
+            margin-top: 12pt;
             margin-bottom: 4pt;
             color: #333;
         }}
         
         p {{
             text-align: justify;
-            margin: 6pt 0;
+            margin: 8pt 0;
             page-break-inside: avoid;
             orphans: 3;
             widows: 3;
@@ -344,41 +345,35 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         /* ========================================
            CABEÇALHO DO DOCUMENTO
            ======================================== */
-        .documento-header {{
+        .documento-hero {{
+            margin: 0 0 18pt;
             text-align: center;
-            margin: 6pt 0 24pt;
-            padding: 18pt 0 14pt;
-            border-top: 1.5px solid #d8d8d8;
-            border-bottom: 1px solid #c7c7c7;
         }}
         
-        .documento-header-logo img {{
-            max-width: 180px;
+        .documento-hero-logo img {{
+            max-width: 150px;
             width: 100%;
             display: block;
-            margin: 0 auto 12pt;
+            margin: 0 auto 4pt;
         }}
         
-        .documento-header-title p {{
-            font-family: {font_families['sans']};
-            color: #111;
-            font-weight: 700;
-            margin: 3pt 0;
-            text-align: center;
-        }}
-        
-        .documento-header-title .titulo-principal {{
-            font-size: 16pt;
-        }}
-        
-        .documento-header-title .titulo-secundario {{
-            font-size: 13pt;
+        .documento-hero-banner {{
+            background: #1f4e79;
+            color: #fff;
+            padding: 16pt 12pt;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }}
         
-        .documento-header-title .titulo-cnpj {{
-            font-size: 11pt;
+        .documento-hero-banner .hero-title {{
+            font-size: 15pt;
+            margin: 0;
+        }}
+        
+        .documento-hero-banner .hero-meta {{
+            font-size: 10pt;
+            margin: 2pt 0 0;
+            font-weight: 600;
         }}
         
         .documento-meta {{
@@ -391,23 +386,25 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 12pt 0;
+            margin: 14pt 0;
             page-break-inside: avoid;
+            font-size: 11pt;
         }}
         
         thead {{
-            background: #f0f0f0;
+            background: #f2f5fb;
         }}
         
         th, td {{
-            border: 1px solid #444;
-            padding: 6pt 8pt;
+            border: 1px solid #d8dde8;
+            padding: 8pt 10pt;
             text-align: left;
         }}
         
         th {{
             font-weight: 600;
             font-family: 'Source Sans 3', 'Arial', sans-serif;
+            color: #1f4e79;
         }}
         
         tr {{
@@ -492,31 +489,16 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             }}
         }}
         
-        /* ========================================
-           RODAPÉ FIXO
-           ======================================== */
-        .pdf-footer {{
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 9pt;
-            color: #666;
-            padding: 10pt 0;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            background: white;
-        }}
     </style>
 </head>
 <body>
     <!-- Cabeçalho do Documento -->
-    <header class="documento-header">
-        <div class="documento-header-logo">{logo_html}</div>
-        <div class="documento-header-title">
-            <p class="titulo-principal">Parecer de Crédito</p>
-            <p class="titulo-secundario">{empresa}</p>
-            <p class="titulo-cnpj">CNPJ: {cnpj}</p>
+    <header class="documento-hero">
+        <div class="documento-hero-logo">{logo_html}</div>
+        <div class="documento-hero-banner">
+            <p class="hero-title">Parecer Técnico</p>
+            <p class="hero-meta">{empresa}</p>
+            <p class="hero-meta">CNPJ: {cnpj}</p>
         </div>
     </header>
     
@@ -548,14 +530,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         </div>
         
         <div class="local-data">
-            <p>Ribeirão Preto (SP), {data_extenso}.</p>
+            <p>São Paulo (SP), {data_extenso}.</p>
         </div>
     </section>
-    
-    <!-- Rodapé fixo PDF -->
-    <div class="pdf-footer">
-        <p>Confidencial – Uso Interno</p>
-    </div>
 </body>
 </html>"""
     
@@ -573,6 +550,8 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
     Returns:
         Bytes do PDF gerado
     """
+    footer_left_text = FOOTER_BRAND
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
@@ -584,22 +563,20 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
         pdf_bytes = await page.pdf(
             format="A4",
             margin={
-                "top": "2.5cm",
-                "right": "2.5cm",
-                "bottom": "3cm",
-                "left": "2.5cm"
+                "top": "2.4cm",
+                "right": "2.3cm",
+                "bottom": "2.8cm",
+                "left": "2.3cm"
             },
             print_background=True,
             display_header_footer=True,
             header_template="""
-                <div style="font-size: 9pt; color: #666; width: 100%; text-align: center; padding: 5px 0;">
-                    <span>Parecer de Crédito - Confidencial</span>
-                </div>
+                <div style="font-size:0;"></div>
             """,
-            footer_template="""
-                <div style="font-size: 9pt; color: #666; width: 100%; padding: 5px 40px; display: flex; justify-content: space-between;">
-                    <span>Confidencial – Uso Interno</span>
-                    <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
+            footer_template=f"""
+                <div style="font-size: 9pt; font-family: 'Source Sans 3', Arial, sans-serif; color: #4a4a4a; width: 100%; padding: 6px 40px; display: flex; justify-content: space-between;">
+                    <span>{footer_left_text}</span>
+                    <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
                 </div>
             """
         )

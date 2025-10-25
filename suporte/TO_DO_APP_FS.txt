@@ -943,6 +943,7 @@ Até aqui:
 ---
 Até aqui:
 [v. 0.8.33a (ia), de 25/10/2025] - cabeçalho em andamento
+[v. 0.8.33b (ia), de 25/10/2025] - Modelo parecer feito no libreoffice
 ---
 
 =====Ajustes=====

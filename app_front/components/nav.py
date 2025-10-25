@@ -178,7 +178,7 @@ def render_sidebar(current_slug: str) -> None:
                 
                 display: inline-block;
             }
-            details[open] > summary .caret { transform: rotate(-90deg); }
+            details[open] > summary .caret { transform: rotate(90deg); }
             </style>
             """,
             unsafe_allow_html=True,
@@ -297,7 +297,7 @@ def render_sidebar(current_slug: str) -> None:
 
                 if children:
                     html.append(
-                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">◂</span></summary>'
+                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▸</span></summary>'
                     )
                     for child in children:
                         c_label, c_slug = child["label"], child["slug"]
