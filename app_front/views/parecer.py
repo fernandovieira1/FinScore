@@ -1342,7 +1342,11 @@ def render():
                                 "classificacao_finscore": cls_fin or "N/A",
                                 "serasa_score": f"{serasa_score:.0f}" if serasa_score is not None else "N/A",
                                 "classificacao_serasa": cls_ser or "N/A",
-                                "decisao": resultado["decisao"]
+                                "decisao": resultado["decisao"],
+                                "serasa_data": meta.get("serasa_data"),
+                                "ano_inicial": meta.get("ano_inicial"),
+                                "ano_final": meta.get("ano_final"),
+                                "cidade_relatorio": meta.get("cidade_relatorio", "São Paulo (SP)")
                             }
                             
                             # Gerar PDF (engine auto-detectado baseado na plataforma)

@@ -44,6 +44,12 @@ else:
     DEFAULT_ENGINE = 'playwright' if PLAYWRIGHT_AVAILABLE else 'xhtml2pdf'
 
 FOOTER_BRAND = "Assertif Soluções Financeiras"
+ACCENT_PRIMARY = "#2d4c6a"
+ACCENT_SECONDARY = "#7bb0d5"
+NEUTRAL_DARK = "#2f2f2f"
+NEUTRAL_LIGHT = "#f5f6fa"
+BODY_FONT = "'Source Sans 3', 'Helvetica Neue', Arial, sans-serif"
+TITLE_FONT = "'Source Serif 4', 'Libre Baskerville', serif"
 
 
 def get_available_engines() -> list:
@@ -102,39 +108,33 @@ def _get_css_for_engine(engine: str) -> str:
     Returns:
         String com CSS
     """
+    margin_top = "1.2cm"
+    margin_sides = "2cm"
+    margin_bottom = "2.5cm"
+
     if engine == 'playwright':
         # CSS moderno para Playwright (Chromium)
-        return """
-        @page {
+        return f"""
+        @page {{
             size: A4;
-            margin: 2.4cm 2.3cm 2.8cm 2.3cm;
-            
-            @top-center {
-                content: "";
-            }
-            
-            @bottom-left {
-                content: "Assertif Soluções Financeiras";
-                font-family: "Source Sans 3", Arial, sans-serif;
-                font-size: 9pt;
-                color: #999999;
-            }
-            
-            @bottom-right {
-                content: counter(page) " / " counter(pages);
-                font-family: "Source Sans 3", Arial, sans-serif;
-                font-size: 9pt;
-                color: #999999;
-            }
-        }
+            margin: {margin_top} {margin_sides} {margin_bottom} {margin_sides};
+            @top-center {{
+                content: element(fs-header);
+            }}
+        }}
+        @page:first {{
+            @top-center {{
+                content: normal;
+            }}
+        }}
         """
     else:
         # CSS simples para xhtml2pdf
-        return """
-        @page {
+        return f"""
+        @page {{
             size: A4;
-            margin: 2.4cm 2.3cm 2.8cm 2.3cm;
-        }
+            margin: {margin_top} {margin_sides} {margin_bottom} {margin_sides};
+        }}
         """
 
 
@@ -198,6 +198,49 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     Returns:
         HTML completo pronto para impressão
     """
+    def _format_score(value) -> str:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return "N/A"
+        if number.is_integer():
+            return f"{number:,.0f}".replace(",", ".")
+        return f"{number:,.1f}".replace(",", ".")
+
+    def _format_periodo(meta_dict: Dict) -> tuple[str, str, str]:
+        def _safe_int(value):
+            try:
+                return int(str(value).strip())
+            except (TypeError, ValueError, AttributeError):
+                return None
+
+        ano_inicial_meta = _safe_int(meta_dict.get("ano_inicial"))
+        ano_final_meta = _safe_int(meta_dict.get("ano_final"))
+
+        periodo_resumo = "Período não informado"
+        ano_inicial_texto = "Ano inicial não informado"
+        ano_final_texto = "Ano final não informado"
+
+        if ano_inicial_meta and ano_final_meta:
+            ano_inicial_texto = str(ano_inicial_meta)
+            ano_final_texto = str(ano_final_meta)
+            if ano_inicial_meta == ano_final_meta:
+                periodo_resumo = str(ano_inicial_meta)
+            elif ano_final_meta > ano_inicial_meta:
+                periodo_resumo = f"{ano_inicial_meta}–{ano_final_meta}"
+            else:
+                periodo_resumo = f"{ano_inicial_meta}, {ano_final_meta}"
+        elif ano_inicial_meta:
+            ano_inicial_texto = str(ano_inicial_meta)
+            ano_final_texto = "Ano final não informado"
+            periodo_resumo = str(ano_inicial_meta)
+        elif ano_final_meta:
+            ano_final_texto = str(ano_final_meta)
+            ano_inicial_texto = "Ano inicial não informado"
+            periodo_resumo = str(ano_final_meta)
+
+        return periodo_resumo, ano_inicial_texto, ano_final_texto
+
     # Converter Markdown para HTML se necessário
     if is_markdown:
         conteudo_html = _convert_markdown_to_html(conteudo)
@@ -209,9 +252,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     cnpj = meta.get("cnpj", "N/A")
     data_analise = meta.get("data_analise", datetime.now().strftime("%d/%m/%Y"))
     finscore = meta.get("finscore_ajustado", "N/A")
-    classificacao_fs = meta.get("classificacao_finscore", "N/A")
+    classificacao_fs = meta.get("classificacao_finscore", meta.get("classificacao_fs", "N/A"))
     serasa = meta.get("serasa_score", "N/A")
-    classificacao_ser = meta.get("classificacao_serasa", "N/A")
+    classificacao_ser = meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A"))
     decisao = meta.get("decisao", "N/A")
     
     # Formatar decisão
@@ -227,6 +270,12 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
              "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
     hoje = datetime.now()
     data_extenso = f"{hoje.day} de {meses[hoje.month-1]} de {hoje.year}"
+    data_relatorio = meta.get("data_analise") or data_extenso
+    serasa_data_texto = str(meta.get("serasa_data") or "Consulta não informada")
+    cidade_relatorio = meta.get("cidade_relatorio", "São Paulo (SP)")
+    periodo_texto, ano_inicial_texto, ano_final_texto = _format_periodo(meta)
+    finscore_display = _format_score(meta.get("finscore_ajustado") or meta.get("finscore"))
+    serasa_display = _format_score(meta.get("serasa_score") or meta.get("serasa"))
     
     # Obter configurações específicas do engine
     page_css = _get_css_for_engine(engine)
@@ -238,10 +287,13 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         try:
             logo_b64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
             logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" />'
+            header_logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" style="height:18pt;" />'
         except Exception:
             logo_html = "<strong>Assertif</strong>"
+            header_logo_html = "<strong>Assertif</strong>"
     else:
         logo_html = "<strong>Assertif</strong>"
+        header_logo_html = "<strong>Assertif</strong>"
     
     # Template HTML completo
     html = f"""<!DOCTYPE html>
@@ -271,62 +323,56 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }}
         
         body {{
-            font-family: {font_families['serif']};
-            color: #2c2c2c;
-            line-height: 1.6;
-            background: white;
+            font-family: {BODY_FONT};
+            color: {NEUTRAL_DARK};
+            line-height: 1.65;
+            background: #ffffff;
+            padding: 20pt 0 30pt;
         }}
         
         main {{
-            margin-top: 12pt;
+            margin-top: 24pt;
         }}
         
         /* ========================================
            TIPOGRAFIA
            ======================================== */
         h1, h2, h3, h4, h5, h6 {{
-            font-family: {font_families['sans']};
-            font-weight: 700;
+            font-family: {TITLE_FONT};
+            font-weight: 600;
             page-break-after: avoid;
             page-break-inside: avoid;
         }}
         
-        h1 {{
-            font-size: 18pt;
-            margin-bottom: 16pt;
-            text-align: center;
-            color: #111;
-        }}
-        
         h2 {{
-            font-size: 15pt;
-            margin-top: 24pt;
-            margin-bottom: 10pt;
-            color: #4ea4e5;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 18pt;
+            margin-top: 32pt;
+            margin-bottom: 14pt;
+            color: {ACCENT_PRIMARY};
+            letter-spacing: 0.4pt;
         }}
         
         h3 {{
-            font-size: 13pt;
-            margin-top: 16pt;
-            margin-bottom: 6pt;
-            color: #4ea4e5;
+            font-size: 14pt;
+            margin-top: 20pt;
+            margin-bottom: 8pt;
+            color: {ACCENT_PRIMARY};
         }}
         
         h4 {{
-            font-size: 12pt;
+            font-size: 12.5pt;
             margin-top: 12pt;
-            margin-bottom: 4pt;
-            color: #333;
+            margin-bottom: 6pt;
+            color: {NEUTRAL_DARK};
         }}
         
         p {{
             text-align: justify;
-            margin: 8pt 0;
+            margin: 9pt 0;
             page-break-inside: avoid;
             orphans: 3;
             widows: 3;
+            font-size: 11pt;
         }}
         
         strong {{
@@ -346,86 +392,251 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
            CABEÇALHO DO DOCUMENTO
            ======================================== */
         .documento-hero {{
-            margin: 0 0 18pt;
+            background: linear-gradient(135deg, rgba(45,76,106,0.95), rgba(23,33,54,0.92));
+            border-radius: 28px;
+            padding: 24pt;
+            color: #fff;
+            box-shadow: 0 25px 60px rgba(23,33,54,0.35);
+        }}
+        
+        .hero-top {{
             display: flex;
-            flex-direction: column;
-            gap: 12pt;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24pt;
         }}
         
-        .documento-hero-logo {{
+        .hero-text {{
+            max-width: 70%;
+        }}
+        
+        .hero-eyebrow {{
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10pt;
+            margin: 0;
+            color: rgba(255,255,255,0.75);
+        }}
+        
+        .hero-text h1 {{
+            font-size: 28pt;
+            margin: 6pt 0 8pt;
+            color: #fff;
+        }}
+        
+        .hero-subtitle {{
+            margin: 0;
+            font-size: 11pt;
+            color: rgba(255,255,255,0.9);
+        }}
+        
+        .hero-logo {{
             text-align: right;
-            padding-top: 0;
         }}
         
-        .documento-hero-logo img {{
-            max-width: 150px;
+        .hero-logo img {{
+            max-width: 160px;
             width: 100%;
             display: inline-block;
-        }}
-        
-        .documento-hero-banner {{
-            background: #1f4e79;
-            color: #fff;
-            padding: 16pt 12pt;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            width: 100%;
-        }}
-        
-        .documento-hero-banner .hero-title {{
-            font-size: 15pt;
-            margin: 0;
-            font-weight: 700;
-            text-align: center;
-        }}
-        
-        .documento-hero-banner .hero-meta {{
-            font-size: 10pt;
-            margin: 2pt 0 0;
-            font-weight: 600;
-            text-align: center;
         }}
         
         .documento-meta {{
             display: none;
         }}
+
+        .print-header-placeholder {{
+            height: 0;
+            overflow: hidden;
+        }}
+
+        .print-header-content {{
+            position: running(fs-header);
+            font-family: {BODY_FONT};
+            font-size: 11pt;
+            color: #1f3f5b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18pt;
+            padding: 12px 40px;
+            border-bottom: 1px solid #d9e2ef;
+        }}
+
+        .print-header-content .print-header-logo img {{
+            height: 18pt;
+        }}
+
+        .print-header-content .print-header-info {{
+            text-align: right;
+            line-height: 1.45;
+        }}
+
+        .page-canvas {{
+            width: 100%;
+            margin: 0 auto;
+            background: transparent;
+            padding: 0;
+        }}
         
-        /* ========================================
-           TABELAS
-           ======================================== */
+        .page-content {{
+            background: #ffffff;
+            border-radius: 0;
+            padding: 0;
+        }}
+
+        .hero-shell {{
+            background: linear-gradient(135deg, #f7f9fc 0%, #eef3fb 100%);
+            border-radius: 34px;
+            padding: 26pt 28pt 28pt;
+            margin-bottom: 26pt;
+            box-shadow: 0 30px 80px rgba(25,40,75,0.18);
+        }}
+        
+        .summary-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12pt;
+            margin-top: 16pt;
+        }}
+
+        .summary-card {{
+            background: #fff;
+            border-radius: 16px;
+            padding: 12pt 14pt;
+            box-shadow: 0 12px 30px rgba(45,76,106,0.08);
+            border: 1px solid #e7eaf1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100px;
+        }}
+        
+        .summary-card.highlight {{
+            background: linear-gradient(135deg, {ACCENT_PRIMARY}, #192338);
+            color: #fff;
+            border: none;
+        }}
+        
+        .summary-label {{
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4pt;
+            color: #7b889b;
+        }}
+        
+        .summary-card.highlight .summary-label {{
+            color: rgba(255,255,255,0.7);
+        }}
+        
+        .summary-value {{
+            font-size: 16pt;
+            margin: 0;
+        }}
+        
+        .summary-card.highlight .summary-value {{
+            color: #fff;
+        }}
+        
+        .summary-helper {{
+            margin: 4pt 0 0;
+            font-size: 9.5pt;
+            color: #6c7c8f;
+        }}
+        
+        .summary-card.highlight .summary-helper {{
+            color: rgba(255,255,255,0.85);
+        }}
+        
+        .summary-chip {{
+            display: inline-block;
+            margin-top: 4pt;
+            padding: 2pt 8pt;
+            border-radius: 999px;
+            font-size: 8.5pt;
+            background: {NEUTRAL_LIGHT};
+            color: {ACCENT_PRIMARY};
+            font-weight: 600;
+        }}
+        
+        .summary-card.highlight .summary-chip {{
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }}
+        
+        .content-panel {{
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+            border: none;
+            margin-top: 26pt;
+        }}
+        
+        .markdown-body h2 {{
+            font-size: 18pt;
+            margin-top: 30pt;
+        }}
+        
+        .markdown-body h3 {{
+            font-size: 14pt;
+        }}
+        
+        .markdown-body h4 {{
+            font-size: 12.5pt;
+        }}
+        
+        .markdown-body blockquote {{
+            border-left: 4px solid {ACCENT_SECONDARY};
+            background: #eef5fb;
+            padding: 10pt 14pt;
+            margin: 12pt 0;
+            font-style: italic;
+        }}
+        
+        .markdown-body hr {{
+            border: none;
+            border-top: 1px solid #d9dfe8;
+            margin: 20pt 0;
+        }}
+        
         table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 14pt 0;
+            margin: 16pt 0;
             page-break-inside: avoid;
-            font-size: 11pt;
+            font-size: 10.5pt;
         }}
         
         thead {{
-            background: #f2f5fb;
+            background: {ACCENT_PRIMARY};
+            color: #fff;
         }}
         
-        th, td {{
-            border: 1px solid #d8dde8;
-            padding: 8pt 10pt;
-            text-align: left;
+        .markdown-body img {{
+            display: block;
+            margin: 16pt auto;
+            max-width: 90%;
+            height: auto;
         }}
         
         th {{
             font-weight: 600;
-            font-family: 'Source Sans 3', 'Arial', sans-serif;
-            color: #1f4e79;
+            padding: 8pt 10pt;
+            border: none;
         }}
         
-        tr {{
-            page-break-inside: avoid;
+        td {{
+            border-bottom: 1px solid #e5e9f0;
+            padding: 8pt 10pt;
         }}
         
-        /* ========================================
-           LISTAS
-           ======================================== */
+        tr:last-child td {{
+            border-bottom: none;
+        }}
+        
         ul, ol {{
-            margin: 8pt 0 8pt 20pt;
+            margin: 10pt 0 10pt 22pt;
         }}
         
         li {{
@@ -439,6 +650,11 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         .assinaturas {{
             margin-top: 36pt;
             page-break-inside: avoid;
+            background: #fff;
+            border-radius: 20px;
+            padding: 22pt 26pt;
+            box-shadow: 0 15px 55px rgba(15,23,42,0.08);
+            border: 1px solid #e2e7f0;
         }}
         
         .assinaturas-header {{
@@ -451,6 +667,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         
         .assinaturas-header h3 {{
             margin: 0;
+            color: {ACCENT_PRIMARY};
         }}
         
         .assinaturas-header .local-data {{
@@ -472,7 +689,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }}
         
         .assinatura-linha {{
-            border-bottom: 1px solid #000;
+            border-bottom: 1px solid #1f2937;
             height: 60pt;
             margin-bottom: 8pt;
         }}
@@ -511,25 +728,67 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     </style>
 </head>
 <body>
-    <!-- Cabeçalho do Documento -->
+    <div class="print-header-placeholder">
+        <div class="print-header-content">
+            <div class="print-header-logo">{header_logo_html}</div>
+            <div class="print-header-info">
+                <span style="font-weight:700; display:block;">{empresa}</span>
+                <span style="font-size:10pt; display:block;">CNPJ: {cnpj}</span>
+            </div>
+        </div>
+    </div>
+    <div class="page-canvas">
+    <div class="page-content" style="background:#ffffff;">
+    <section class="hero-shell">
     <header class="documento-hero">
-        <div class="documento-hero-logo">{logo_html}</div>
-        <div class="documento-hero-banner">
-            <p class="hero-title">Parecer Técnico</p>
-            <p class="hero-meta">{empresa}</p>
-            <p class="hero-meta">CNPJ: {cnpj}</p>
+        <div class="hero-top">
+            <div class="hero-text">
+                <p class="hero-eyebrow">Parecer Técnico · FinScore</p>
+                <h1>{empresa}</h1>
+                <p class="hero-subtitle">CNPJ: {cnpj}</p>
+                <p class="hero-subtitle">Emitido em {data_relatorio}</p>
+            </div>
+            <div class="hero-logo">{logo_html}</div>
         </div>
     </header>
     
+    <section class="summary-grid">
+        <div class="summary-card highlight">
+            <p class="summary-label">Decisão Determinística</p>
+            <p class="summary-value">{decisao_texto}</p>
+            <p class="summary-helper">{cidade_relatorio} · {data_relatorio}</p>
+        </div>
+        <div class="summary-card">
+            <p class="summary-label">FinScore Ajustado</p>
+            <p class="summary-value">{finscore_display}</p>
+            <span class="summary-chip">{classificacao_fs}</span>
+        </div>
+        <div class="summary-card">
+            <p class="summary-label">Score Serasa</p>
+            <p class="summary-value">{serasa_display}</p>
+            <span class="summary-chip">{classificacao_ser}</span>
+            <p class="summary-helper">Consulta: {serasa_data_texto}</p>
+        </div>
+        <div class="summary-card">
+            <p class="summary-label">Período Avaliado</p>
+            <p class="summary-value">{periodo_texto}</p>
+            <p class="summary-helper">De {ano_inicial_texto} a {ano_final_texto}</p>
+        </div>
+    </section>
+    </section>
+    
     <!-- Corpo do Parecer -->
     <main>
-        {conteudo_html}
+        <section class="content-panel markdown-body">
+            {conteudo_html}
+        </section>
     </main>
     
     <!-- Campo de Assinaturas -->
     <section class="assinaturas">
         <div class="assinaturas-header">
-            <p class="local-data">São Paulo (SP), {data_extenso}.</p>
+            <h3>Assinaturas</h3>
+            <p class="local-data">{cidade_relatorio}, {data_extenso}.</p>
         </div>
         
         <div class="assinatura-grid">
@@ -550,13 +809,15 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             </div>
         </div>
     </section>
+    </div>
+    </div>
 </body>
 </html>"""
     
     return html
 
 
-async def _html_to_pdf_playwright_async(html: str) -> bytes:
+async def _html_to_pdf_playwright_async(html: str, header_html: str) -> bytes:
     """
     Converte HTML para PDF usando Playwright (Chromium).
     Função assíncrona para uso em ambientes Linux/Mac.
@@ -580,20 +841,18 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
         pdf_bytes = await page.pdf(
             format="A4",
             margin={
-                "top": "2.4cm",
-                "right": "2.3cm",
-                "bottom": "2.8cm",
-                "left": "2.3cm"
+                "top": "1.2cm",
+                "right": "2cm",
+                "bottom": "2.5cm",
+                "left": "2cm"
             },
             print_background=True,
             display_header_footer=True,
-            header_template="""
-                <div style="font-size:0;"></div>
-            """,
+            header_template=header_html,
             footer_template=f"""
-                <div style="font-size: 9pt; font-family: 'Source Sans 3', Arial, sans-serif; color: #999999; width: 100%; padding: 6px 40px; display: flex; justify-content: space-between;">
-                    <span>{footer_left_text}</span>
-                    <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
+                <div style="font-size: 9pt; font-family: 'Source Sans 3', Arial, sans-serif; color: #2d3c4f; width: 100%; padding: 8px 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d4dae4; background: #ffffff;">
+                    <span style="font-weight:600;">{footer_left_text}</span>
+                    <span style="font-size: 8.5pt; color: #556070;">Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
                 </div>
             """
         )
@@ -602,7 +861,7 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
         return pdf_bytes
 
 
-def _html_to_pdf_playwright(html: str) -> bytes:
+def _html_to_pdf_playwright(html: str, header_html: str) -> bytes:
     """
     Wrapper síncrono para Playwright.
     
@@ -623,7 +882,7 @@ def _html_to_pdf_playwright(html: str) -> bytes:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            pdf_bytes = loop.run_until_complete(_html_to_pdf_playwright_async(html))
+            pdf_bytes = loop.run_until_complete(_html_to_pdf_playwright_async(html, header_html))
             return pdf_bytes
         finally:
             loop.close()
@@ -678,7 +937,7 @@ def _html_to_pdf_xhtml2pdf(html: str) -> bytes:
         raise Exception(f"Erro ao gerar PDF com xhtml2pdf: {str(e)}") from e
 
 
-def html_to_pdf_bytes(html: str, engine: Optional[str] = None) -> bytes:
+def html_to_pdf_bytes(html: str, engine: Optional[str] = None, header_html: Optional[str] = None) -> bytes:
     """
     Converte HTML para PDF usando o engine especificado.
     
@@ -708,7 +967,8 @@ def html_to_pdf_bytes(html: str, engine: Optional[str] = None) -> bytes:
     
     # Gerar PDF com o engine escolhido
     if engine == 'playwright':
-        return _html_to_pdf_playwright(html)
+        header_html = header_html or "<div style='font-size:0;'></div>"
+        return _html_to_pdf_playwright(html, header_html)
     elif engine == 'xhtml2pdf':
         return _html_to_pdf_xhtml2pdf(html)
     else:

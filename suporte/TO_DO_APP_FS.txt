@@ -945,6 +945,7 @@ Até aqui:
 [v. 0.8.33a (ia), de 25/10/2025] - cabeçalho em andamento
 [v. 0.8.33b (ia), de 25/10/2025] - Modelo parecer feito no libreoffice
 [v. 0.8.33c (ia), de 25/10/2025] - Modelo Parecer PDF 1.0 finalizado
+[v. 0.8.33d (ia), de 26/10/2025] - Modelo Parecer PDF 1.1 finalizado
 ---
 
 =====Ajustes=====
