@@ -933,17 +933,18 @@ Até aqui:
 
 =====Ajustes=====
 * (x) Parecer PDF:
-    - ( ) Cabeçalho e rodapé
+    - (x) Cabeçalho e rodapé
     - (x) Margens
     - (x) Fonte
     - (x) Tamanho da fonte
     - (x) Espaçamento entre linhas
     - (x) Quebras de página
-    - ( ) Gráficos centralizados
+    - (x) Gráficos centralizados
 ---
 Até aqui:
 [v. 0.8.33a (ia), de 25/10/2025] - cabeçalho em andamento
 [v. 0.8.33b (ia), de 25/10/2025] - Modelo parecer feito no libreoffice
+[v. 0.8.33c (ia), de 25/10/2025] - Modelo Parecer PDF 1.0 finalizado
 ---
 
 =====Ajustes=====
