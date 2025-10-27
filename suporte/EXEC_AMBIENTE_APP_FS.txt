@@ -51,7 +51,7 @@ streamlit run app.py --logger.level=debug
 # (I) Criar um venv com Python 3.11
 # **apenas a primeira vez
 python3 -m venv .venv
-# Obs: se aparecer erro sobre "venv"/"ensurepip" ausente, instale o pacote do venv do seu Python (Ubuntu/Debian):
+# Obs: se aparecer erro sobreven "venv"/"ensurepip" ausente, instale o pacote do venv do seu Python (Ubuntu/Debian):
 # sudo apt-get update && sudo apt-get install -y python3-venv   # ou python3.12-venv dependendo da sua versão
 
 -------------------
