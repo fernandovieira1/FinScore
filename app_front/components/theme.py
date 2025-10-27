@@ -26,6 +26,28 @@ def inject_global_css():
     st.markdown(
         f"""
         <style>
+        :root, html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"],
+        [data-testid="stAppViewContainer"] * {{
+            color-scheme: light !important;
+            forced-color-adjust: none !important;
+        }}
+
+        input,
+        textarea,
+        select,
+        .stTextInput input,
+        .stNumberInput input,
+        .stDateInput input,
+        .stTimeInput input,
+        .stSelectbox [data-baseweb="select"] input,
+        .stSelectbox [data-baseweb="select"] div,
+        .stMarkdown textarea {{
+            background-color: {c["white"]} !important;
+            color: {c["text"]} !important;
+            color-scheme: light !important;
+            forced-color-adjust: none !important;
+        }}
+
         /* ====== Layout geral ====== */
         body, [data-testid="stAppViewContainer"], .main {{
             background-color: {c["gray_bg"]} !important;

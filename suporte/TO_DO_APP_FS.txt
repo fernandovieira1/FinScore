@@ -947,6 +947,8 @@ Até aqui:
 [v. 0.8.33c (ia), de 25/10/2025] - Modelo Parecer PDF 1.0 finalizado
 [v. 0.8.33d (ia), de 26/10/2025] - Modelo Parecer PDF 1.1 finalizado
 [v. 0.8.33e (ia), de 26/10/2025] - Modelo Parecer PDF 1.2 finalizado + Remoção de xhtml2pdf (Windows)
+[v. 0.8.33f (ia), de 26/10/2025] - Tentativa frustrada de forçar tema claro no site
+---
 
 =====Ajustes=====
 * ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
