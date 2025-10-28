@@ -951,6 +951,15 @@ Até aqui:
 ---
 
 =====Ajustes=====
+=====Novidades=====
+* (x) Início implementação tela de login
+---
+Até aqui:
+[v. 0.8.34 (ia), de 27/10/2025]
+---
+
+
+=====Ajustes=====
 * ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
 * ( ) Revisão da seção 4 do parecer (Resultados)
 =====Novidades=====
