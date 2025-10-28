@@ -16,3 +16,20 @@ git push origin main
 # 4) Verificar e Testar
 git checkout dev
 streamlit run .\app_front\app.py
+
+************************
+dev para ia
+------------
+# Certifique-se de estar na branch `dev`
+git checkout dev
+
+# Atualize a branch `dev` com as alterações da branch `ia`
+git merge ia
+
+# Resolva quaisquer conflitos, se houver, e finalize o merge
+# Após resolver os conflitos:
+git add .
+git commit -m "Resolve conflitos e atualiza a branch dev com as alterações da branch ia"
+
+# Opcional: envie as alterações para o repositório remoto
+git push origin dev
