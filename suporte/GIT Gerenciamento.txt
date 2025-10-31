@@ -15,6 +15,7 @@ git push origin main
 
 # 4) Verificar e Testar
 git checkout dev
+git merge ia
 streamlit run .\app_front\app.py
 
 ************************

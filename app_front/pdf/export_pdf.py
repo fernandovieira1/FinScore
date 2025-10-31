@@ -447,7 +447,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         .hero-text h1 {
-            font-size: 28pt;
+            /* Fonte reduzida para ajustar hierarquia visual no cabeçalho */
+            font-size: 20pt;
             margin: 6pt 0 8pt;
             color: #fff;
         }
@@ -522,14 +523,17 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(200px, 1fr));
-            gap: 12pt;
+            /* Ajuste: permitir que 4 cards caibam sem extrapolar a margem da página,
+               mantendo proporção visual. Min-width reduzido para evitar overflow em A4. */
+            grid-template-columns: repeat(4, minmax(170px, 1fr));
+            gap: 2pt;
             margin-top: 16pt;
-            max-width: 1040px;
-            margin-left: auto;
-            margin-right: auto;
+            /* Usar largura total do container e deslocamento interno para alinhar à esquerda */
+            width: calc(100% - 48pt);
+            margin-left: -24pt; /* alinha com padding interno do hero-shell */
+            margin-right: -0pt;
+            box-sizing: border-box;
             align-items: stretch;
-            width: 100%;
         }
 
         .summary-card {
@@ -540,8 +544,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             border: 1px solid #e6ecf6;
             display: flex;
             flex-direction: column;
-            /* Mostrar título e valor próximos (sem espaçamento forçado),
-               manter helper/rodapé alinhado ao final com margin-top:auto */
+            /* Colocar título e valor próximos; helpers (rodapé) serão empurrados ao final */
             justify-content: flex-start;
             min-height: 125px;
         }
@@ -565,8 +568,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         .summary-value {
-            /* Redução de 20% conforme solicitado (20pt -> 16pt) */
-            font-size: 16pt;
+            font-size: 13pt;
             margin: 0 0 4pt;
             font-family: $TITLE_FONT;
             line-height: 1.05;
@@ -589,10 +591,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             color: rgba(255,255,255,0.85);
         }
 
-        /* Ajuste específico para a caixa 'Período Avaliado' - subir levemente o valor */
-        .summary-card.period-card .summary-value {
-            margin-top: -6pt;
-        }
+        /* Removido ajuste negativo em 'Período Avaliado' para restaurar altura original */
         
         .summary-chip {
             display: inline-block;
@@ -818,7 +817,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             <p class="summary-label">Score Serasa</p>
             <p class="summary-value">$serasa_display</p>
             <span class="summary-chip">$classificacao_ser</span>
-            <p class="summary-helper">Consulta: $serasa_data_texto</p>
+            <!-- Consulta date intentionally removed from PDF summary card as requested -->
         </div>
         <div class="summary-card period-card">
             <p class="summary-label">Período Avaliado</p>
