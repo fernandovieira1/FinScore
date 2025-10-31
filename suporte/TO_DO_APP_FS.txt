@@ -954,13 +954,14 @@ Até aqui:
 
 
 =====Ajustes=====
-* ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
-* ( ) Revisão da seção 4 do parecer (Resultados)
+* (x) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
+* (x) Revisão da seção 4 do parecer (Resultados)
+* (x) Texto e visual das boxes no pdf aperfeiçoados
 =====Novidades=====
-* ( ) Mais texto na seção 4 do parecer (Resultados)
+* (x) Mais texto na seção 4 do parecer (Resultados)
 ---
 Até aqui:
-[v. 0.8.3x (ia), de xx/10/2025]
+[v. 0.8.34, de 30/10/2025]
 ---
 
 ......................................................................................................................
