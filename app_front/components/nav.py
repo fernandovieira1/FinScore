@@ -49,6 +49,25 @@ def go(target: str) -> bool:
     """
     target = target or "home"
     origin = current()
+    ss = st.session_state
+
+    if ss.get("_lock_parecer") and target in {"novo", "lanc"}:
+        if target == "novo":
+            ss["_nav_block_message"] = (
+                "⚠️ Um parecer já foi gerado e permanece em cache. "
+                "Usar o botão 'Iniciar' na seção Novo reiniciará o processo e apagará os dados atuais. "
+                "Se desejar começar de novo, utilize o botão 'Iniciar novo ciclo' ao final do parecer."
+            )
+        else:
+            ss["_nav_block_message"] = (
+                "⚠️ Os lançamentos ficam protegidos após a geração do parecer. "
+                "Inicie um novo ciclo para editar ou reenviar os dados contábeis."
+            )
+        return False
+
+    if ss.get("_lock_parecer") and origin == "parecer" and target == "analise":
+        _set(target)
+        return True
 
     if target == origin:
         _set(target)
@@ -151,8 +170,15 @@ def render_sidebar(current_slug: str) -> None:
             .fs-menu summary { position: relative; }
             .fs-menu summary::marker { display: none; }
             .fs-menu summary::-webkit-details-marker { display: none; }
-            .fs-menu summary .caret { position: absolute; right: 10px; transition: transform .2s ease; color: #235561 !important; }
-            details[open] > summary .caret { transform: rotate(180deg); }
+            .fs-menu summary .caret {
+                position: absolute;
+                right: 10px;
+                transition: transform .2s ease;
+                color: #235561 !important;
+                
+                display: inline-block;
+            }
+            details[open] > summary .caret { transform: rotate(90deg); }
             </style>
             """,
             unsafe_allow_html=True,
@@ -271,7 +297,7 @@ def render_sidebar(current_slug: str) -> None:
 
                 if children:
                     html.append(
-                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▾</span></summary>'
+                        f'<details{open_attr}><summary class="item{active_cls}">{label}<span class="caret">▸</span></summary>'
                     )
                     for child in children:
                         c_label, c_slug = child["label"], child["slug"]

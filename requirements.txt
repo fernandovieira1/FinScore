@@ -11,6 +11,7 @@ xlrd==2.0.1
 matplotlib==3.8.4
 plotly==5.22.0
 seaborn==0.13.2
+Pillow==10.3.0  # Para manipulação de imagens (logos dos minicharts)
 # Machine Learning / PCA
 scikit-learn==1.4.2
 scipy==1.11.4
@@ -32,3 +33,6 @@ langchain-community==0.2.9
 # chromadb==0.3.28
 python-dotenv==1.0.1
 requests==2.32.3
+
+# Tokenizer for OpenAI-compatible token counting
+tiktoken>=0.4.0

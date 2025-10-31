@@ -12,9 +12,11 @@ import os
 import sys
 import platform
 import asyncio
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional, Literal
+from string import Template
 import markdown_it
 from io import BytesIO
 
@@ -41,6 +43,14 @@ if IS_WINDOWS:
     DEFAULT_ENGINE = 'xhtml2pdf'
 else:
     DEFAULT_ENGINE = 'playwright' if PLAYWRIGHT_AVAILABLE else 'xhtml2pdf'
+
+FOOTER_BRAND = "Assertif Soluções Financeiras"
+ACCENT_PRIMARY = "#2d4c6a"
+ACCENT_SECONDARY = "#7bb0d5"
+NEUTRAL_DARK = "#2f2f2f"
+NEUTRAL_LIGHT = "#f5f6fa"
+BODY_FONT = "'Source Sans 3', 'Helvetica Neue', Arial, sans-serif"
+TITLE_FONT = "'Source Serif 4', 'Libre Baskerville', serif"
 
 
 def get_available_engines() -> list:
@@ -77,6 +87,8 @@ def get_engine_info() -> Dict:
 def _convert_markdown_to_html(markdown_text: str) -> str:
     """
     Converte texto Markdown para HTML usando markdown-it-py.
+    Ativa extensões necessárias para suportar tabelas e outros
+    elementos avançados utilizados no parecer.
     
     Args:
         markdown_text: Texto em formato Markdown
@@ -84,9 +96,12 @@ def _convert_markdown_to_html(markdown_text: str) -> str:
     Returns:
         HTML renderizado
     """
-    md = markdown_it.MarkdownIt()
-    html = md.render(markdown_text)
-    return html
+    md = (
+        markdown_it
+        .MarkdownIt("commonmark")
+        .enable(["table", "strikethrough"])
+    )
+    return md.render(markdown_text)
 
 
 def _get_css_for_engine(engine: str) -> str:
@@ -99,45 +114,48 @@ def _get_css_for_engine(engine: str) -> str:
     Returns:
         String com CSS
     """
+    margin_top = "1.2cm"
+    margin_sides = "2cm"
+    margin_bottom = "2.5cm"
+
     if engine == 'playwright':
         # CSS moderno para Playwright (Chromium)
-        return """
+        template = Template(
+            """
         @page {
             size: A4;
-            margin: 2.5cm 2.5cm 3cm 2.5cm;
-            
+            margin: $margin_top $margin_sides $margin_bottom $margin_sides;
             @top-center {
-                content: "Parecer de Crédito - Confidencial";
-                font-family: Arial, sans-serif;
-                font-size: 9pt;
-                color: #666;
-                padding-bottom: 5pt;
-                border-bottom: 1px solid #ddd;
+                content: element(fs-header);
             }
-            
-            @bottom-left {
-                content: "Confidencial – Uso Interno";
-                font-family: Arial, sans-serif;
-                font-size: 9pt;
-                color: #666;
-            }
-            
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-family: Arial, sans-serif;
-                font-size: 9pt;
-                color: #666;
+        }
+        @page:first {
+            @top-center {
+                content: normal;
             }
         }
         """
+        )
+        return template.substitute(
+            margin_top=margin_top,
+            margin_sides=margin_sides,
+            margin_bottom=margin_bottom,
+        )
     else:
         # CSS simples para xhtml2pdf
-        return """
+        template = Template(
+            """
         @page {
             size: A4;
-            margin: 2.5cm;
+            margin: $margin_top $margin_sides $margin_bottom $margin_sides;
         }
         """
+        )
+        return template.substitute(
+            margin_top=margin_top,
+            margin_sides=margin_sides,
+            margin_bottom=margin_bottom,
+        )
 
 
 def _get_fonts_for_engine(engine: str) -> str:
@@ -200,6 +218,49 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     Returns:
         HTML completo pronto para impressão
     """
+    def _format_score(value) -> str:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return "N/A"
+        if number.is_integer():
+            return f"{number:,.0f}".replace(",", ".")
+        return f"{number:,.1f}".replace(",", ".")
+
+    def _format_periodo(meta_dict: Dict) -> tuple[str, str, str]:
+        def _safe_int(value):
+            try:
+                return int(str(value).strip())
+            except (TypeError, ValueError, AttributeError):
+                return None
+
+        ano_inicial_meta = _safe_int(meta_dict.get("ano_inicial"))
+        ano_final_meta = _safe_int(meta_dict.get("ano_final"))
+
+        periodo_resumo = "Período não informado"
+        ano_inicial_texto = "Ano inicial não informado"
+        ano_final_texto = "Ano final não informado"
+
+        if ano_inicial_meta and ano_final_meta:
+            ano_inicial_texto = str(ano_inicial_meta)
+            ano_final_texto = str(ano_final_meta)
+            if ano_inicial_meta == ano_final_meta:
+                periodo_resumo = str(ano_inicial_meta)
+            elif ano_final_meta > ano_inicial_meta:
+                periodo_resumo = f"{ano_inicial_meta}–{ano_final_meta}"
+            else:
+                periodo_resumo = f"{ano_inicial_meta}, {ano_final_meta}"
+        elif ano_inicial_meta:
+            ano_inicial_texto = str(ano_inicial_meta)
+            ano_final_texto = "Ano final não informado"
+            periodo_resumo = str(ano_inicial_meta)
+        elif ano_final_meta:
+            ano_final_texto = str(ano_final_meta)
+            ano_inicial_texto = "Ano inicial não informado"
+            periodo_resumo = str(ano_final_meta)
+
+        return periodo_resumo, ano_inicial_texto, ano_final_texto
+
     # Converter Markdown para HTML se necessário
     if is_markdown:
         conteudo_html = _convert_markdown_to_html(conteudo)
@@ -211,343 +272,573 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     cnpj = meta.get("cnpj", "N/A")
     data_analise = meta.get("data_analise", datetime.now().strftime("%d/%m/%Y"))
     finscore = meta.get("finscore_ajustado", "N/A")
-    classificacao_fs = meta.get("classificacao_finscore", "N/A")
+    classificacao_fs = meta.get("classificacao_finscore", meta.get("classificacao_fs", "N/A"))
     serasa = meta.get("serasa_score", "N/A")
-    classificacao_ser = meta.get("classificacao_serasa", "N/A")
+    classificacao_ser = meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A"))
     decisao = meta.get("decisao", "N/A")
     
-    # Formatar decisão
+    # Formatar decisão (com ícones conforme solicitado)
     decisao_map = {
         "aprovar": "APROVAR",
         "aprovar_com_ressalvas": "APROVAR COM RESSALVAS",
         "nao_aprovar": "NÃO APROVAR"
     }
-    decisao_texto = decisao_map.get(decisao, decisao.upper())
+    # Mapa com ícones para exibição no cabeçalho/PDF
+    decisao_icon_map = {
+        "aprovar": "✅ APROVAR",
+        "aprovar_com_ressalvas": "⚠️ APROVAR COM RESSALVAS",
+        "nao_aprovar": "❌ NÃO APROVAR",
+    }
+    decisao_texto = decisao_icon_map.get(decisao, decisao_map.get(decisao, decisao.upper()))
     
     # Data por extenso
     meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
              "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
     hoje = datetime.now()
     data_extenso = f"{hoje.day} de {meses[hoje.month-1]} de {hoje.year}"
+    data_relatorio = meta.get("data_analise") or data_extenso
+    serasa_data_texto = str(meta.get("serasa_data") or "Consulta não informada")
+    cidade_relatorio = meta.get("cidade_relatorio", "São Paulo (SP)")
+    periodo_texto, ano_inicial_texto, ano_final_texto = _format_periodo(meta)
+    finscore_display = _format_score(meta.get("finscore_ajustado") or meta.get("finscore"))
+    serasa_display = _format_score(meta.get("serasa_score") or meta.get("serasa"))
     
     # Obter configurações específicas do engine
     page_css = _get_css_for_engine(engine)
     fonts_html = _get_fonts_for_engine(engine)
     font_families = _get_font_families_for_engine(engine)
+
+    logo_path = Path(__file__).resolve().parents[1] / "assets" / "logo_assertif_cab.png"
+    if logo_path.exists():
+        try:
+            logo_b64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
+            logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" />'
+            header_logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" style="height:18pt;" />'
+        except Exception:
+            logo_html = "<strong>Assertif</strong>"
+            header_logo_html = "<strong>Assertif</strong>"
+    else:
+        logo_html = "<strong>Assertif</strong>"
+        header_logo_html = "<strong>Assertif</strong>"
     
+    font_family_mono = font_families['mono']
+
     # Template HTML completo
-    html = f"""<!DOCTYPE html>
+    html_template = Template("""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parecer de Crédito - {empresa}</title>
-    {fonts_html}
+    <title>Parecer de Crédito - $empresa</title>
+    $fonts_html
     <style>
         /* ========================================
            CONFIGURAÇÃO DE PÁGINA
            ======================================== */
-        {page_css}
+        $page_css
         
         /* ========================================
            RESET E BASE
            ======================================== */
-        * {{
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }}
+        }
         
-        html {{
+        html {
             font-size: 12pt;
-        }}
+        }
         
-        body {{
-            font-family: {font_families['serif']};
-            color: #222;
-            line-height: 1.5;
-            background: white;
-        }}
+        body {
+            font-family: $BODY_FONT;
+            color: $NEUTRAL_DARK;
+            line-height: 1.65;
+            background: #ffffff;
+            padding: 20pt 0 30pt;
+        }
+        
+        main {
+            margin-top: 24pt;
+        }
         
         /* ========================================
            TIPOGRAFIA
            ======================================== */
-        h1, h2, h3, h4, h5, h6 {{
-            font-family: {font_families['sans']};
-            font-weight: 700;
+        h1, h2, h3, h4, h5, h6 {
+            font-family: $TITLE_FONT;
+            font-weight: 600;
             page-break-after: avoid;
             page-break-inside: avoid;
-        }}
+        }
         
-        h1 {{
+        h2 {
             font-size: 18pt;
-            margin-bottom: 16pt;
-            text-align: center;
-            color: #111;
-        }}
+            margin-top: 32pt;
+            margin-bottom: 14pt;
+            color: $ACCENT_PRIMARY;
+            letter-spacing: 0.4pt;
+        }
         
-        h2 {{
+        h3 {
             font-size: 14pt;
-            margin-top: 18pt;
+            margin-top: 20pt;
             margin-bottom: 8pt;
-            color: #111;
-            border-bottom: 1px solid #444;
-            padding-bottom: 4pt;
-        }}
+            color: $ACCENT_PRIMARY;
+        }
         
-        h3 {{
-            font-size: 13pt;
-            margin-top: 14pt;
+        h4 {
+            font-size: 12.5pt;
+            margin-top: 12pt;
             margin-bottom: 6pt;
-            color: #111;
-        }}
+            color: $NEUTRAL_DARK;
+        }
         
-        h4 {{
-            font-size: 12pt;
-            margin-top: 10pt;
-            margin-bottom: 4pt;
-            color: #333;
-        }}
-        
-        p {{
+        p {
             text-align: justify;
-            margin: 6pt 0;
+            margin: 9pt 0;
             page-break-inside: avoid;
             orphans: 3;
             widows: 3;
-        }}
+            font-size: 11pt;
+        }
         
-        strong {{
+        strong {
             font-weight: 700;
-        }}
+        }
         
-        em {{
+        em {
             font-style: italic;
-        }}
+        }
         
-        code, pre {{
-            font-family: {font_families['mono']};
+        code, pre {
+            font-family: $font_family_mono;
             font-size: 10pt;
-        }}
+        }
         
         /* ========================================
            CABEÇALHO DO DOCUMENTO
            ======================================== */
-        .documento-header {{
-            text-align: center;
-            margin-bottom: 24pt;
-            padding-bottom: 12pt;
-            border-bottom: 2px solid #444;
-        }}
+        .documento-hero {
+            background: linear-gradient(135deg, rgba(45,76,106,0.95), rgba(23,33,54,0.92));
+            border-radius: 28px;
+            padding: 24pt;
+            color: #fff;
+            box-shadow: 0 25px 60px rgba(23,33,54,0.35);
+        }
         
-        .documento-header h1 {{
-            margin-bottom: 8pt;
-        }}
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24pt;
+        }
         
-        .documento-meta {{
+        .hero-text {
+            max-width: 70%;
+        }
+        
+        .hero-eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 2px;
             font-size: 10pt;
-            color: #555;
-            line-height: 1.4;
-        }}
+            margin: 0;
+            color: rgba(255,255,255,0.75);
+        }
         
-        .documento-meta p {{
-            text-align: center;
-            margin: 2pt 0;
-        }}
+        .hero-text h1 {
+            /* Fonte reduzida para ajustar hierarquia visual no cabeçalho */
+            font-size: 20pt;
+            margin: 6pt 0 8pt;
+            color: #fff;
+        }
         
-        /* ========================================
-           RESUMO EXECUTIVO (destaque)
-           ======================================== */
-        .resumo-executivo {{
-            background: #f5f5f5;
-            border-left: 4px solid #5ea68d;
-            padding: 12pt;
-            margin: 16pt 0;
-            page-break-inside: avoid;
-        }}
+        .hero-subtitle {
+            margin: 0;
+            font-size: 11pt;
+            color: rgba(255,255,255,0.9);
+        }
         
-        .resumo-executivo h3 {{
-            margin-top: 0;
-            color: #5ea68d;
-        }}
+        .hero-logo {
+            text-align: right;
+        }
         
-        .decisao-box {{
-            background: white;
-            border: 2px solid #444;
-            padding: 8pt;
-            margin: 8pt 0;
-            text-align: center;
-            font-weight: 700;
+        .hero-logo img {
+            max-width: 160px;
+            width: 100%;
+            display: inline-block;
+        }
+        
+        .documento-meta {
+            display: none;
+        }
+
+        .print-header-placeholder {
+            height: 0;
+            overflow: hidden;
+        }
+
+        .print-header-content {
+            position: running(fs-header);
+            font-family: $BODY_FONT;
+            font-size: 11pt;
+            color: #1f3f5b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18pt;
+            padding: 12px 40px;
+            border-bottom: 1px solid #d9e2ef;
+        }
+
+        .print-header-content .print-header-logo img {
+            height: 18pt;
+        }
+
+        .print-header-content .print-header-info {
+            text-align: right;
+            line-height: 1.45;
+        }
+
+        .page-canvas {
+            width: 100%;
+            margin: 0 auto;
+            background: transparent;
+            padding: 0;
+        }
+        
+        .page-content {
+            background: #ffffff;
+            border-radius: 0;
+            padding: 0;
+        }
+
+        .hero-shell {
+            background: linear-gradient(135deg, #f7f9fc 0%, #eef3fb 100%);
+            border-radius: 34px;
+            padding: 26pt 28pt 28pt;
+            margin-bottom: 26pt;
+            box-shadow: 0 30px 80px rgba(25,40,75,0.18);
+        }
+        
+        .summary-grid {
+            display: grid;
+            /* Ajuste: permitir que 4 cards caibam sem extrapolar a margem da página,
+               mantendo proporção visual. Min-width reduzido para evitar overflow em A4. */
+            grid-template-columns: repeat(4, minmax(170px, 1fr));
+            gap: 2pt;
+            margin-top: 16pt;
+            /* Usar largura total do container e deslocamento interno para alinhar à esquerda */
+            width: calc(100% - 48pt);
+            margin-left: -24pt; /* alinha com padding interno do hero-shell */
+            margin-right: -0pt;
+            box-sizing: border-box;
+            align-items: stretch;
+        }
+
+        .summary-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%);
+            border-radius: 22px;
+            padding: 14pt 16pt 16pt;
+            box-shadow: 0 28px 60px rgba(32,56,85,0.12);
+            border: 1px solid #e6ecf6;
+            display: flex;
+            flex-direction: column;
+            /* Colocar título e valor próximos; helpers (rodapé) serão empurrados ao final */
+            justify-content: flex-start;
+            min-height: 125px;
+        }
+        
+        .summary-card.highlight {
+            background: linear-gradient(135deg, $ACCENT_PRIMARY, #1a2840);
+            color: #fff;
+            border: none;
+        }
+        
+        .summary-label {
+            font-size: 7.2pt;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            margin-bottom: 5pt;
+            color: #8892a6;
+        }
+        
+        .summary-card.highlight .summary-label {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .summary-value {
+            font-size: 13pt;
+            margin: 0 0 4pt;
+            font-family: $TITLE_FONT;
+            line-height: 1.05;
+            color: #1f2434;
+        }
+        
+        .summary-card.highlight .summary-value {
+            color: #fff;
+        }
+        
+        .summary-helper {
+            margin: 4pt 0 0;
+            font-size: 8.6pt;
+            color: #768197;
+            /* Empurra o helper para o final do card quando houver espaço extra */
+            margin-top: auto;
+        }
+        
+        .summary-card.highlight .summary-helper {
+            color: rgba(255,255,255,0.85);
+        }
+
+        /* Removido ajuste negativo em 'Período Avaliado' para restaurar altura original */
+        
+        .summary-chip {
+            display: inline-block;
+            margin-top: 5pt;
+            padding: 3pt 10pt;
+            border-radius: 999px;
+            font-size: 8pt;
+            background: rgba(123,176,213,0.22);
+            color: $ACCENT_PRIMARY;
+            font-weight: 600;
+        }
+        
+        .summary-card.highlight .summary-chip {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
+
+        @media screen and (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+        
+        .content-panel {
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+            border: none;
+            margin-top: 26pt;
+        }
+        
+        .markdown-body h2 {
+            font-size: 18pt;
+            margin-top: 30pt;
+        }
+        
+        .markdown-body h3 {
             font-size: 14pt;
-        }}
+        }
         
-        /* ========================================
-           TABELAS
-           ======================================== */
-        table {{
+        .markdown-body h4 {
+            font-size: 12.5pt;
+        }
+        
+        .markdown-body blockquote {
+            border-left: 4px solid $ACCENT_SECONDARY;
+            background: #eef5fb;
+            padding: 10pt 14pt;
+            margin: 12pt 0;
+            font-style: italic;
+        }
+        
+        .markdown-body hr {
+            border: none;
+            border-top: 1px solid #d9dfe8;
+            margin: 20pt 0;
+        }
+        
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12pt 0;
+            margin: 16pt 0;
             page-break-inside: avoid;
-        }}
+            font-size: 10.5pt;
+        }
         
-        thead {{
-            background: #f0f0f0;
-        }}
+        thead {
+            background: $ACCENT_PRIMARY;
+            color: #fff;
+        }
         
-        th, td {{
-            border: 1px solid #444;
-            padding: 6pt 8pt;
-            text-align: left;
-        }}
+        .markdown-body img {
+            display: block;
+            margin: 16pt auto;
+            max-width: 90%;
+            height: auto;
+        }
         
-        th {{
+        th {
             font-weight: 600;
-            font-family: 'Source Sans 3', 'Arial', sans-serif;
-        }}
+            padding: 8pt 10pt;
+            border: none;
+        }
         
-        tr {{
-            page-break-inside: avoid;
-        }}
+        td {
+            border-bottom: 1px solid #e5e9f0;
+            padding: 8pt 10pt;
+        }
         
-        /* ========================================
-           LISTAS
-           ======================================== */
-        ul, ol {{
-            margin: 8pt 0 8pt 20pt;
-        }}
+        tr:last-child td {
+            border-bottom: none;
+        }
         
-        li {{
+        ul, ol {
+            margin: 10pt 0 10pt 22pt;
+        }
+        
+        li {
             margin: 4pt 0;
             page-break-inside: avoid;
-        }}
+        }
         
         /* ========================================
            CAMPO DE ASSINATURA
            ======================================== */
-        .assinaturas {{
+        .assinaturas {
             margin-top: 36pt;
             page-break-inside: avoid;
-        }}
+            background: #fff;
+            border-radius: 20px;
+            padding: 22pt 26pt;
+            box-shadow: 0 15px 55px rgba(15,23,42,0.08);
+            border: 1px solid #e2e7f0;
+        }
         
-        .assinaturas h3 {{
-            margin-bottom: 16pt;
-        }}
+        .assinaturas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12pt;
+            margin-bottom: 18pt;
+        }
         
-        .assinatura-grid {{
+        .assinaturas-header h3 {
+            margin: 0;
+            color: $ACCENT_PRIMARY;
+        }
+        
+        .assinaturas-header .local-data {
+            text-align: right;
+            font-style: italic;
+            margin: 0;
+            font-size: 11pt;
+        }
+        
+        .assinatura-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24pt;
             margin-top: 16pt;
-        }}
+        }
         
-        .assinatura-campo {{
+        .assinatura-campo {
             page-break-inside: avoid;
-        }}
+        }
         
-        .assinatura-linha {{
-            border-bottom: 1px solid #000;
+        .assinatura-linha {
+            border-bottom: 1px solid #1f2937;
             height: 60pt;
             margin-bottom: 8pt;
-        }}
+        }
         
-        .assinatura-info {{
+        .assinatura-info {
             font-size: 10pt;
             line-height: 1.3;
-        }}
+        }
         
-        .assinatura-info strong {{
+        .assinatura-info strong {
             display: block;
             margin-bottom: 2pt;
-        }}
-        
-        .local-data {{
-            margin-top: 24pt;
-            text-align: right;
-            font-style: italic;
-        }}
+        }
         
         /* ========================================
            QUEBRAS DE PÁGINA
            ======================================== */
-        .page-break {{
+        .page-break {
             page-break-after: always;
-        }}
+        }
         
         /* ========================================
            IMPRESSÃO
            ======================================== */
-        @media print {{
-            body {{
+        @media print {
+            body {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
-            }}
+            }
             
-            .no-print {{
+            .no-print {
                 display: none !important;
-            }}
-        }}
+            }
+        }
         
-        /* ========================================
-           CABEÇALHO E RODAPÉ FIXOS
-           ======================================== */
-        .pdf-header {{
-            text-align: center;
-            font-size: 9pt;
-            color: #666;
-            padding: 10pt 0;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20pt;
-        }}
-        
-        .pdf-footer {{
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 9pt;
-            color: #666;
-            padding: 10pt 0;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            background: white;
-        }}
     </style>
 </head>
 <body>
-    <!-- Cabeçalho fixo PDF -->
-    <div class="pdf-header">
-        <strong>Parecer de Crédito - Confidencial</strong>
+    <div class="print-header-placeholder">
+        <div class="print-header-content">
+            <div class="print-header-logo">$header_logo_html</div>
+            <div class="print-header-info">
+                <span style="font-weight:700; display:block;">$empresa</span>
+                <span style="font-size:10pt; display:block;">CNPJ: $cnpj</span>
+            </div>
+        </div>
     </div>
-    
-    <!-- Cabeçalho do Documento -->
-    <header class="documento-header">
-        <h1>Parecer de Crédito</h1>
-        <div class="documento-meta">
-            <p><strong>{empresa}</strong></p>
-            <p>CNPJ: {cnpj}</p>
-            <p>Data da Análise: {data_analise}</p>
+    <div class="page-canvas">
+    <div class="page-content" style="background:#ffffff;">
+    <section class="hero-shell">
+    <header class="documento-hero">
+        <div class="hero-top">
+            <div class="hero-text">
+                <p class="hero-eyebrow">Parecer Técnico · FinScore</p>
+                <h1>$empresa</h1>
+                <p class="hero-subtitle">CNPJ: $cnpj</p>
+                <p class="hero-subtitle">Emitido em $data_relatorio</p>
+            </div>
+            <div class="hero-logo">$logo_html</div>
         </div>
     </header>
     
-    <!-- Resumo Executivo (destaque) -->
-    <section class="resumo-executivo">
-        <h3>Resumo Executivo</h3>
-        <p><strong>FinScore:</strong> {finscore} ({classificacao_fs})</p>
-        <p><strong>Serasa Score:</strong> {serasa} ({classificacao_ser})</p>
-        <div class="decisao-box">
-            DECISÃO: {decisao_texto}
+    <section class="summary-grid">
+        <div class="summary-card highlight">
+            <p class="summary-label">Decisão</p>
+            <p class="summary-value">$decisao_texto</p>
         </div>
+        <div class="summary-card">
+            <p class="summary-label">FinScore Ajustado</p>
+            <p class="summary-value">$finscore_display</p>
+            <span class="summary-chip">$classificacao_fs</span>
+        </div>
+        <div class="summary-card">
+            <p class="summary-label">Score Serasa</p>
+            <p class="summary-value">$serasa_display</p>
+            <span class="summary-chip">$classificacao_ser</span>
+            <!-- Consulta date intentionally removed from PDF summary card as requested -->
+        </div>
+        <div class="summary-card period-card">
+            <p class="summary-label">Período Avaliado</p>
+            <p class="summary-value">$periodo_texto</p>
+        </div>
+    </section>
     </section>
     
     <!-- Corpo do Parecer -->
     <main>
-        {conteudo_html}
+        <section class="content-panel markdown-body">
+            $conteudo_html
+        </section>
     </main>
     
     <!-- Campo de Assinaturas -->
     <section class="assinaturas">
-        <h3>5. Assinaturas</h3>
+        <div class="assinaturas-header">
+            <h3></h3>
+            <p class="local-data">$cidade_relatorio, $data_extenso.</p>
+        </div>
         
         <div class="assinatura-grid">
             <div class="assinatura-campo">
@@ -557,7 +848,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
                     <span>Cargo | CPF: XXX.XXX.XXX-XX</span>
                 </div>
             </div>
-            
+        
             <div class="assinatura-campo">
                 <div class="assinatura-linha"></div>
                 <div class="assinatura-info">
@@ -566,23 +857,44 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
                 </div>
             </div>
         </div>
-        
-        <div class="local-data">
-            <p>Ribeirão Preto (SP), {data_extenso}.</p>
-        </div>
     </section>
-    
-    <!-- Rodapé fixo PDF -->
-    <div class="pdf-footer">
-        <p>Confidencial – Uso Interno</p>
+    </div>
     </div>
 </body>
-</html>"""
+</html>""")
+
+    html = html_template.safe_substitute(
+        empresa=empresa,
+        fonts_html=fonts_html,
+        page_css=page_css,
+        BODY_FONT=BODY_FONT,
+        NEUTRAL_DARK=NEUTRAL_DARK,
+        TITLE_FONT=TITLE_FONT,
+        ACCENT_PRIMARY=ACCENT_PRIMARY,
+        ACCENT_SECONDARY=ACCENT_SECONDARY,
+        font_family_mono=font_family_mono,
+        header_logo_html=header_logo_html,
+        cnpj=cnpj,
+        data_relatorio=data_relatorio,
+        logo_html=logo_html,
+        decisao_texto=decisao_texto,
+        cidade_relatorio=cidade_relatorio,
+        finscore_display=finscore_display,
+        classificacao_fs=classificacao_fs,
+        serasa_display=serasa_display,
+        classificacao_ser=classificacao_ser,
+        serasa_data_texto=serasa_data_texto,
+        periodo_texto=periodo_texto,
+        ano_inicial_texto=ano_inicial_texto,
+        ano_final_texto=ano_final_texto,
+        conteudo_html=conteudo_html,
+        data_extenso=data_extenso,
+    )
     
     return html
 
 
-async def _html_to_pdf_playwright_async(html: str) -> bytes:
+async def _html_to_pdf_playwright_async(html: str, header_html: str) -> bytes:
     """
     Converte HTML para PDF usando Playwright (Chromium).
     Função assíncrona para uso em ambientes Linux/Mac.
@@ -593,6 +905,8 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
     Returns:
         Bytes do PDF gerado
     """
+    footer_left_text = FOOTER_BRAND
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
@@ -604,22 +918,18 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
         pdf_bytes = await page.pdf(
             format="A4",
             margin={
-                "top": "2.5cm",
-                "right": "2.5cm",
-                "bottom": "3cm",
-                "left": "2.5cm"
+                "top": "1.2cm",
+                "right": "2cm",
+                "bottom": "2.5cm",
+                "left": "2cm"
             },
             print_background=True,
             display_header_footer=True,
-            header_template="""
-                <div style="font-size: 9pt; color: #666; width: 100%; text-align: center; padding: 5px 0;">
-                    <span>Parecer de Crédito - Confidencial</span>
-                </div>
-            """,
-            footer_template="""
-                <div style="font-size: 9pt; color: #666; width: 100%; padding: 5px 40px; display: flex; justify-content: space-between;">
-                    <span>Confidencial – Uso Interno</span>
-                    <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
+            header_template=header_html,
+            footer_template=f"""
+                <div style="font-size: 9pt; font-family: 'Source Sans 3', Arial, sans-serif; color: #2d3c4f; width: 100%; padding: 8px 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d4dae4; background: #ffffff;">
+                    <span style="font-weight:600;">{footer_left_text}</span>
+                    <span style="font-size: 8.5pt; color: #556070;">Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
                 </div>
             """
         )
@@ -628,7 +938,7 @@ async def _html_to_pdf_playwright_async(html: str) -> bytes:
         return pdf_bytes
 
 
-def _html_to_pdf_playwright(html: str) -> bytes:
+def _html_to_pdf_playwright(html: str, header_html: str) -> bytes:
     """
     Wrapper síncrono para Playwright.
     
@@ -649,7 +959,7 @@ def _html_to_pdf_playwright(html: str) -> bytes:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            pdf_bytes = loop.run_until_complete(_html_to_pdf_playwright_async(html))
+            pdf_bytes = loop.run_until_complete(_html_to_pdf_playwright_async(html, header_html))
             return pdf_bytes
         finally:
             loop.close()
@@ -704,7 +1014,7 @@ def _html_to_pdf_xhtml2pdf(html: str) -> bytes:
         raise Exception(f"Erro ao gerar PDF com xhtml2pdf: {str(e)}") from e
 
 
-def html_to_pdf_bytes(html: str, engine: Optional[str] = None) -> bytes:
+def html_to_pdf_bytes(html: str, engine: Optional[str] = None, header_html: Optional[str] = None) -> bytes:
     """
     Converte HTML para PDF usando o engine especificado.
     
@@ -734,7 +1044,8 @@ def html_to_pdf_bytes(html: str, engine: Optional[str] = None) -> bytes:
     
     # Gerar PDF com o engine escolhido
     if engine == 'playwright':
-        return _html_to_pdf_playwright(html)
+        header_html = header_html or "<div style='font-size:0;'></div>"
+        return _html_to_pdf_playwright(html, header_html)
     elif engine == 'xhtml2pdf':
         return _html_to_pdf_xhtml2pdf(html)
     else:

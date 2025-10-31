@@ -1,3 +1,9 @@
+/* Força esquema de cores claro independentemente de preferências do navegador */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] * {
+    color-scheme: light !important;
+    forced-color-adjust: none !important;
+}
+
 /* --- Fix: Forçar aparência consistente em inputs, selects, textareas e tabelas (compatível com temas escuros/claro do SO) --- */
 input, select, textarea {
     background-color: #fff !important;
@@ -7,6 +13,8 @@ input, select, textarea {
     box-shadow: none !important;
     outline: none !important;
     font-family: inherit;
+    color-scheme: light !important;
+    forced-color-adjust: none !important;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -63,6 +71,7 @@ table {
     --fs-sidebar-max: 547px;
     --fs-sidebar-default: 274px;
     --fs-sidebar-width: var(--fs-sidebar-default);
+    color-scheme: light;
 }
 
 header[data-testid="stHeader"] {
@@ -350,4 +359,13 @@ button[kind="primary"]:hover,
 .stButton button:hover {
     background: #4a8f77 !important;
     color: white !important;
+}
+
+/* Mantém o gráfico do parecer dentro da largura disponível */
+[data-testid="stMarkdownContainer"] img[alt="Comparativo Serasa vs FinScore"] {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }

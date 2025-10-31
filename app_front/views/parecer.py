@@ -1,18 +1,28 @@
 import math
 import json
 import time
+import uuid
+import base64
 from typing import Dict, Any, Optional
 
 import streamlit as st
 import streamlit.components.v1 as components
+import requests
+import os
 
 from components.policy_engine import PolicyInputs, decide
-from components.llm_client import _invoke_model, MODEL_NAME
+from components.llm_client import _invoke_model, MODEL_NAME, get_last_usage
+from components.token_utils import (
+    count_messages_tokens,
+    count_text_tokens,
+    estimate_cost_usd,
+    now_ts,
+)
 from components.navigation_flow import NavigationFlow
 from components.session_state import clear_flow_state
 from components import nav
 
-# Usar temperatura 0 para máxima determinism e reduzir erros ortográficos
+# Usar temperatura 0 para máxima determinismo e reduzir erros ortográficos
 PARECER_TEMPERATURE = 0.0
 
 RANK_SERASA = {"Excelente": 1, "Bom": 2, "Baixo": 3, "Muito Baixo": 4}
@@ -25,6 +35,25 @@ RANK_FINSCORE = {
 }
 
 
+def _format_metric(value, decimals: int = 2, suffix: str = "") -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, AttributeError):
+        return "N/A"
+    formatted = f"{number:.{decimals}f}"
+    if suffix:
+        formatted = f"{formatted}{suffix}"
+    return formatted
+
+
+def _format_currency(value) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, AttributeError):
+        return "N/A"
+    return f"R$ {number:,.0f}".replace(",", ".")
+
+
 def _safe_float(value):
     try:
         number = float(value)
@@ -33,6 +62,49 @@ def _safe_float(value):
     if math.isnan(number) or math.isinf(number):
         return None
     return number
+
+
+def _safe_int(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+def _expected_intro_paragraphs(meta_cliente: Dict[str, Any]) -> tuple[str, str]:
+    empresa = meta_cliente.get("empresa", "N/A")
+    cnpj = meta_cliente.get("cnpj", "N/A")
+
+    ano_inicial_meta = _safe_int(meta_cliente.get("ano_inicial"))
+    ano_final_meta = _safe_int(meta_cliente.get("ano_final"))
+
+    anos_disponiveis: list[int] = []
+    if ano_inicial_meta is not None and ano_final_meta is not None:
+        if ano_final_meta >= ano_inicial_meta:
+            anos_disponiveis = list(range(ano_inicial_meta, ano_final_meta + 1))
+        else:
+            anos_disponiveis = [ano_inicial_meta, ano_final_meta]
+    elif ano_inicial_meta is not None:
+        anos_disponiveis = [ano_inicial_meta]
+    elif ano_final_meta is not None:
+        anos_disponiveis = [ano_final_meta]
+
+    anos_texto = ", ".join(str(ano) for ano in anos_disponiveis) if anos_disponiveis else "N/A"
+    serasa_data_texto = str(meta_cliente.get("serasa_data") or "N/A").strip() or "N/A"
+
+    paragrafo1 = (
+        f"Trata-se de análise da situação econômica, contábil e patrimonial da empresa {empresa}, "
+        f"CNPJ {cnpj}, para fins de análise de riscos e oportunidades em operação de crédito."
+    )
+
+    paragrafo2 = (
+        "Foram utilizados como fontes de informações as demonstrações contábeis referentes aos anos "
+        f"{anos_texto}, que serviram para cálculo e análise do FinScore, conforme metodologia detalhada "
+        "adiante, bem como o score Serasa, consultado em "
+        f"{serasa_data_texto}."
+    )
+
+    return paragrafo1, paragrafo2
 
 
 def _latest_indices_row(out_dict):
@@ -96,7 +168,26 @@ def _extract_analysis_data(out_dict) -> Dict[str, Any]:
     
     # PCA (se disponível)
     data["pca_variancia_pc1"] = out_dict.get("pca_explained_variance", [None])[0] if out_dict.get("pca_explained_variance") else None
-    
+
+    # Incluir CSVs brutos para garantir que o prompt receba todos os valores
+    try:
+        df_indices_full = out_dict.get("df_indices")
+        if df_indices_full is not None and getattr(df_indices_full, "empty", True) is False:
+            # exportar sem índice e com ponto decimal padrão
+            data["df_indices_csv"] = df_indices_full.to_csv(index=False, float_format='%.6f')
+        else:
+            data["df_indices_csv"] = None
+    except Exception:
+        data["df_indices_csv"] = None
+
+    try:
+        if df_raw is not None and not df_raw.empty:
+            data["df_raw_csv"] = df_raw.to_csv(index=False)
+        else:
+            data["df_raw_csv"] = None
+    except Exception:
+        data["df_raw_csv"] = None
+
     return data
 
 
@@ -112,17 +203,29 @@ def _build_parecer_prompt(
     """
     empresa = meta_cliente.get("empresa", "N/A")
     cnpj = meta_cliente.get("cnpj", "N/A")
+    intro_paragrafo1, intro_paragrafo2 = _expected_intro_paragraphs(meta_cliente)
     
     # Extrair dados para variáveis no prompt
     finscore_ajustado = analysis_data.get("finscore_ajustado", "N/A")
     classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
-    serasa_score = analysis_data.get("serasa_score", "N/A")
+    serasa_score = analysis_data.get("serasa", "N/A")  # Corrigido: era "serasa_score"
     classificacao_serasa = analysis_data.get("classificacao_serasa", "N/A")
     covenants_texto = ', '.join(covenants_motor) if covenants_motor else 'Nenhum covenant específico'
     
     # Formatar dados para o prompt
     dados_formatados = json.dumps(analysis_data, ensure_ascii=False, indent=2, default=str)
-    
+
+    # Incluir CSVs brutos explicitamente no prompt para garantir uso dos valores exatos
+    df_indices_csv = analysis_data.get("df_indices_csv")
+    df_raw_csv = analysis_data.get("df_raw_csv")
+
+    csv_section = ""
+    if df_indices_csv:
+        # Limitar tamanho se muito grande — aqui adicionamos completo para garantir precisão
+        csv_section += "\n**DADOS BRUTOS (CSV) - ÍNDICES CONTÁBEIS**\n\n```csv\n" + df_indices_csv + "\n```\n"
+    if df_raw_csv:
+        csv_section += "\n**DADOS BRUTOS (CSV) - DADOS CONTÁBEIS (LINHA POR ANO)**\n\n```csv\n" + df_raw_csv + "\n```\n"
+
     prompt = f"""
 Você é um analista de crédito sênior. Redija um parecer financeiro técnico, claro e analítico em **Markdown puro** (sem HTML).
 
@@ -138,19 +241,21 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 **DADOS FINANCEIROS:**
 {dados_formatados}
 
+ATENÇÃO: abaixo seguem os arquivos CSV com os valores brutos e os índices calculados (linha por ano). Utilize esses CSVs EXATAMENTE como fonte factual ao redigir a seção 3 (Análise Detalhada dos Indicadores). Reproduza os números literais quando pedir valores ou comparar anos.
+
+{csv_section}
+
 **ESTRUTURA OBRIGATÓRIA (siga exatamente):**
 
 ## 1. Introdução
 
-**Primeiro parágrafo:** Apresente a empresa ({empresa}, CNPJ {cnpj}) e o objetivo do parecer: avaliar sua capacidade de crédito com base nos indicadores financeiros e no FinScore.
+**Primeiro parágrafo (copie exatamente o texto abaixo e mantenha-o como um parágrafo isolado, sem conectores adicionais):**
+{intro_paragrafo1}
 
-**Segundo parágrafo (Síntese Executiva):** Em 5–8 linhas, apresente:
-- Destaques principais: FinScore e Serasa (valores e classificações)
-- Pontos fortes e eventuais fragilidades identificadas
-- Conclusão direta sobre a decisão de crédito ({decisao_motor}), com justificativa objetiva
-- Indicação se há ou não covenants necessários
+**Segundo parágrafo (copie exatamente o texto abaixo e mantenha-o como um parágrafo isolado, separado por linha em branco):**
+{intro_paragrafo2}
 
-**Terceiro parágrafo (Estrutura do Parecer):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e covenants, se aplicáveis.
+**Terceiro parágrafo (Estrutura do Parecer – escreva em um parágrafo separado):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e salvaguardas (garantias reais, fianças, seguros etc), se aplicáveis.
 
 ---
 
@@ -164,7 +269,7 @@ O **FinScore** (escala 0–1000) sintetiza a saúde financeira da empresa, captu
 
 **Cálculo (5 etapas):**
 
-1. **Índices Contábeis**: Extração de 15+ indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
+1. **Índices Contábeis**: Extração de diversos indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
 2. **Padronização**: Transformação em z-scores para comparação objetiva entre dimensões.
 3. **PCA**: Redução de dimensionalidade eliminando redundâncias.
 4. **Consolidação Temporal**: Pesos 60% (ano recente), 25% (anterior), 15% (mais antigo).
@@ -199,14 +304,14 @@ A convergência entre FinScore e Serasa reforça a avaliação. Divergências si
 
 ### 2.3 Dados Contábeis e Índices Financeiros
 
-A análise detalhada dos índices que compõem o FinScore permite:
+De forma complementar, a análise contextualizada e detalhada dos índices que compõem o FinScore permite:
 
-1. **Identificar drivers de risco**: Qual dimensão (liquidez, rentabilidade, endividamento) impacta negativamente o escore.
-2. **Detectar vulnerabilidades ocultas**: Riscos específicos mesmo com escore geral aceitável.
-3. **Definir covenants personalizados**: Condições alinhadas aos riscos identificados.
-4. **Compreender tendências**: Trajetória de melhora ou deterioração ao longo do tempo.
+1. **Identificar fatores de risco**: A identificação precisa de qual dimensão financeira (liquidez, rentabilidade ou endividamento) exerce impacto negativo no escore permite direcionar ações corretivas específicas e priorizadas, otimizando recursos e reduzindo o custo de capital ao mitigar os pontos críticos que mais deterioram a avaliação de crédito.
+2. **Detectar vulnerabilidades ocultas**: A identificação de riscos específicos, mesmo quando o escore geral aparenta solidez, possibilita antecipar problemas latentes que poderiam se materializar em crises futuras, garantindo maior segurança operacional sem sacrificar oportunidades de rentabilizar o negócio ou comprometer a concessão de crédito.
+3. **Sugestão de garantias de crédito**: A elaboração de cláusulas contratuais (salvaguardas) customizadas e alinhadas aos riscos específicos identificados estabelece gatilhos de alerta precoce e mecanismos de proteção proporcionais ao perfil real do tomador, equilibrando proteção institucional com condições comercialmente viáveis.
+4. **Compreender tendências**: A análise da trajetória temporal dos indicadores financeiros revela se a empresa está em ciclo de fortalecimento ou deterioração, permitindo decisões proativas de renovação, aumento de garantias ou encerramento de exposição antes que reversões negativas se consolidem em perdas efetivas.
 
-Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e covenants.
+Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e eventuais salvaguardas adicionais.
 
 ### 2.4 Critérios de Decisão
 
@@ -216,7 +321,7 @@ A decisão final resulta da **convergência** entre:
 
 **2. Serasa Score (Validação Cruzada)**: Valida histórico de comportamento de crédito. Divergências entre FinScore e Serasa demandam investigação qualitativa.
 
-**3. Índices Detalhados**: Análise granular permite identificar drivers específicos de risco e personalizar covenants (ex: liquidez crítica exige covenant de manutenção de índices mínimos).
+**3. Índices Detalhados**: A análise granular permite identificar riscos e personalizar salvaguardas.
 
 **4. Contexto Qualitativo**: Tendências temporais, sazonalidade setorial e eventos atípicos complementam a análise quantitativa.
 
@@ -298,7 +403,7 @@ Apresente a tabela e, em seguida, **contextualize o porte e desempenho** em 3–
 
 ## 4. Resultados
 
-Escreva um parágrafo introdutório (sem subtítulo) apresentando esta seção. Explique que aqui serão analisados os resultados da avaliação quantitativa: o FinScore e o Serasa Score. Contextualize que esses escores, conforme detalhado na Metodologia, serão agora interpretados considerando os dados contábeis e índices financeiros específicos da empresa. Mencione também que serão identificados riscos operacionais relevantes que possam demandar covenants.
+Escreva um parágrafo introdutório (sem subtítulo) apresentando esta seção. Explique que aqui serão analisados os resultados da avaliação quantitativa: o FinScore e o Serasa Score. Contextualize que esses escores, conforme detalhado na Metodologia, serão agora interpretados considerando os dados contábeis e índices financeiros específicos da empresa. Mencione também que serão identificados riscos operacionais relevantes que possam demandar salvaguardas adicionais.
 
 ### 4.1 FinScore
 
@@ -330,10 +435,19 @@ Analise os dados contábeis e índices financeiros observando tanto os **valores
 
 Identifique e discuta:
 - **Riscos estruturais detectados**: liquidez em queda, endividamento crescente, rentabilidade declinante, piora na eficiência operacional, etc.
-- **Covenants recomendados** (se aplicável): limites de DL/EBITDA, manutenção de índices mínimos de liquidez ou cobertura de juros, envio periódico de demonstrações, restrições a dividendos ou novos endividamentos, etc.
+- **Salvaguardas contratuais recomendadas** (se aplicável): limites de DL/EBITDA, manutenção de índices mínimos de liquidez ou cobertura de juros, envio periódico de demonstrações, restrições a dividendos ou novos endividamentos, etc.
 - **Indicadores críticos para monitoramento**: liste 3-5 índices que devem ser acompanhados continuamente e justifique cada escolha
 
 Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estruturais preocupantes, ou solidez suficiente para dispensar cláusulas restritivas mais rígidas.
+
+### 4.4 Opinião (Síntese Visual)
+
+**Parágrafo inicial (Síntese Executiva Visual):** Antes do gráfico, redija 5–8 linhas apresentando os valores e classificações de FinScore e Serasa, os principais pontos fortes e fragilidades identificados, a decisão de crédito ({decisao_motor}) com justificativa objetiva e se há salvaguardas necessários. Esta síntese substitui o antigo parágrafo-resumo da Introdução e deve servir como leitura prévia ao gráfico.
+
+**Parágrafo posterior (Comentário Analítico):** Em 2-3 frases, sintetize:
+- O alinhamento (ou divergência) entre FinScore e Serasa
+- Se os resultados confirmam ou contradizem a análise detalhada dos indicadores
+- Uma avaliação geral sobre o perfil de risco da empresa
 
 ---
 
@@ -344,7 +458,7 @@ Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estrutura
 **Segundo parágrafo (Síntese dos Resultados - Pontos Fortes e Fragilidades):** Com base na análise da seção "4. Resultados", identifique e resuma:
 - **Aspectos positivos**: Quais indicadores, dimensões ou escores demonstraram desempenho satisfatório ou acima da média? (ex: liquidez confortável, rentabilidade consistente, Serasa elevado, FinScore sólido)
 - **Aspectos de atenção**: Quais indicadores ou dimensões apresentaram fragilidades, deterioração temporal ou riscos que justificam monitoramento? (ex: endividamento crescente, margens declinantes, liquidez apertada)
-- **Ponderação geral**: Como o equilíbrio entre pontos fortes e fragilidades fundamenta a decisão de crédito ({decisao_motor}) e os covenants recomendados?
+- **Ponderação geral**: Como o equilíbrio entre pontos fortes e fragilidades fundamenta a decisão de crédito ({decisao_motor}) e os covenants (salvaguardas) recomendados?
 
 Este parágrafo deve consolidar os comentários específicos da seção 4 em uma visão integrada, permitindo ao leitor compreender rapidamente o "saldo" da análise (se predominam aspectos positivos, negativos, ou se há equilíbrio com ressalvas).
 
@@ -365,8 +479,236 @@ Este parágrafo deve consolidar os comentários específicos da seção 4 em uma
 ✓ Múltiplos: 2,5x (não 2,5)
 ✓ Máximo 1000 palavras
 ✓ A decisão {decisao_motor} é FINAL e INALTERÁVEL
+✓ Em cada seção ou tópico, finalize com um parágrafo iniciado por conjunção conclusiva (ex: “Em suma”, “Em resumo”, “Portanto”, “Logo”, “Destarte”)
 """
     return prompt.strip()
+
+
+def _generate_fake_parecer(
+    decisao_motor: str,
+    motivos_motor: list,
+    covenants_motor: list,
+    analysis_data: Dict[str, Any],
+    meta_cliente: Dict[str, Any]
+) -> str:
+    empresa = meta_cliente.get("empresa", "Empresa")
+    cnpj = meta_cliente.get("cnpj", "N/A")
+    intro1, intro2 = _expected_intro_paragraphs(meta_cliente)
+    intro3 = (
+        "Este parecer foi produzido no modo de contingência para permitir testes da interface e do PDF "
+        "quando o serviço de IA estiver temporariamente indisponível."
+    )
+    intro_estrutura = (
+        "A seguir, o documento apresenta a metodologia aplicada (FinScore e Serasa), a análise detalhada "
+        "dos indicadores financeiros por categoria, os resultados consolidados com avaliação de riscos e, "
+        "por fim, as considerações finais com recomendações e eventuais covenants."
+    )
+
+    finscore_ajustado = _format_metric(analysis_data.get("finscore_ajustado"))
+    classificacao_finscore = analysis_data.get("classificacao_finscore", "N/A")
+    serasa_score = _format_metric(analysis_data.get("serasa"), decimals=0)
+    classificacao_serasa = analysis_data.get("classificacao_serasa", "N/A")
+
+    indicadores = [
+        ("Liquidez", "Liquidez Corrente", _format_metric(analysis_data.get("liquidez_corrente"))),
+        ("Liquidez", "Liquidez Seca", _format_metric(analysis_data.get("liquidez_seca"))),
+        ("Estrutura", "Endividamento", _format_metric(analysis_data.get("endividamento"))),
+        ("Estrutura", "Alavancagem (DL/EBITDA)", _format_metric(analysis_data.get("alavancagem"))),
+        ("Rentabilidade", "ROE", _format_metric(analysis_data.get("roe"), suffix="%")),
+        ("Rentabilidade", "ROA", _format_metric(analysis_data.get("roa"), suffix="%")),
+        ("Margens", "Margem Líquida", _format_metric(analysis_data.get("margem_liquida"), suffix="%")),
+        ("Margens", "Margem EBITDA", _format_metric(analysis_data.get("margem_ebitda"), suffix="%")),
+        ("Eficiência", "PMR (dias)", _format_metric(analysis_data.get("pmr"), decimals=0)),
+        ("Eficiência", "PMP (dias)", _format_metric(analysis_data.get("pmp"), decimals=0)),
+        ("Eficiência", "Giro do Ativo", _format_metric(analysis_data.get("giro_ativo"))),
+    ]
+
+    motivos_md = "\n".join(f"- {motivo}" for motivo in motivos_motor) if motivos_motor else "- Motor determinístico não forneceu motivos detalhados."
+    covenants_md = ", ".join(covenants_motor) if covenants_motor else "Monitoramento trimestral dos indicadores de liquidez e alavancagem."
+
+    liquidez_corrente = indicadores[0][2]
+    liquidez_seca = indicadores[1][2]
+    ccl_ativo = _format_metric(analysis_data.get("ccl_ativo"))
+    endividamento = indicadores[2][2]
+    alavancagem = indicadores[3][2]
+    cobertura_juros = _format_metric(analysis_data.get("cobertura_juros"))
+    roe = indicadores[4][2]
+    roa = indicadores[5][2]
+    margem_liquida = indicadores[6][2]
+    margem_ebitda = indicadores[7][2]
+    pmr = indicadores[8][2]
+    pmp = indicadores[9][2]
+    giro_ativo = indicadores[10][2]
+
+    receita_total = _format_currency(analysis_data.get("receita_total"))
+    lucro_liquido = _format_currency(analysis_data.get("lucro_liquido"))
+    ativo_total = _format_currency(analysis_data.get("ativo_total"))
+    patrimonio_liquido = _format_currency(analysis_data.get("patrimonio_liquido"))
+    passivo_total = _format_currency(analysis_data.get("passivo_total"))
+
+    dados_patrimoniais_table = (
+        "| Indicador | Valor |\n"
+        "|-----------|------:|\n"
+        f"| Receita Total | {receita_total} |\n"
+        f"| Lucro Líquido | {lucro_liquido} |\n"
+        f"| Ativo Total | {ativo_total} |\n"
+        f"| Patrimônio Líquido | {patrimonio_liquido} |\n"
+        f"| Passivo Total | {passivo_total} |\n"
+    )
+
+    indicadores_monitoramento = "\n".join(
+        [
+            f"- Liquidez Corrente em {liquidez_corrente} para acompanhar eventual aperto de caixa.",
+            f"- Alavancagem em {alavancagem}x para evitar degradação da cobertura de serviço da dívida.",
+            f"- Margem EBITDA em {margem_ebitda} para medir geração operacional.",
+            f"- PMR em {pmr} dias e PMP em {pmp} dias para monitorar o ciclo financeiro.",
+            f"- Cobertura de juros em {cobertura_juros} para assegurar folga frente a custos financeiros.",
+        ]
+    )
+
+    fake_text = f"""
+> ⚠️ Parecer simulado para desenvolvimento. Utilize apenas para validar layout, navegação e exportação em PDF.
+
+## 1. Introdução
+
+{intro1}
+
+{intro2}
+
+{intro3}
+
+{intro_estrutura}
+
+---
+
+## 2. Metodologia
+
+Este parecer fundamenta-se em uma **avaliação técnica estruturada** que combina dois instrumentos complementares: o **FinScore** (índice proprietário baseado em dados contábeis) e o **Serasa Score** (indicador externo de histórico de crédito).
+
+### 2.1 FinScore
+
+O **FinScore** (escala 0–1000) sintetiza a saúde financeira da empresa, capturando capacidade de pagamento, eficiência, endividamento e produtividade dos ativos. Inspirado no Altman Z-Score, oferece avaliação objetiva do risco de inadimplência.
+
+**Cálculo (5 etapas):**
+
+1. **Índices Contábeis**: Extração de 15+ indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
+2. **Padronização**: Transformação em z-scores para comparação objetiva entre dimensões.
+3. **PCA**: Redução de dimensionalidade eliminando redundâncias.
+4. **Consolidação Temporal**: Pesos 60% (ano recente), 25% (anterior), 15% (mais antigo).
+5. **Escalonamento**: Resultado convertido para escala 0–1000 e classificado em faixas de risco.
+
+**Tabela – Classificação FinScore**
+
+| Faixa de Pontuação | Classificação de Risco | Interpretação |
+|-------------------:|:-----------------------|:--------------|
+| > 875 | Muito Abaixo do Risco | Perfil financeiro excepcional, risco mínimo |
+| 750 – 875 | Levemente Abaixo do Risco | Situação confortável, baixo risco |
+| 250 – 750 | Neutro | Situação intermediária, sem sinais claros de excelência ou fragilidade |
+| 125 – 250 | Levemente Acima do Risco | Atenção recomendada, sinais de fragilidade |
+| < 125 | Muito Acima do Risco | Risco elevado, análise detalhada necessária |
+
+### 2.2 Serasa Score
+
+O **Serasa Score** (0–1000) avalia **comportamento de crédito**: pagamentos em dia, protestos, negativações e histórico com credores. Complementa o FinScore ao capturar aspectos comportamentais não visíveis nas demonstrações contábeis.
+
+**Tabela – Classificação Serasa**
+
+| Faixa de Pontuação | Classificação | Significado |
+|-------------------:|:--------------|:------------|
+| 851 – 1000 | Excelente | Histórico de crédito exemplar, paga em dia, sem restrições |
+| 701 – 850 | Bom | Comportamento de pagamento satisfatório, baixo risco |
+| 0 – 400 | Baixo | Histórico comprometido, atenção necessária (atrasos, negativações) |
+| Sem cadastro | Muito Baixo | Ausência de histórico de crédito (empresa nova ou sem relacionamento bancário) |
+
+A convergência entre FinScore e Serasa reforça a avaliação. Divergências significativas demandam análise qualitativa adicional para compreender inconsistências entre capacidade financeira e histórico de pagamento.
+
+### 2.3 Dados Contábeis e Índices Financeiros
+
+De forma complementar, a análise contextualizada e detalhada dos índices que compõem o FinScore permite identificar fatores de risco, detectar vulnerabilidades ocultas, desenhar covenants proporcionais e compreender tendências temporais. Os índices não substituem o FinScore: **explicam e fundamentam** o escore consolidado.
+
+### 2.4 Critérios de Decisão
+
+A decisão final resulta da convergência entre FinScore ({finscore_ajustado}), Serasa ({serasa_score}), indicadores detalhados e contexto qualitativo. Essa combinação garante transparência, rastreabilidade e aderência às políticas de crédito.
+
+---
+
+## 3. Análise Detalhada dos Indicadores
+
+Esta seção disseca os indicadores financeiros nas dimensões de liquidez, endividamento, rentabilidade, eficiência e porte patrimonial. Os valores servem como base factual para a conclusão expressa na decisão {decisao_motor}.
+
+### 3.1 Liquidez
+
+**Indicadores analisados:** Liquidez Corrente ({liquidez_corrente}), Liquidez Seca ({liquidez_seca}) e CCL/Ativo Total ({ccl_ativo}).
+
+**Contexto e implicações práticas:** Os valores apontam como a empresa equilibra ativos e passivos de curto prazo. Portanto, a combinação atual indica que a companhia dispõe de {liquidez_corrente} em recursos circulantes para cada unidade de dívida imediata, enquanto a liquidez seca de {liquidez_seca} revela o colchão disponível sem estoques. O CCL equivalente a {ccl_ativo} do ativo total confirma se há capital próprio sustentando o giro e orienta a necessidade (ou não) de capital de giro adicional.
+
+### 3.2 Endividamento e Estrutura de Capital
+
+**Indicadores analisados:** Endividamento total ({endividamento}), Alavancagem DL/EBITDA ({alavancagem}) e Cobertura de Juros ({cobertura_juros}).
+
+**Contexto e implicações práticas:** A relação dívida/ativo em {endividamento} sinaliza a dependência de capital de terceiros. A alavancagem de {alavancagem}x indica quantos anos de EBITDA seriam necessários para amortizar a dívida líquida, enquanto a cobertura de juros em {cobertura_juros} vezes demonstra a folga operacional frente às despesas financeiras. Logo, a análise conjunta mostra se a empresa suporta novas linhas ou se precisa de covenants restritivos.
+
+### 3.3 Rentabilidade
+
+**Indicadores analisados:** ROE ({roe}), ROA ({roa}), Margem Líquida ({margem_liquida}) e Margem EBITDA ({margem_ebitda}).
+
+**Contexto e implicações práticas:** Os retornos sobre patrimônio e ativos, combinados às margens, indicam capacidade de geração de caixa e remuneração dos sócios. Em resumo, os percentuais atuais ilustram se o negócio remunera adequadamente o risco e se possui elasticidade para absorver oscilações de custos ou receita.
+
+### 3.4 Eficiência Operacional
+
+**Indicadores analisados:** PMR ({pmr} dias), PMP ({pmp} dias) e Giro do Ativo ({giro_ativo}).
+
+**Contexto e implicações práticas:** O PMR revela a velocidade de recebimento, o PMP sinaliza o poder de negociação com fornecedores e o giro do ativo mostra a produtividade dos investimentos. Logo, o ciclo financeiro resultante ({pmr} vs {pmp}) indica se a empresa financia clientes com capital próprio ou se consegue gerar folga de caixa.
+
+### 3.5 Dados Patrimoniais e de Resultado
+
+**Principais indicadores:**
+
+{dados_patrimoniais_table}
+
+**Contexto e implicações práticas:** A tabela evidencia o porte do negócio em termos de receita e base patrimonial. Portanto, a leitura conjunta dos valores demonstra se a estrutura é compatível com o nível de endividamento atual e quais amortecedores patrimoniais existem para suportar choques.
+
+---
+
+## 4. Resultados
+
+Esta seção consolida os escores quantitativos e interpreta como FinScore e Serasa traduzem os dados analisados anteriormente, destacando riscos que podem demandar salvaguardas contratuais.
+
+### 4.1 FinScore
+
+O FinScore ajustado de **{finscore_ajustado} ({classificacao_finscore})** reflete a combinação dos indicadores avaliados. Logo, o resultado confirma que a situação financeira descrita nas seções de liquidez, estrutura, rentabilidade e eficiência sustenta o patamar atual de risco e orienta a manutenção/ajuste de limites.
+
+### 4.2 Serasa
+
+O Serasa Score de **{serasa_score} ({classificacao_serasa})** complementa a análise ao capturar o histórico de pagamentos. Em resumo, o comportamento externo está alinhado à leitura contábil, reforçando (ou relativizando) o FinScore conforme a proximidade entre as classificações.
+
+### 4.3 Riscos da Operação
+
+{motivos_md}
+
+**Covenants sugeridos:** {covenants_md}
+
+**Indicadores críticos para monitoramento:**
+{indicadores_monitoramento}
+
+Portanto, a decisão determinística **{decisao_motor.upper()}** permanece aderente às evidências e pode ser acompanhada pelos gatilhos listados.
+
+### 4.4 Opinião (Síntese Visual)
+
+Esta subseção reserva espaço para o gráfico comparativo entre FinScore e Serasa. Utilize-o para comunicar visualmente o equilíbrio de risco, mantendo a fundamentação descrita nas etapas anteriores.
+
+---
+
+## 5. Considerações Finais
+
+**Síntese da análise detalhada:** As leituras de liquidez ({liquidez_corrente}/{liquidez_seca}), estrutura ({endividamento}, {alavancagem}), rentabilidade ({roe}, {margem_liquida}) e eficiência ({pmr} dias vs {pmp} dias) formam o núcleo da avaliação e explicam a decisão {decisao_motor}.
+
+**Aspectos positivos e pontos de atenção:** Pontos fortes incluem a combinação entre FinScore {finscore_ajustado} e Serasa {serasa_score}, além da produtividade indicada pelo giro {giro_ativo}. Entre as fragilidades, acompanhe alavancagem ({alavancagem}) e margem EBITDA ({margem_ebitda}) para evitar deterioração. Portanto, o saldo é equilibrado com viés {classificacao_finscore}.
+
+**Decisão final e recomendações:** Reitera-se a decisão **{decisao_motor}**, respaldada pelos escores (FinScore {finscore_ajustado} / Serasa {serasa_score}) e pelos motivos determinísticos. Recomenda-se manter os covenants: {covenants_md}. Logo, monitore periodicamente os indicadores destacados enquanto o serviço de IA não retorna, substituindo este texto pelo parecer definitivo assim que possível.
+"""
+
+    return fake_text.strip()
 
 
 def _generate_parecer_ia(
@@ -377,7 +719,7 @@ def _generate_parecer_ia(
     meta_cliente: Dict[str, Any]
 ) -> Optional[str]:
     """
-    Gera o parecer narrativo usando IA.
+    Gera o parecer narrativo usando IA e injeta o minichart na seção 4.4.
     """
     system_prompt = (
         "Você é um analista de crédito sênior. Escreva pareceres técnicos objetivos e bem estruturados. "
@@ -393,16 +735,288 @@ def _generate_parecer_ia(
         {"role": "user", "content": user_prompt}
     ]
     
+    # --- Token counting (estimativa) antes do envio ---
     try:
-        response = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
-        response = _fix_formatting_issues(response)
-        return response
+        price_per_1k = float(os.getenv("FINSCORE_PRICE_PER_1K_USD", "0.03"))
+    except Exception:
+        price_per_1k = 0.03
+
+    try:
+        prompt_tokens = int(count_messages_tokens(MODEL_NAME, messages))
+    except Exception:
+        prompt_tokens = int(count_text_tokens(MODEL_NAME, user_prompt))
+
+    st.session_state.setdefault("token_usage", []).append({
+        "step": "parecer_prompt",
+        "model": MODEL_NAME,
+        "prompt_tokens_est": int(prompt_tokens),
+        "price_per_1k_usd": float(price_per_1k),
+        "timestamp": now_ts(),
+    })
+
+    try:
+        response_text = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
+    except requests.exceptions.HTTPError as http_err:  # type: ignore[attr-defined]
+        status_code = http_err.response.status_code if http_err.response is not None else None
+        if status_code == 429:
+            st.warning("Limite da API de IA atingido. Gerando parecer simulado para testes...")
+            response_text = _generate_fake_parecer(
+                decisao_motor,
+                motivos_motor,
+                covenants_motor,
+                analysis_data,
+                meta_cliente,
+            )
+        else:
+            st.error(f"Erro ao gerar parecer: {http_err}")
+            return None
     except Exception as e:
         st.error(f"Erro ao gerar parecer: {e}")
         return None
 
+    response_text = _fix_formatting_issues(response_text, meta_cliente)
+    response_text = _inject_minichart(response_text, analysis_data)
 
-def _fix_formatting_issues(text: str) -> str:
+    # Preferir 'usage' retornado pela API quando disponível (mais preciso)
+    usage = None
+    try:
+        usage = get_last_usage()
+    except Exception:
+        usage = None
+
+    response_tokens = 0
+    prompt_tokens_final = prompt_tokens
+    if usage and isinstance(usage, dict):
+        # API pode retornar 'prompt_tokens', 'completion_tokens' e 'total_tokens'
+        api_prompt = usage.get("prompt_tokens")
+        api_completion = usage.get("completion_tokens")
+        api_total = usage.get("total_tokens")
+
+        if api_prompt is not None:
+            prompt_tokens_final = int(api_prompt)
+        if api_completion is not None:
+            response_tokens = int(api_completion)
+        elif api_total is not None:
+            # fallback: total - prompt
+            try:
+                response_tokens = int(api_total) - int(prompt_tokens_final)
+            except Exception:
+                response_tokens = 0
+    else:
+        # Fallback: contar localmente a resposta
+        try:
+            response_tokens = int(count_text_tokens(MODEL_NAME, response_text))
+        except Exception:
+            response_tokens = 0
+
+    total_tokens = int(prompt_tokens_final) + int(response_tokens)
+    cost = estimate_cost_usd(total_tokens, price_per_1k)
+
+    st.session_state.setdefault("token_usage", []).append({
+        "step": "parecer_result",
+        "model": MODEL_NAME,
+        "prompt_tokens": int(prompt_tokens_final),
+        "response_tokens": int(response_tokens),
+        "total_tokens": int(total_tokens),
+        "cost_usd": float(cost),
+        "usage_api": usage,
+        "timestamp": now_ts(),
+    })
+
+    # Persistir uma cópia do token_usage em arquivo para investigação/admin (evita perda por rerun)
+    try:
+        token_list = st.session_state.get("token_usage", [])
+        token_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".last_token_usage.json"))
+        with open(token_file, "w", encoding="utf-8") as _tf:
+            json.dump(token_list, _tf, ensure_ascii=False, indent=2)
+    except Exception:
+        # Não falhar o fluxo por causa do log/persistência
+        pass
+
+    return response_text
+
+
+def _inject_minichart(parecer: str, analysis_data: Dict[str, Any]) -> str:
+    """
+    Injeta o minichart visual comparativo na seção 4.4 do parecer.
+    """
+    import re
+    from services.chart_renderer import (
+        gerar_minichart_serasa_finscore,
+        obter_valores_faixas_serasa,
+        obter_valores_faixas_finscore
+    )
+    
+    try:
+        # Extrair valores
+        serasa_score = analysis_data.get("serasa", 0)
+        finscore_score = analysis_data.get("finscore_ajustado", 0)
+        cls_serasa = analysis_data.get("classificacao_serasa", "N/A")
+        cls_finscore = analysis_data.get("classificacao_finscore", "N/A")
+        
+        # Obter valores das faixas baseado nas classificações
+        serasa_vals = obter_valores_faixas_serasa(cls_serasa)
+        finscore_vals = obter_valores_faixas_finscore(cls_finscore)
+        
+        # Gerar minichart em base64
+        chart_base64 = gerar_minichart_serasa_finscore(
+            serasa_score=float(serasa_score),
+            finscore_score=float(finscore_score),
+            serasa_vals=serasa_vals,
+            finscore_vals=finscore_vals,
+            return_base64=True
+        )
+        
+        # Construir markdown com imagem embutida
+        chart_markdown = f"\n\n![Comparativo Serasa vs FinScore](data:image/png;base64,{chart_base64})\n\n"
+        
+        # Procurar pela seção 4.4 e injetar o gráfico logo após o título
+        # Padrão: ### 4.4 Opinião (Síntese Visual)
+        pattern = r'(###\s+4\.4\s+Opinião\s*\(Síntese Visual\).*?\n\n)'
+        
+        def replacer(match):
+            return match.group(1) + chart_markdown
+        
+        parecer_modificado = re.sub(pattern, replacer, parecer, count=1, flags=re.DOTALL)
+        
+        # Se não encontrou o padrão, adicionar antes da seção 5
+        if parecer_modificado == parecer:
+            pattern_secao5 = r'(##\s+5\.\s+Considerações Finais)'
+            fallback_chart = f"\n\n### 4.4 Opinião (Síntese Visual)\n\n{chart_markdown}\n"
+            parecer_modificado = re.sub(pattern_secao5, fallback_chart + r'\1', parecer, count=1)
+        
+        return parecer_modificado
+        
+    except Exception as e:
+        st.warning(f"Não foi possível gerar o gráfico comparativo: {e}")
+        return parecer
+
+        return None
+
+
+def _ensure_concluding_connectors(text: str) -> str:
+    """
+    Garante que o último parágrafo de cada seção/tópico se inicie com uma
+    conjunção conclusiva ou locução equivalente.
+    """
+    import re
+
+    connectors = [
+        "Em suma",
+        "Em resumo",
+        "Portanto",
+        "Logo",
+        "Destarte",
+        "Assim",
+        "Dessa forma",
+        "Consequentemente",
+        "Por conseguinte",
+        "Deste modo",
+    ]
+    connectors_lower = [c.casefold() for c in connectors]
+    connector_index = 0
+
+    def next_connector() -> str:
+        nonlocal connector_index
+        connector = connectors[connector_index % len(connectors)]
+        connector_index += 1
+        return connector
+
+    def lowercase_first_alpha(sentence: str) -> str:
+        for idx, ch in enumerate(sentence):
+            if ch.isalpha():
+                return sentence[:idx] + ch.lower() + sentence[idx + 1 :]
+        return sentence
+
+    lines = text.split("\n")
+    heading_indexes = [idx for idx, line in enumerate(lines) if line.strip().startswith("#")]
+    heading_indexes.append(len(lines))
+
+    for i in range(len(heading_indexes) - 1):
+        start = heading_indexes[i]
+        end = heading_indexes[i + 1]
+        if end - start <= 1:
+            continue
+
+        section = lines[start + 1:end]
+        paragraphs = []
+        cursor = 0
+
+        while cursor < len(section):
+            if section[cursor].strip() == "":
+                cursor += 1
+                continue
+
+            para_start = cursor
+            while cursor < len(section) and section[cursor].strip() != "":
+                cursor += 1
+            para_end = cursor
+            paragraphs.append((para_start, para_end))
+
+        for para_start, para_end in reversed(paragraphs):
+            first_line = section[para_start]
+            stripped = first_line.lstrip()
+            if not stripped:
+                continue
+            if stripped.startswith(("!", "|", "```")):
+                continue
+            if stripped[0] in "-*+>":
+                continue
+            if re.match(r"^\d+[.)]", stripped):
+                continue
+
+            lowered = stripped.casefold()
+            if any(lowered.startswith(conn) for conn in connectors_lower):
+                break
+
+            leading = first_line[: len(first_line) - len(stripped)]
+            connector = next_connector()
+            new_sentence = lowercase_first_alpha(stripped)
+            section[para_start] = f"{leading}{connector}, {new_sentence}"
+            break
+
+        lines[start + 1:end] = section
+
+    return "\n".join(lines)
+
+
+def _enforce_intro_paragraphs(text: str, meta_cliente: Optional[Dict[str, Any]]) -> str:
+    import re
+
+    if not meta_cliente:
+        return text
+
+    p1, p2 = _expected_intro_paragraphs(meta_cliente)
+    pattern = r"(##\s+1\.\s+Introdução\s+)(.*?)(\n##\s+2\.)"
+    match = re.search(pattern, text, flags=re.DOTALL)
+    if not match:
+        return text
+
+    body = match.group(2)
+    paragraphs = [seg.strip() for seg in re.split(r"\n\s*\n", body) if seg.strip()]
+    remaining = paragraphs[2:] if len(paragraphs) > 2 else []
+    if not remaining:
+        remaining = [
+            "Este parecer está organizado nas próximas seções: (i) a metodologia do FinScore e Serasa; "
+            "(ii) a análise detalhada dos indicadores financeiros por categoria; (iii) a análise de risco e scoring; "
+            "e (iv) as considerações finais com recomendações e covenants."
+        ]
+
+    new_body_parts = [p1, p2] + remaining
+    new_body = "\n\n".join(new_body_parts).strip()
+
+    suffix = text[match.end(2):]
+    prefix = text[:match.start(2)]
+
+    if not suffix.startswith("\n"):
+        new_body = new_body + "\n\n"
+    else:
+        new_body = new_body + "\n"
+
+    return prefix + new_body + suffix
+
+
+def _fix_formatting_issues(text: str, meta_cliente: Optional[Dict[str, Any]] = None) -> str:
     """
     Pós-processamento MINIMALISTA: apenas correções essenciais comprovadas.
     Temperatura 0 já reduz drasticamente erros ortográficos.
@@ -448,8 +1062,10 @@ def _fix_formatting_issues(text: str) -> str:
     
     # 6) Espaços antes de pontuação
     text = re.sub(r' +([,.;:!?])', r'\1', text)
+
+    text = _enforce_intro_paragraphs(text, meta_cliente)
     
-    return text
+    return _ensure_concluding_connectors(text)
 
 
 def render():
@@ -479,77 +1095,56 @@ def render():
         st.markdown(
             """
             <style>
-                                    .parecer-progress{
-
-                margin-top:1.25rem!important;
-
-                margin-bottom:0.75rem!important;
-
+            .parecer-progress {
+                margin: 1.25rem 0 0.75rem 0 !important;
             }
-
-            .parecer-progress-track{
-
-                width:100%;
-
-                height:14px;
-
-                border-radius:999px;
-
-                background:#ffffff;
-
-                border:1px solid #e0e7ff;
-
-                box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);
-
-                overflow:hidden;
-
+            .parecer-progress-track {
+                position: relative;
+                width: 100%;
+                font-size: clamp(1.6rem, 2.8vw, 2.05rem);
+                height: 1em;
+                border-radius: 999px;
+                background: #ffffff;
+                border: 1px solid #e0e7ff;
+                box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+                overflow: hidden;
             }
-
-            .parecer-progress-fill{
-
-                display:block;
-
-                height:100%;
-
-                border-radius:999px;
-
-                background:#3b82f6 !important;
-
-                transition:width .45s ease-in-out;
-
-                box-shadow:0 2px 6px rgba(59,130,246,0.4);
-
-                position:relative;
-
-                opacity:1 !important;
-
+            .parecer-progress-fill {
+                display: block;
+                height: 100%;
+                border-radius: inherit;
+                background: linear-gradient(90deg, #0f9d58, #34c759);
+                transition: width .45s ease-in-out;
+                position: relative;
             }
-
-            .parecer-progress-fill::after{
-
-                content:"";
-
-                position:absolute;
-
-                inset:0;
-
-                background:linear-gradient(120deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.6) 50%,rgba(255,255,255,0) 100%);
-
-                animation:parecer-sheen 1.5s ease-in-out infinite;
-
-                border-radius:999px;
-
+            .parecer-progress-fill::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
+                animation: parecer-sheen 1.6s ease-in-out infinite;
+                border-radius: inherit;
             }
-
+            .parecer-progress-label {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.46em;
+                color: #0f5132;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
             @keyframes parecer-sheen {
                 0% { transform: translateX(-150%); }
                 100% { transform: translateX(150%); }
             }
-
-.parecer-progress-message p{
-                margin:0.15rem 0 0 0;
-                color:#315c93;
-                font-weight:600;
+            .parecer-progress-message p {
+                margin: 0.15rem 0 0 0;
+                color: #6b7280;
+                font-weight: 600;
+                font-style: italic;
             }
             </style>
             """,
@@ -745,8 +1340,9 @@ def render():
             progress_visual.markdown(
                 f"""
                 <div class="parecer-progress">
-                    <div class="parecer-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{bounded}">
+                    <div class="parecer-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{bounded}" aria-valuetext="{bounded}% concluído">
                         <span class="parecer-progress-fill" style="width:{bounded}%;"></span>
+                        <span class="parecer-progress-label">{bounded}%</span>
                     </div>
                 </div>
                 """,
@@ -756,7 +1352,7 @@ def render():
         def update_progress(pct: int, message: str) -> None:
             bounded = max(0, min(100, pct))
             _render_progress_bar(bounded)
-            status_text.markdown(f"<div class='parecer-progress-message'><p>{message}</p></div>", unsafe_allow_html=True)
+            status_text.markdown(f"<div class='parecer-progress-message'><p><em>{message}</em></p></div>", unsafe_allow_html=True)
 
         update_progress(4, "⚙️ Preparando ambiente para geração do parecer...")
         time.sleep(0.35)
@@ -782,7 +1378,9 @@ def render():
             time.sleep(0.4)
 
             # Etapa 2: Gerar parecer
-            update_progress(74, "🤖 Gerando narrativa técnica com IA...")
+            progresso_base = "🤖 Gerando narrativa da análise econômica, contábil e patrimonial da empresa..."
+            update_progress(74, progresso_base)
+
             parecer = _generate_parecer_ia(
                 decisao_motor=resultado["decisao"],
                 motivos_motor=resultado.get("motivos", []),
@@ -797,6 +1395,13 @@ def render():
 
             if parecer:
                 ss["parecer_gerado"] = parecer
+                # Expor token_usage para inspeção rápida no console do navegador
+                try:
+                    import json as _json
+                    token_js = _json.dumps(st.session_state.get("token_usage", []), ensure_ascii=False)
+                    st.markdown(f"<pre id='token-usage-debug' style='display:none'>{token_js}</pre>", unsafe_allow_html=True)
+                except Exception:
+                    pass
                 # Atualiza 100% ANTES de limpar placeholders (evita erro 'setIn' em elementos removidos)
                 try:
                     update_progress(100, "✅ Parecer gerado com sucesso!")
@@ -809,6 +1414,7 @@ def render():
                 status_text.empty()
                 # Travar navegacao em /Parecer apos rerun
                 NavigationFlow.request_lock_parecer()
+                st.session_state["_pending_nav_target"] = "parecer"
                 st.rerun()
             else:
                 update_progress(100, "⚠️ Não foi possível gerar o parecer automaticamente.")
@@ -860,7 +1466,11 @@ def render():
                                 "classificacao_finscore": cls_fin or "N/A",
                                 "serasa_score": f"{serasa_score:.0f}" if serasa_score is not None else "N/A",
                                 "classificacao_serasa": cls_ser or "N/A",
-                                "decisao": resultado["decisao"]
+                                "decisao": resultado["decisao"],
+                                "serasa_data": meta.get("serasa_data"),
+                                "ano_inicial": meta.get("ano_inicial"),
+                                "ano_final": meta.get("ano_final"),
+                                "cidade_relatorio": meta.get("cidade_relatorio", "São Paulo (SP)")
                             }
                             
                             # Gerar PDF (engine auto-detectado baseado na plataforma)
@@ -877,13 +1487,27 @@ def render():
                             empresa_safe = meta.get("empresa", "Empresa").replace(" ", "_")
                             pdf_filename = f"Parecer_{empresa_safe}_{meta.get('cnpj', 'CNPJ').replace('.', '').replace('/', '').replace('-', '')}.pdf"
                             
-                            # Botão de download
-                            st.download_button(
-                                label="🗂️ Baixar PDF",
-                                data=pdf_bytes,
-                                file_name=pdf_filename,
-                                mime="application/pdf",
-                                use_container_width=True
+                            b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+                            components.html(
+                                f"""
+                                <html>
+                                <body>
+                                <script>
+                                (function() {{
+                                    const link = document.createElement('a');
+                                    link.href = 'data:application/pdf;base64,{b64_pdf}';
+                                    link.download = '{pdf_filename}';
+                                    link.style.display = 'none';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    setTimeout(() => document.body.removeChild(link), 1000);
+                                }})();
+                                </script>
+                                </body>
+                                </html>
+                                """,
+                                height=0,
+                                width=0,
                             )
                             st.success("PDF gerado com sucesso!")
                     except Exception as e:

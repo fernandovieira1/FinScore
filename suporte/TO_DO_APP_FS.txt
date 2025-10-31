@@ -897,33 +897,78 @@ Até aqui:
 ---
 
 =====Ajustes=====
-* ( ) xxxxxxxxxxx
-=====Novidades=====
-* ( ) Mais texto na seção 4 do parecer (Resultados)
-* ( ) Gráfico na seção 4 do parecer (Resultados)
-* ( ) Botões pós-parecer:
-    - ( ) Baixar Parecer (PDF) (playright)
+* (x) Parecer com Gráficos (chart_renderer, test_chart_renderer)
 ---
 Até aqui:
-[v. 0.8.xx (ia), de xx/10/2025]
+[v. 0.8.29a (ia), de 19/10/2025]
 ---
 
-=====Novidades=====
-* ( ) Transpor os resultados da seção /Parecer para a aba 'Resultado' em /Análise
-* ( ) Gerar o resultado a partir de /Análise/Resultado
-* ( ) Gerar parecer ser computado em segundo plano a partir do momento que se clica em 
-'Calcular FinScore' em /Lançamentos
+=====Ajustes=====
+* (x) Config Linux para playright
 ---
 Até aqui:
-[v. 0.8.xx (ia), de xx/10/2025]
+[v. 0.8.30 (ia), de 18/10/2025]
+---
+
+=====Ajustes=====
+* (x) Config Linux para playright
+* (x) Gráficos em /Parecer escapando da margem imaginária do texto e tabelas ao aparecer em html.
+* (x) Seções com último parágrafo encerrando com conjunções conclusivas
+* (x) Diversos ajustes no texto/prompt das seções 1, 2 e 3 do parecer.
+---
+Até aqui:
+[v. 0.8.31 (ia), de 24/10/2025]
+---
+
+=====Ajustes=====
+* (x) Emissão de parecer fictício quando chave OpenAI resultar em falha
+* (x) Orientação das setinhas aberta/fechada em /Processo alteradas
+* (x) Removido o botão 'Baixar PDF', com a exportação sendo automática após clicar em 'Exportar para PDF'
+=====Novidades=====
+* (x) Gráfico na seção 4 do parecer (Resultados)
+* (x) playright:
+    - (x) Verificar se está funcionando no Linux
+    - (x) Baixar Parecer
+---
+Até aqui:
+[v. 0.8.32 (ia), de 24/10/2025]
+---
+
+=====Ajustes=====
+* (x) Parecer PDF:
+    - (x) Cabeçalho e rodapé
+    - (x) Margens
+    - (x) Fonte
+    - (x) Tamanho da fonte
+    - (x) Espaçamento entre linhas
+    - (x) Quebras de página
+    - (x) Gráficos centralizados
+---
+Até aqui:
+[v. 0.8.33a (ia), de 25/10/2025] - cabeçalho em andamento
+[v. 0.8.33b (ia), de 25/10/2025] - Modelo parecer feito no libreoffice
+[v. 0.8.33c (ia), de 25/10/2025] - Modelo Parecer PDF 1.0 finalizado
+[v. 0.8.33d (ia), de 26/10/2025] - Modelo Parecer PDF 1.1 finalizado
+[v. 0.8.33e (ia), de 26/10/2025] - Modelo Parecer PDF 1.2 finalizado + Remoção de xhtml2pdf (Windows)
+[v. 0.8.33f (ia), de 26/10/2025] - Tentativa frustrada de forçar tema claro no site
+[v. 0.8.33g (ia), de 27/10/2025] - Tentativa frustrada de implementar tela de login (dia 27/10 quase todo)
+[v. 0.8.33h (ia), de 28/10/2025] - Ajustes texto /Estoque e /Cadastros e testes em todas as seções
+---
+
+
+=====Ajustes=====
+* (x) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
+* (x) Revisão da seção 4 do parecer (Resultados)
+* (x) Texto e visual das boxes no pdf aperfeiçoados
+=====Novidades=====
+* (x) Mais texto na seção 4 do parecer (Resultados)
+---
+Até aqui:
+[v. 0.8.34, de 30/10/2025]
 ---
 
 ......................................................................................................................
-============
-5. LOGIN
-============
-* ( ) Estudar bibliotecas
-* ( ) Codificar
+Beta Version 1.0.00 (brigadeiro)
 
 ......................................................................................................................
 ============
