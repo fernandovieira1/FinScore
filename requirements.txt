@@ -33,3 +33,6 @@ langchain-community==0.2.9
 # chromadb==0.3.28
 python-dotenv==1.0.1
 requests==2.32.3
+
+# Tokenizer for OpenAI-compatible token counting
+tiktoken>=0.4.0

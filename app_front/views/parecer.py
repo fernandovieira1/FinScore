@@ -8,9 +8,16 @@ from typing import Dict, Any, Optional
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+import os
 
 from components.policy_engine import PolicyInputs, decide
-from components.llm_client import _invoke_model, MODEL_NAME
+from components.llm_client import _invoke_model, MODEL_NAME, get_last_usage
+from components.token_utils import (
+    count_messages_tokens,
+    count_text_tokens,
+    estimate_cost_usd,
+    now_ts,
+)
 from components.navigation_flow import NavigationFlow
 from components.session_state import clear_flow_state
 from components import nav
@@ -728,6 +735,25 @@ def _generate_parecer_ia(
         {"role": "user", "content": user_prompt}
     ]
     
+    # --- Token counting (estimativa) antes do envio ---
+    try:
+        price_per_1k = float(os.getenv("FINSCORE_PRICE_PER_1K_USD", "0.03"))
+    except Exception:
+        price_per_1k = 0.03
+
+    try:
+        prompt_tokens = int(count_messages_tokens(MODEL_NAME, messages))
+    except Exception:
+        prompt_tokens = int(count_text_tokens(MODEL_NAME, user_prompt))
+
+    st.session_state.setdefault("token_usage", []).append({
+        "step": "parecer_prompt",
+        "model": MODEL_NAME,
+        "prompt_tokens_est": int(prompt_tokens),
+        "price_per_1k_usd": float(price_per_1k),
+        "timestamp": now_ts(),
+    })
+
     try:
         response_text = _invoke_model(messages, MODEL_NAME, PARECER_TEMPERATURE)
     except requests.exceptions.HTTPError as http_err:  # type: ignore[attr-defined]
@@ -750,6 +776,63 @@ def _generate_parecer_ia(
 
     response_text = _fix_formatting_issues(response_text, meta_cliente)
     response_text = _inject_minichart(response_text, analysis_data)
+
+    # Preferir 'usage' retornado pela API quando disponível (mais preciso)
+    usage = None
+    try:
+        usage = get_last_usage()
+    except Exception:
+        usage = None
+
+    response_tokens = 0
+    prompt_tokens_final = prompt_tokens
+    if usage and isinstance(usage, dict):
+        # API pode retornar 'prompt_tokens', 'completion_tokens' e 'total_tokens'
+        api_prompt = usage.get("prompt_tokens")
+        api_completion = usage.get("completion_tokens")
+        api_total = usage.get("total_tokens")
+
+        if api_prompt is not None:
+            prompt_tokens_final = int(api_prompt)
+        if api_completion is not None:
+            response_tokens = int(api_completion)
+        elif api_total is not None:
+            # fallback: total - prompt
+            try:
+                response_tokens = int(api_total) - int(prompt_tokens_final)
+            except Exception:
+                response_tokens = 0
+    else:
+        # Fallback: contar localmente a resposta
+        try:
+            response_tokens = int(count_text_tokens(MODEL_NAME, response_text))
+        except Exception:
+            response_tokens = 0
+
+    total_tokens = int(prompt_tokens_final) + int(response_tokens)
+    cost = estimate_cost_usd(total_tokens, price_per_1k)
+
+    st.session_state.setdefault("token_usage", []).append({
+        "step": "parecer_result",
+        "model": MODEL_NAME,
+        "prompt_tokens": int(prompt_tokens_final),
+        "response_tokens": int(response_tokens),
+        "total_tokens": int(total_tokens),
+        "cost_usd": float(cost),
+        "usage_api": usage,
+        "timestamp": now_ts(),
+    })
+
+    # Persistir uma cópia do token_usage em arquivo para investigação/admin (evita perda por rerun)
+    try:
+        token_list = st.session_state.get("token_usage", [])
+        token_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".last_token_usage.json"))
+        with open(token_file, "w", encoding="utf-8") as _tf:
+            json.dump(token_list, _tf, ensure_ascii=False, indent=2)
+    except Exception:
+        # Não falhar o fluxo por causa do log/persistência
+        pass
+
     return response_text
 
 
@@ -1312,6 +1395,13 @@ def render():
 
             if parecer:
                 ss["parecer_gerado"] = parecer
+                # Expor token_usage para inspeção rápida no console do navegador
+                try:
+                    import json as _json
+                    token_js = _json.dumps(st.session_state.get("token_usage", []), ensure_ascii=False)
+                    st.markdown(f"<pre id='token-usage-debug' style='display:none'>{token_js}</pre>", unsafe_allow_html=True)
+                except Exception:
+                    pass
                 # Atualiza 100% ANTES de limpar placeholders (evita erro 'setIn' em elementos removidos)
                 try:
                     update_progress(100, "✅ Parecer gerado com sucesso!")

@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class _SimpleMessage:
     content: str
+    usage: dict | None = None
+
+
+# Último 'usage' retornado pela última chamada bem-sucedida (módulo-local)
+LLM_LAST_USAGE: dict | None = None
 
 
 def _maybe_get_langchain_client(model: str, temperature: float):
@@ -59,10 +64,13 @@ def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessag
     response.raise_for_status()
     data = response.json()
     try:
-        content = data["choices"][0]["message"]["content"]
+        choice = data["choices"][0]
+        content = choice["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:  # pragma: no cover - API drift
         raise RuntimeError(f"Unexpected OpenAI response: {data}") from exc
-    return _SimpleMessage(content=content)
+
+    usage = data.get("usage") if isinstance(data, dict) else None
+    return _SimpleMessage(content=content, usage=usage)
 
 
 def _invoke_model(messages, model: str, temperature: float) -> str:
@@ -72,12 +80,18 @@ def _invoke_model(messages, model: str, temperature: float) -> str:
     last_exc: Exception | None = None
     candidates = [model] + [fallback for fallback in MODEL_FALLBACKS if fallback and fallback != model]
 
+    global LLM_LAST_USAGE
     for candidate in candidates:
         tried_models.append(candidate)
         try:
             response = _call_openai_rest(messages, model=candidate, temperature=temperature)
             if candidate != model:
                 logger.info("LLM fallback: usando modelo %s (preferido: %s)", candidate, model)
+            # armazenar usage no estado do módulo para leituras posteriores
+            try:
+                LLM_LAST_USAGE = response.usage
+            except Exception:
+                LLM_LAST_USAGE = None
             return response.content
         except requests.exceptions.HTTPError as exc:  # type: ignore[attr-defined]
             status = exc.response.status_code if exc.response is not None else None
@@ -95,6 +109,14 @@ def _invoke_model(messages, model: str, temperature: float) -> str:
     if last_exc is not None:
         raise last_exc
     raise RuntimeError(f"Nao foi possivel invocar nenhum modelo: {tried_models}")
+
+
+def get_last_usage() -> dict | None:
+    """Retorna o último objeto 'usage' obtido do LLM (ou None).
+
+    Não consome/limpa o valor; chama-lo repetidamente retorna o mesmo dicionário até a próxima chamada de LLM bem-sucedida.
+    """
+    return LLM_LAST_USAGE
 
 
 MODEL_NAME = os.getenv("FINSCORE_LLM_MODEL", "gpt-4o-mini")
