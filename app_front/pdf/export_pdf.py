@@ -277,13 +277,19 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     classificacao_ser = meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A"))
     decisao = meta.get("decisao", "N/A")
     
-    # Formatar decisão
+    # Formatar decisão (com ícones conforme solicitado)
     decisao_map = {
         "aprovar": "APROVAR",
         "aprovar_com_ressalvas": "APROVAR COM RESSALVAS",
         "nao_aprovar": "NÃO APROVAR"
     }
-    decisao_texto = decisao_map.get(decisao, decisao.upper())
+    # Mapa com ícones para exibição no cabeçalho/PDF
+    decisao_icon_map = {
+        "aprovar": "✅ APROVAR",
+        "aprovar_com_ressalvas": "⚠️ APROVAR COM RESSALVAS",
+        "nao_aprovar": "❌ NÃO APROVAR",
+    }
+    decisao_texto = decisao_icon_map.get(decisao, decisao_map.get(decisao, decisao.upper()))
     
     # Data por extenso
     meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -534,7 +540,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             border: 1px solid #e6ecf6;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            /* Mostrar título e valor próximos (sem espaçamento forçado),
+               manter helper/rodapé alinhado ao final com margin-top:auto */
+            justify-content: flex-start;
             min-height: 125px;
         }
         
@@ -557,7 +565,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         .summary-value {
-            font-size: 20pt;
+            /* Redução de 20% conforme solicitado (20pt -> 16pt) */
+            font-size: 16pt;
             margin: 0 0 4pt;
             font-family: $TITLE_FONT;
             line-height: 1.05;
@@ -572,10 +581,17 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             margin: 4pt 0 0;
             font-size: 8.6pt;
             color: #768197;
+            /* Empurra o helper para o final do card quando houver espaço extra */
+            margin-top: auto;
         }
         
         .summary-card.highlight .summary-helper {
             color: rgba(255,255,255,0.85);
+        }
+
+        /* Ajuste específico para a caixa 'Período Avaliado' - subir levemente o valor */
+        .summary-card.period-card .summary-value {
+            margin-top: -6pt;
         }
         
         .summary-chip {
@@ -790,9 +806,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     
     <section class="summary-grid">
         <div class="summary-card highlight">
-            <p class="summary-label">Decisão Determinística</p>
+            <p class="summary-label">Decisão</p>
             <p class="summary-value">$decisao_texto</p>
-            <p class="summary-helper">$cidade_relatorio · $data_relatorio</p>
         </div>
         <div class="summary-card">
             <p class="summary-label">FinScore Ajustado</p>
@@ -805,10 +820,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             <span class="summary-chip">$classificacao_ser</span>
             <p class="summary-helper">Consulta: $serasa_data_texto</p>
         </div>
-        <div class="summary-card">
+        <div class="summary-card period-card">
             <p class="summary-label">Período Avaliado</p>
             <p class="summary-value">$periodo_texto</p>
-            <p class="summary-helper">De $ano_inicial_texto a $ano_final_texto</p>
         </div>
     </section>
     </section>

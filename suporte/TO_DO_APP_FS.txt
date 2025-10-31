@@ -948,38 +948,20 @@ Até aqui:
 [v. 0.8.33d (ia), de 26/10/2025] - Modelo Parecer PDF 1.1 finalizado
 [v. 0.8.33e (ia), de 26/10/2025] - Modelo Parecer PDF 1.2 finalizado + Remoção de xhtml2pdf (Windows)
 [v. 0.8.33f (ia), de 26/10/2025] - Tentativa frustrada de forçar tema claro no site
----
-
-=====Ajustes=====
-=====Novidades=====
-* (x) Início implementação tela de login
----
-Até aqui:
-[v. 0.8.34 (ia), de 27/10/2025]
+[v. 0.8.33g (ia), de 27/10/2025] - Tentativa frustrada de implementar tela de login (dia 27/10 quase todo)
+[v. 0.8.33h (ia), de 28/10/2025] - Ajustes texto /Estoque e /Cadastros e testes em todas as seções
 ---
 
 
 =====Ajustes=====
-* ( ) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
-* ( ) Revisão da seção 4 do parecer (Resultados)
+* (x) Revisão da seção 3 do parecer (Análise Detalhada dos Indicadores)
+* (x) Revisão da seção 4 do parecer (Resultados)
+* (x) Texto e visual das boxes no pdf aperfeiçoados
 =====Novidades=====
-* ( ) Mais texto na seção 4 do parecer (Resultados)
-* ( ) Gráfico na seção 4 do parecer (Resultados)
-* ( ) playright:
-    - ( ) Configurar pdf (cabeçalho e rodapé)
+* (x) Mais texto na seção 4 do parecer (Resultados)
 ---
 Até aqui:
-[v. 0.8.3x (ia), de xx/10/2025]
----
-
-=====Novidades=====
-* ( ) Transpor os resultados da seção /Parecer para a aba 'Resultado' em /Análise
-* ( ) Gerar o resultado a partir de /Análise/Resultado
-* ( ) Gerar parecer ser computado em segundo plano a partir do momento que se clica em 
-'Calcular FinScore' em /Lançamentos
----
-Até aqui:
-[v. 0.8.xx (ia), de xx/10/2025]
+[v. 0.8.34, de 30/10/2025]
 ---
 
 ......................................................................................................................

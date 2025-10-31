@@ -161,7 +161,26 @@ def _extract_analysis_data(out_dict) -> Dict[str, Any]:
     
     # PCA (se disponível)
     data["pca_variancia_pc1"] = out_dict.get("pca_explained_variance", [None])[0] if out_dict.get("pca_explained_variance") else None
-    
+
+    # Incluir CSVs brutos para garantir que o prompt receba todos os valores
+    try:
+        df_indices_full = out_dict.get("df_indices")
+        if df_indices_full is not None and getattr(df_indices_full, "empty", True) is False:
+            # exportar sem índice e com ponto decimal padrão
+            data["df_indices_csv"] = df_indices_full.to_csv(index=False, float_format='%.6f')
+        else:
+            data["df_indices_csv"] = None
+    except Exception:
+        data["df_indices_csv"] = None
+
+    try:
+        if df_raw is not None and not df_raw.empty:
+            data["df_raw_csv"] = df_raw.to_csv(index=False)
+        else:
+            data["df_raw_csv"] = None
+    except Exception:
+        data["df_raw_csv"] = None
+
     return data
 
 
@@ -188,7 +207,18 @@ def _build_parecer_prompt(
     
     # Formatar dados para o prompt
     dados_formatados = json.dumps(analysis_data, ensure_ascii=False, indent=2, default=str)
-    
+
+    # Incluir CSVs brutos explicitamente no prompt para garantir uso dos valores exatos
+    df_indices_csv = analysis_data.get("df_indices_csv")
+    df_raw_csv = analysis_data.get("df_raw_csv")
+
+    csv_section = ""
+    if df_indices_csv:
+        # Limitar tamanho se muito grande — aqui adicionamos completo para garantir precisão
+        csv_section += "\n**DADOS BRUTOS (CSV) - ÍNDICES CONTÁBEIS**\n\n```csv\n" + df_indices_csv + "\n```\n"
+    if df_raw_csv:
+        csv_section += "\n**DADOS BRUTOS (CSV) - DADOS CONTÁBEIS (LINHA POR ANO)**\n\n```csv\n" + df_raw_csv + "\n```\n"
+
     prompt = f"""
 Você é um analista de crédito sênior. Redija um parecer financeiro técnico, claro e analítico em **Markdown puro** (sem HTML).
 
@@ -204,6 +234,10 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 **DADOS FINANCEIROS:**
 {dados_formatados}
 
+ATENÇÃO: abaixo seguem os arquivos CSV com os valores brutos e os índices calculados (linha por ano). Utilize esses CSVs EXATAMENTE como fonte factual ao redigir a seção 3 (Análise Detalhada dos Indicadores). Reproduza os números literais quando pedir valores ou comparar anos.
+
+{csv_section}
+
 **ESTRUTURA OBRIGATÓRIA (siga exatamente):**
 
 ## 1. Introdução
@@ -214,7 +248,7 @@ Você é um analista de crédito sênior. Redija um parecer financeiro técnico,
 **Segundo parágrafo (copie exatamente o texto abaixo e mantenha-o como um parágrafo isolado, separado por linha em branco):**
 {intro_paragrafo2}
 
-**Terceiro parágrafo (Estrutura do Parecer – escreva em um parágrafo separado):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e covenants, se aplicáveis.
+**Terceiro parágrafo (Estrutura do Parecer – escreva em um parágrafo separado):** Descreva brevemente como este parecer está organizado, explicando que as próximas seções abordarão: (i) a metodologia do FinScore e Serasa; (ii) a análise detalhada dos indicadores financeiros por categoria (liquidez, endividamento, rentabilidade e eficiência); (iii) a análise de risco e scoring; e (iv) as considerações finais com recomendações e salvaguardas (garantias reais, fianças, seguros etc), se aplicáveis.
 
 ---
 
@@ -228,7 +262,7 @@ O **FinScore** (escala 0–1000) sintetiza a saúde financeira da empresa, captu
 
 **Cálculo (5 etapas):**
 
-1. **Índices Contábeis**: Extração de 15+ indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
+1. **Índices Contábeis**: Extração de diversos indicadores (rentabilidade, liquidez, endividamento, eficiência) das demonstrações financeiras.
 2. **Padronização**: Transformação em z-scores para comparação objetiva entre dimensões.
 3. **PCA**: Redução de dimensionalidade eliminando redundâncias.
 4. **Consolidação Temporal**: Pesos 60% (ano recente), 25% (anterior), 15% (mais antigo).
@@ -267,10 +301,10 @@ De forma complementar, a análise contextualizada e detalhada dos índices que c
 
 1. **Identificar fatores de risco**: A identificação precisa de qual dimensão financeira (liquidez, rentabilidade ou endividamento) exerce impacto negativo no escore permite direcionar ações corretivas específicas e priorizadas, otimizando recursos e reduzindo o custo de capital ao mitigar os pontos críticos que mais deterioram a avaliação de crédito.
 2. **Detectar vulnerabilidades ocultas**: A identificação de riscos específicos, mesmo quando o escore geral aparenta solidez, possibilita antecipar problemas latentes que poderiam se materializar em crises futuras, garantindo maior segurança operacional sem sacrificar oportunidades de rentabilizar o negócio ou comprometer a concessão de crédito.
-3. **Sugestão de garantias de crédito**: A elaboração de cláusulas contratuais (covenants) customizadas e alinhadas aos riscos específicos identificados estabelece gatilhos de alerta precoce e mecanismos de proteção proporcionais ao perfil real do tomador, equilibrando proteção institucional com condições comercialmente viáveis.
+3. **Sugestão de garantias de crédito**: A elaboração de cláusulas contratuais (salvaguardas) customizadas e alinhadas aos riscos específicos identificados estabelece gatilhos de alerta precoce e mecanismos de proteção proporcionais ao perfil real do tomador, equilibrando proteção institucional com condições comercialmente viáveis.
 4. **Compreender tendências**: A análise da trajetória temporal dos indicadores financeiros revela se a empresa está em ciclo de fortalecimento ou deterioração, permitindo decisões proativas de renovação, aumento de garantias ou encerramento de exposição antes que reversões negativas se consolidem em perdas efetivas.
 
-Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e covenants.
+Os índices detalhados não substituem o FinScore, mas o **explicam e fundamentam**, oferecendo visão granular que sustenta decisões e eventuais salvaguardas adicionais.
 
 ### 2.4 Critérios de Decisão
 
@@ -280,7 +314,7 @@ A decisão final resulta da **convergência** entre:
 
 **2. Serasa Score (Validação Cruzada)**: Valida histórico de comportamento de crédito. Divergências entre FinScore e Serasa demandam investigação qualitativa.
 
-**3. Índices Detalhados**: Análise granular permite identificar drivers específicos de risco e personalizar covenants (ex: liquidez crítica exige covenant de manutenção de índices mínimos).
+**3. Índices Detalhados**: A análise granular permite identificar riscos e personalizar salvaguardas.
 
 **4. Contexto Qualitativo**: Tendências temporais, sazonalidade setorial e eventos atípicos complementam a análise quantitativa.
 
@@ -362,7 +396,7 @@ Apresente a tabela e, em seguida, **contextualize o porte e desempenho** em 3–
 
 ## 4. Resultados
 
-Escreva um parágrafo introdutório (sem subtítulo) apresentando esta seção. Explique que aqui serão analisados os resultados da avaliação quantitativa: o FinScore e o Serasa Score. Contextualize que esses escores, conforme detalhado na Metodologia, serão agora interpretados considerando os dados contábeis e índices financeiros específicos da empresa. Mencione também que serão identificados riscos operacionais relevantes que possam demandar covenants.
+Escreva um parágrafo introdutório (sem subtítulo) apresentando esta seção. Explique que aqui serão analisados os resultados da avaliação quantitativa: o FinScore e o Serasa Score. Contextualize que esses escores, conforme detalhado na Metodologia, serão agora interpretados considerando os dados contábeis e índices financeiros específicos da empresa. Mencione também que serão identificados riscos operacionais relevantes que possam demandar salvaguardas adicionais.
 
 ### 4.1 FinScore
 
@@ -394,14 +428,14 @@ Analise os dados contábeis e índices financeiros observando tanto os **valores
 
 Identifique e discuta:
 - **Riscos estruturais detectados**: liquidez em queda, endividamento crescente, rentabilidade declinante, piora na eficiência operacional, etc.
-- **Covenants recomendados** (se aplicável): limites de DL/EBITDA, manutenção de índices mínimos de liquidez ou cobertura de juros, envio periódico de demonstrações, restrições a dividendos ou novos endividamentos, etc.
+- **Salvaguardas contratuais recomendadas** (se aplicável): limites de DL/EBITDA, manutenção de índices mínimos de liquidez ou cobertura de juros, envio periódico de demonstrações, restrições a dividendos ou novos endividamentos, etc.
 - **Indicadores críticos para monitoramento**: liste 3-5 índices que devem ser acompanhados continuamente e justifique cada escolha
 
 Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estruturais preocupantes, ou solidez suficiente para dispensar cláusulas restritivas mais rígidas.
 
 ### 4.4 Opinião (Síntese Visual)
 
-**Parágrafo inicial (Síntese Executiva Visual):** Antes do gráfico, redija 5–8 linhas apresentando os valores e classificações de FinScore e Serasa, os principais pontos fortes e fragilidades identificados, a decisão de crédito ({decisao_motor}) com justificativa objetiva e se há covenants necessários. Esta síntese substitui o antigo parágrafo-resumo da Introdução e deve servir como leitura prévia ao gráfico.
+**Parágrafo inicial (Síntese Executiva Visual):** Antes do gráfico, redija 5–8 linhas apresentando os valores e classificações de FinScore e Serasa, os principais pontos fortes e fragilidades identificados, a decisão de crédito ({decisao_motor}) com justificativa objetiva e se há salvaguardas necessários. Esta síntese substitui o antigo parágrafo-resumo da Introdução e deve servir como leitura prévia ao gráfico.
 
 **Parágrafo posterior (Comentário Analítico):** Em 2-3 frases, sintetize:
 - O alinhamento (ou divergência) entre FinScore e Serasa
@@ -417,7 +451,7 @@ Conclua avaliando se a operação apresenta riscos mitigáveis, riscos estrutura
 **Segundo parágrafo (Síntese dos Resultados - Pontos Fortes e Fragilidades):** Com base na análise da seção "4. Resultados", identifique e resuma:
 - **Aspectos positivos**: Quais indicadores, dimensões ou escores demonstraram desempenho satisfatório ou acima da média? (ex: liquidez confortável, rentabilidade consistente, Serasa elevado, FinScore sólido)
 - **Aspectos de atenção**: Quais indicadores ou dimensões apresentaram fragilidades, deterioração temporal ou riscos que justificam monitoramento? (ex: endividamento crescente, margens declinantes, liquidez apertada)
-- **Ponderação geral**: Como o equilíbrio entre pontos fortes e fragilidades fundamenta a decisão de crédito ({decisao_motor}) e os covenants recomendados?
+- **Ponderação geral**: Como o equilíbrio entre pontos fortes e fragilidades fundamenta a decisão de crédito ({decisao_motor}) e os covenants (salvaguardas) recomendados?
 
 Este parágrafo deve consolidar os comentários específicos da seção 4 em uma visão integrada, permitindo ao leitor compreender rapidamente o "saldo" da análise (se predominam aspectos positivos, negativos, ou se há equilíbrio com ressalvas).
 
