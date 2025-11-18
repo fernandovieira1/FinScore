@@ -1,101 +1,134 @@
-# LICENÇA PROPRIETÁRIA
+# AVISO DE DIREITOS AUTORAIS E PROPRIEDADE INTELECTUAL
 
 ## FinScore - Sistema de Análise de Risco Financeiro
 
-**Copyright © 2025 Fernando Vieira. Todos os direitos reservados.**
+**Copyright © 2025 Assertif. Todos os direitos reservados.**
 
 ---
 
-## TERMOS E CONDIÇÕES DE USO
+## DECLARAÇÃO DE TITULARIDADE E DIREITOS
 
-### 1. PROPRIEDADE INTELECTUAL
+### 1. TITULARIDADE DA OBRA
 
-Este software, incluindo todo o código-fonte, algoritmos, documentação, design e demais elementos que compõem o sistema **FinScore**, é de propriedade exclusiva da empresa **Assertif** e está protegido pelas leis de direitos autorais e propriedade intelectual do Brasil e tratados internacionais.
+Esta versão específica do software **FinScore** (Beta Version 1.0.00 (brigadeiro) (04/11/2025)), incluindo código-fonte, algoritmos, documentação, design e demais elementos, foi desenvolvida sob encomenda para a empresa **Assertif**, que detém os **direitos patrimoniais** sobre esta versão da obra, nos termos do art. 111 da Lei 9.610/98 (Lei de Direitos Autorais).
 
-O autor **Fernando Vieira** detém os direitos intelectuais sobre o algoritmo desenvolvido, na forma dos arts. 7º, XII, 22 e 29 da Lei 9.610/98, bem como dos arts. 2º e 7º da Lei 9.609/98.
+A **Assertif** é a titular dos direitos de exploração econômica desta versão do sistema, podendo usá-lo, modificá-lo e distribuí-lo conforme seus interesses comerciais.
 
-Fica assegurado ao autor o direito de modificar, adaptar e utilizar o algoritmo em projetos futuros, inclusive para comercialização a terceiros, desde que tais versões não constituam reprodução integral da versão originalmente desenvolvida para a Assertif, caracterizando-se como obras derivadas ou adaptações legítimas.
+### 2. AUTORIA E DIREITOS MORAIS
 
-Nos termos do art. 421 e art. 425 do Código Civil, eventuais contratos firmados entre as partes não restringem a faculdade do autor de explorar economicamente suas criações intelectuais, salvo disposição expressa em contrário.
+O **autor Fernando Vieira** é o criador intelectual do sistema e dos algoritmos que o compõem, mantendo os **direitos morais de autor** previstos no art. 24 da Lei 9.610/98, incluindo:
 
-### 2. RESTRIÇÕES DE USO
+- Direito de ter seu nome vinculado à obra (paternidade)
+- Direito à integridade da obra
+- Direito de modificar a obra (na forma prevista nesta declaração)
 
-**É EXPRESSAMENTE PROIBIDO:**
+### 3. DIREITOS DE REUTILIZAÇÃO E DESENVOLVIMENTO FUTURO
 
-- Copiar, reproduzir, distribuir ou modificar este software sem autorização prévia e expressa do autor
-- Criar trabalhos derivados baseados neste código
+Nos termos do art. 7º, XII e art. 29 da Lei 9.610/98, e art. 2º da Lei 9.609/98 (Lei do Software), fica assegurado ao autor **Fernando Vieira** o direito de:
+
+1. **Desenvolver obras derivadas** baseadas nos conceitos, algoritmos e metodologias criados, desde que:
+   - Não constituam cópia ou reprodução substancial do código-fonte desta versão entregue à Assertif
+   - Sejam caracterizadas como **adaptações, aprimoramentos ou novas implementações** dos conceitos desenvolvidos
+   - Não utilizem dados, configurações ou elementos proprietários da Assertif
+
+2. **Utilizar os conhecimentos técnicos** adquiridos durante o desenvolvimento em projetos futuros, próprios ou para terceiros
+
+3. **Comercializar versões derivadas** dos algoritmos e metodologias, desde que não constituam concorrência desleal ou violação de segredos comerciais da Assertif
+
+**Limitação**: O autor não pode redistribuir, sublicenciar ou comercializar **esta versão específica** do código entregue à Assertif sem autorização expressa da empresa.
+
+### 4. RESTRIÇÕES DE USO POR TERCEIROS
+
+**Terceiros NÃO autorizados pela Assertif estão EXPRESSAMENTE PROIBIDOS de:**
+
+- Copiar, reproduzir ou distribuir este software
+- Criar trabalhos derivados baseados neste código específico
 - Fazer engenharia reversa, descompilar ou desassemblar o software
 - Remover ou alterar avisos de copyright e propriedade intelectual
-- Usar o software para fins comerciais sem licenciamento adequado
+- Usar o software para fins comerciais sem licenciamento
 - Redistribuir o software em qualquer forma ou meio
 
-### 3. AUTORIZAÇÃO PARA CÓPIAS E FORKS
+### 5. LICENCIAMENTO A TERCEIROS
 
-**CÓPIAS E FORKS** deste repositório **SOMENTE SERÃO AUTORIZADOS** mediante:
+Cópias, uso ou licenciamento deste software por terceiros requerem:
 
-1. **Requisição prévia e formal** ao autor através dos canais oficiais
-2. **Autorização expressa e por escrito** do proprietário
-3. **Acordo de licenciamento específico** quando aplicável
-4. **Cumprimento das condições** estabelecidas pelo licenciador
+1. Autorização expressa e por escrito da **Assertif** (titular dos direitos patrimoniais)
+2. Acordo de licenciamento específico
+3. Cumprimento das condições estabelecidas pela Assertif
 
-### 4. VIOLAÇÕES E SANÇÕES LEGAIS
+Para solicitações de licenciamento comercial, entre em contato com a Assertif.
 
-**CÓPIAS NÃO AUTORIZADAS** deste software e/ou de seus componentes sujeitam os infratores a:
+### 6. VIOLAÇÕES E SANÇÕES LEGAIS
 
-#### 4.1 Ações Cíveis
-- Indenização por danos materiais e morais
-- Lucros cessantes e perdas decorrentes do uso indevido
-- Reparação integral dos prejuízos causados
-- Busca e apreensão de materiais contrafeitos
+Uso não autorizado deste software sujeita os infratores às seguintes sanções:
 
-#### 4.2 Ações Penais
-- **Crime de Violação de Direito Autoral** (Art. 184 do Código Penal Brasileiro)
-  - Pena: detenção de 3 meses a 1 ano ou multa
-- **Crime de Concorrência Desleal** (Lei 9.279/96)
-- **Crime de Violação de Software** (Lei 9.609/98)
+#### 6.1 Esfera Cível
+- Indenização por danos materiais e morais (arts. 102 e 103 da Lei 9.610/98)
+- Lucros cessantes
+- Busca e apreensão (art. 105 da Lei 9.610/98)
+- Perdas e danos (art. 927 do Código Civil)
 
-### 5. LEGISLAÇÃO APLICÁVEL
+#### 6.2 Esfera Penal
+- **Violação de Direito Autoral** (art. 184 do Código Penal)
+  - Detenção de 3 meses a 1 ano ou multa
+- **Violação de Direito Autoral de Programa de Computador** (art. 12 da Lei 9.609/98)
+  - Detenção de 6 meses a 2 anos ou multa
+- **Concorrência Desleal** (art. 195 da Lei 9.279/96)
 
-Este contrato de licença é regido pelas leis da **República Federativa do Brasil**, especialmente:
+### 7. LEGISLAÇÃO APLICÁVEL
+
+Esta declaração de direitos é regida pelas leis da República Federativa do Brasil:
 
 - **Lei 9.610/98** (Lei de Direitos Autorais)
-- **Lei 9.609/98** (Lei do Software)
-- **Código Penal Brasileiro** (Decreto-Lei 2.848/40)
-- **Código Civil Brasileiro** (Lei 10.406/02)
+- **Lei 9.609/98** (Lei de Proteção da Propriedade Intelectual de Programa de Computador)
+- **Lei 10.406/02** (Código Civil Brasileiro)
+- **Decreto-Lei 2.848/40** (Código Penal Brasileiro)
+- **Lei 9.279/96** (Lei da Propriedade Industrial)
 
-### 6. FORO COMPETENTE
+### 8. FORO
 
-Fica eleito o foro da comarca de residência do autor para dirimir quaisquer controvérsias oriundas desta licença, renunciando as partes a qualquer outro, por mais privilegiado que seja.
+Fica eleito o foro da Comarca de **Ribeirão Preto, Estado de São Paulo**, para dirimir controvérsias relacionadas a esta declaração de direitos.
 
-### 7. USO EDUCACIONAL E PESQUISA
+### 9. USO EDUCACIONAL E PESQUISA
 
-Para uso **estritamente educacional, acadêmico ou de pesquisa**, consulte o autor para condições especiais de licenciamento não-comercial.
+Uso educacional ou de pesquisa deste código por terceiros requer autorização da Assertif. Entre em contato para condições de licenciamento acadêmico.
 
-### 8. CONTATO PARA LICENCIAMENTO
+### 10. CONTATO
 
-Para solicitações de autorização, licenciamento ou esclarecimentos:
+**Titular (Assertif)**:
+- Para licenciamento comercial e autorizações de uso
 
-- **Email**: fernandovieira1@outlook.com / fernandodvieira@usp.br
-- **Desenvolvedor**: Fernando Vieira
-- **Empresa**: Assertif
+**Autor (Fernando Vieira)**:
+- Email: fernandovieira1@outlook.com / fernandodvieira@usp.br
+- Para questões técnicas e desenvolvimento de versões derivadas autorizado por esta declaração
 
-### 9. GARANTIAS E RESPONSABILIDADES
+### 11. AUSÊNCIA DE GARANTIAS
 
-Este software é fornecido "como está", sem garantias de qualquer tipo. O autor não se responsabiliza por danos decorrentes do uso do software.
+Esta versão do software foi desenvolvida sob encomenda para a Assertif. Questões de garantia e suporte são regidas pelo contrato entre Assertif e Fernando Vieira.
 
-### 10. VIGÊNCIA
-
-Esta licença permanece em vigor enquanto você mantiver cópias do software. Violações resultam em rescisão automática de todos os direitos aqui concedidos.
-
----
-
-**IMPORTANTE**: A simples visualização deste código não constitui autorização para cópia, uso ou distribuição. Qualquer utilização requer autorização prévia conforme os termos desta licença.
-
-**Data de Vigência**: 13 de setembro de 2025
-
-**Assinatura Digital**: Fernando Vieira  
-**Local**: Brasil
+**Para terceiros**: O software é disponibilizado "como está", sem garantias de qualquer tipo, expressas ou implícitas. Nem a Assertif nem o autor se responsabilizam por danos decorrentes do uso não autorizado.
 
 ---
 
-*Este documento constitui um acordo legal entre você e o proprietário do software. Ao acessar este código, você concorda em cumprir integralmente os termos aqui estabelecidos.*
+## DECLARAÇÃO FINAL
+
+Este documento estabelece a titularidade, autoria e direitos relacionados ao software **FinScore** desenvolvido por Fernando Vieira sob encomenda para a Assertif.
+
+**IMPORTANTE**: 
+- A visualização deste código não autoriza cópia, uso ou distribuição por terceiros
+- A Assertif detém os direitos patrimoniais sobre esta versão específica
+- O autor Fernando Vieira mantém direitos de desenvolvimento futuro de obras derivadas conforme estabelecido na Seção 3
+
+**Data**: 4 de novembro de 2025  
+**Local**: Ribeirão Preto, SP, Brasil
+
+**Declarado por**:  
+Fernando Vieira (Autor)  
+fernandovieira1@outlook.com
+
+**Desenvolvido para**:  
+Assertif (Titular dos Direitos Patrimoniais)
+
+---
+
+*A visualização ou acesso a este código implica ciência e concordância com os termos desta declaração de direitos.*

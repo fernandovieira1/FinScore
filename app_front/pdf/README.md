@@ -184,7 +184,7 @@ python app_front/pdf/test_pdf.py
 
 - Documentação: https://playwright.dev/python/
 
-Resultado esperado:- GitHub: https://github.com/microsoft/playwright-python
+Resultado esperado:
 
 ```
 ✅ xhtml2pdf importado com sucesso

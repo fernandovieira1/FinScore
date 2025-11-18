@@ -1,4 +1,0 @@
-Versão 19/08/2025 (alpha1)
-* reunião com Andre. Apresentação. 
-* Falta parecer com IA e polimento. 
-* Pediu para inserir abas de Glossário, FAQ e Metodologia, e reunir todos os dados na aba Análise (remover Gráficos e Tabelas).

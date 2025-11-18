@@ -1,6 +1,0 @@
-- Tabela com índices, valores e resultado (x)
-- Prompt IA Relatório                     ( )
-- Convergir versão local e google         ( )
-# https://colab.research.google.com/drive/1-CIYnug2IBa7TmRdOljjoFADcXNbBAFI#scrollTo=azL1WNYNW5Y_
-
-teste vscode git pós fechamento

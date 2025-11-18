@@ -233,4 +233,4 @@ print(f"Base64 length: {len(chart_base64)}")
 
 - Script original (mockup manual): `render_minicharts.py`
 - Documentação Matplotlib: https://matplotlib.org/
-- Copilot Instructions: `.github/copilot-instructions.md`
+ 

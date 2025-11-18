@@ -59,7 +59,9 @@ def render_topbar(current_page: str | None = None) -> None:
             text-decoration:none;
           }}
           .right {{ display:flex; align-items:center; gap:14px; }}
-          .assertif-logo {{ height:22px; display:block; border-radius:4px; }}
+          .assertif-logo-link {{ display: flex; align-items: center; text-decoration: none; }}
+          .assertif-logo {{ height:22px; display:block; border-radius:4px; transition: opacity 0.2s ease; }}
+          .assertif-logo:hover {{ opacity: 0.8; }}
           
           /* Estilo para botões sociais, tema e configuração */
           .social-btn, .theme-btn, .config-btn {{
@@ -135,7 +137,9 @@ def render_topbar(current_page: str | None = None) -> None:
               <button class="config-btn" title="Configurações">
                 <i class="fas fa-cog"></i>
               </button>
-              <img class="assertif-logo" src="{logo_src}" alt="assertif"/>
+              <a href="https://assertif.com.br/" class="assertif-logo-link" title="Assertif" target="_blank" rel="noopener noreferrer">
+                <img class="assertif-logo" src="{logo_src}" alt="Assertif"/>
+              </a>
             </div>
           </div>
         </div>
