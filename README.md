@@ -137,3 +137,131 @@ Este projeto está sob licença proprietária. Consulte o arquivo LICENSE para m
 ---
 
 *FinScore - Transformando dados contábeis em inteligência financeira*
+
+## 🖥️ Especificações de Servidor para Deploy
+
+> Esta seção descreve recomendações e passos para hospedar o FinScore em produção. A escolha do provedor (VM, container ou serviço PaaS) depende do tráfego esperado e políticas internas — trate as recomendações abaixo como ponto de partida.
+
+### Requisitos mínimos (desenvolvimento / PoC)
+- Sistema Operacional: Ubuntu 20.04+ (recomendado: 22.04 LTS) ou Debian 11+.
+- CPU: 2 vCPUs.
+- Memória RAM: 2 GB.
+- Disco: 10 GB SSD (mais espaço para uploads/relatórios).
+- Rede: Saída para Internet (para uso de APIs de LLM e integração com Google Sheets).
+
+### Recomendado (produção leve / equipes pequenas)
+- Sistema Operacional: Ubuntu 22.04 LTS.
+- CPU: 4 vCPUs.
+- Memória RAM: 8 GB.
+- Disco: 40–80 GB SSD (dependendo do volume de arquivos e backups).
+- Rede: Conexão com baixa latência e largura de banda suficiente (LLM calls podem gerar tráfego considerável).
+
+### Componentes e serviços adicionais
+- Banco de dados: O projeto usa SQLite por padrão (arquivo `finscore_auth.db`) — adequado para PoC e uso com poucos usuários. Para produção recomenda-se migrar para PostgreSQL/MySQL quando houver concorrência ou necessidade de backups gerenciados.
+- Armazenamento de arquivos: Use volume persistente (NFS, disco gerenciado ou S3) para uploads e `assets/` se desejar manter em armazenamento central.
+- Reverse proxy: Nginx (recomendado) para TLS, redirecionamento e balanceamento reverse-proxy.
+- Certificados TLS: Let's Encrypt (/certbot) ou gerenciador de certificados do provedor.
+
+### Variáveis de ambiente importantes
+- `OPENAI_API_KEY` - chave para LLM (requerida se funcionalidade de IA estiver ativa).
+- `FINSCORE_LLM_MODEL` - modelo padrão (ex.: `gpt-4o-mini`).
+- `FINSCORE_LLM_TEMPERATURE` - temperatura do modelo (ex.: `0.1`).
+- `FINSCORE_LLM_FALLBACK1/2/3` - modelos de fallback.
+- Outras: use `.env` ou secrets do provedor; nunca comite chaves em repositório.
+
+### Portas padrão
+- Streamlit: 8501 (padrão). Em deploy com Nginx use: Streamlit escutando `127.0.0.1:8501` e Nginx como proxy reverso para `:443`.
+
+### Exemplo rápido — implantação sem Docker (Ubuntu + systemd + Nginx)
+1. Criar um user dedicado:
+   ```bash
+   sudo adduser --system --group --no-create-home finscore
+   sudo mkdir -p /opt/finscore
+   sudo chown finscore:finscore /opt/finscore
+   ```
+2. Copiar código para `/opt/finscore` e criar um venv:
+   ```bash
+   python3 -m venv /opt/finscore/venv
+   source /opt/finscore/venv/bin/activate
+   pip install -r /opt/finscore/requirements.txt
+   ```
+3. Configurar variáveis de ambiente (ex: `/etc/default/finscore`) com `OPENAI_API_KEY` e outras chaves.
+4. Criar arquivo systemd `/etc/systemd/system/finscore.service`:
+   ```ini
+   [Unit]
+   Description=FinScore Streamlit service
+   After=network.target
+
+   [Service]
+   User=finscore
+   Group=finscore
+   WorkingDirectory=/opt/finscore
+   EnvironmentFile=/etc/default/finscore
+   ExecStart=/opt/finscore/venv/bin/streamlit run app_front/app.py --server.port 8501 --server.address 127.0.0.1
+   Restart=on-failure
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+5. Definir um bloco básico de Nginx (proxy reverso e TLS):
+   ```nginx
+   server {
+       listen 80;
+       server_name finscore.example.com;
+       location /.well-known/acme-challenge/ { root /var/www/certbot; }
+       location / { return 301 https://$host$request_uri; }
+   }
+
+   server {
+       listen 443 ssl;
+       server_name finscore.example.com;
+
+       ssl_certificate /etc/letsencrypt/live/finscore.example.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/finscore.example.com/privkey.pem;
+
+       location / {
+           proxy_pass http://127.0.0.1:8501;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+6. Iniciar e habilitar o serviço:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now finscore.service
+   ```
+
+### Exemplo rápido — Docker + Docker Compose
+Um deploy via Docker garante isolamento e facilita CI/CD em PaaS. Exemplo (resumido):
+
+docker-compose.yml (essencial):
+```yaml
+version: '3.8'
+services:
+  finscore:
+    build: .
+    image: finscore:latest
+    ports:
+      - "8501:8501"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - ./app_front:/app/app_front
+      - ./finscore_auth:/app/finscore_auth
+``` 
+
+Observação: a imagem deve rodar `streamlit run app_front/app.py --server.port 8501 --server.address 0.0.0.0`.
+
+### Segurança e manutenção 🔒
+- Não comite chaves e segredos — use o gerenciador de secrets do provedor (AWS Secrets Manager, GCP Secret Manager), ou o `.streamlit/secrets.toml`.
+- Faça backups regulares do arquivo `finscore_auth.db` (ou do DB em produção).
+- Configure logs rotativos (ex: `logrotate` no diretório do Streamlit logs) e monitoramento (Prometheus, Grafana, Sentry para erros).
+- Teste a integração LLM (chaves API) em ambiente seguro — chamadas ao OpenAI têm custo.
+
+### Observações finais
+- Streamlit é ótimo para MVPs e dashboards internos; para alta concorrência considere re-architecting (microservices, multi-instance com state externo).
+- Se pretende usar PostgreSQL para a camada de autenticação/usuários, atualize `app_front/services/db.py` para usar a URL de conexão do PostgreSQL e provisionar usuários e permissões.
+

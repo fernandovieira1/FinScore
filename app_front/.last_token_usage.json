@@ -4,7 +4,14 @@
     "model": "gpt-4o-mini",
     "prompt_tokens_est": 8179,
     "price_per_1k_usd": 0.03,
-    "timestamp": 1761928718
+    "timestamp": 1763437880
+  },
+  {
+    "step": "parecer_prompt",
+    "model": "gpt-4o-mini",
+    "prompt_tokens_est": 8179,
+    "price_per_1k_usd": 0.03,
+    "timestamp": 1763438206
   },
   {
     "step": "parecer_result",
@@ -28,6 +35,6 @@
         "rejected_prediction_tokens": 0
       }
     },
-    "timestamp": 1761928812
+    "timestamp": 1763438274
   }
 ]
