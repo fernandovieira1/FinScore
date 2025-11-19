@@ -54,3 +54,6 @@ __pycache__/
 *.egg
 MANIFEST
 *.log
+
+# Secrets e env locais
+suporte/env.txt
