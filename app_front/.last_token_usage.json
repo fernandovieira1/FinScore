@@ -2,39 +2,18 @@
   {
     "step": "parecer_prompt",
     "model": "gpt-4o-mini",
-    "prompt_tokens_est": 8179,
+    "prompt_tokens_est": 8187,
     "price_per_1k_usd": 0.03,
-    "timestamp": 1763437880
-  },
-  {
-    "step": "parecer_prompt",
-    "model": "gpt-4o-mini",
-    "prompt_tokens_est": 8179,
-    "price_per_1k_usd": 0.03,
-    "timestamp": 1763438206
+    "timestamp": 1763560117
   },
   {
     "step": "parecer_result",
     "model": "gpt-4o-mini",
-    "prompt_tokens": 7009,
-    "response_tokens": 3790,
-    "total_tokens": 10799,
-    "cost_usd": 0.32397,
-    "usage_api": {
-      "prompt_tokens": 7009,
-      "completion_tokens": 3790,
-      "total_tokens": 10799,
-      "prompt_tokens_details": {
-        "cached_tokens": 0,
-        "audio_tokens": 0
-      },
-      "completion_tokens_details": {
-        "reasoning_tokens": 0,
-        "audio_tokens": 0,
-        "accepted_prediction_tokens": 0,
-        "rejected_prediction_tokens": 0
-      }
-    },
-    "timestamp": 1763438274
+    "prompt_tokens": 8187,
+    "response_tokens": 45220,
+    "total_tokens": 53407,
+    "cost_usd": 1.60221,
+    "usage_api": null,
+    "timestamp": 1763560119
   }
 ]
