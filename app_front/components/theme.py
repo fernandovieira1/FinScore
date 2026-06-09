@@ -1,4 +1,5 @@
 # app_front/components/theme.py
+from __future__ import annotations
 import streamlit as st
 
 # Paleta de cores do tema

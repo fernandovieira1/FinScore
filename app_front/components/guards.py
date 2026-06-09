@@ -29,6 +29,7 @@ _COOKIE_MANAGER_INSTANCE: Optional[Any] = None
 
 def _get_cookie_password() -> str:
     """Retorna um password fixo para o CookieManager."""
+from __future__ import annotations
     return "finscore-cookie-secret"
 
 

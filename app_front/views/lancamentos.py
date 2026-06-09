@@ -1,4 +1,5 @@
 # app_front/views/lancamentos.py
+from __future__ import annotations
 import math
 import pandas as pd
 import streamlit as st

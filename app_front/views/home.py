@@ -1,3 +1,4 @@
+from __future__ import annotations
 import streamlit as st
 
 # HTML do carrossel renderizado no DOM principal (sem iframe)

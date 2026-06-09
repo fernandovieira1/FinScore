@@ -1,4 +1,5 @@
 # app_front/views/processo.py
+from __future__ import annotations
 import streamlit as st
 
 from . import novo as v_novo

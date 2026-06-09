@@ -1,5 +1,6 @@
 # app_front/views/analise.py
 # coding: utf-8
+from __future__ import annotations
 import copy
 import html
 import json

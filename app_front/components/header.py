@@ -1,4 +1,5 @@
 # app_front/components/header.py
+from __future__ import annotations
 import streamlit as st
 from components.theme import inject_global_css, render_logo_overlay
 

@@ -1,4 +1,5 @@
 # app_front/views/guia_rapido.py
+from __future__ import annotations
 import streamlit as st
 
 def render():

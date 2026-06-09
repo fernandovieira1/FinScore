@@ -1,4 +1,6 @@
 # components/topbar.py
+
+from __future__ import annotations
 import streamlit as st
 import base64
 from pathlib import Path

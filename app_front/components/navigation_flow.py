@@ -1,5 +1,5 @@
-from __future__ import annotations
 
+from __future__ import annotations
 import streamlit as st
 
 _FLAG_KEYS = ("_lock_parecer", "_force_parecer", "_DIRECT_TO_PARECER")

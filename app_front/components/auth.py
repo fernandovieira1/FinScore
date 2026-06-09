@@ -46,6 +46,7 @@ def log_bcrypt_versions():
 
 def hash_password(raw_password: str) -> str:
     """Hash a password usando bcrypt. Trunca para 72 bytes (não caracteres)."""
+from __future__ import annotations
     raw_password_bytes = raw_password.encode("utf-8")[:72]
     raw_password = raw_password_bytes.decode("utf-8", errors="ignore")
     logger.debug(f"Hashing password (len={len(raw_password_bytes)} bytes)")

@@ -2,6 +2,7 @@
 """
 Configurações e constantes compartilhadas para evitar dependências circulares
 """
+from __future__ import annotations
 
 """
 Convenções de navegação

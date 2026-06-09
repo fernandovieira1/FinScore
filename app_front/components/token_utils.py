@@ -2,6 +2,7 @@
 Helpers para contagem de tokens e estimativa de custo.
 Colocado em app_front/components para fácil importação nas views.
 """
+from __future__ import annotations
 import time
 from typing import List, Dict, Optional
 import os

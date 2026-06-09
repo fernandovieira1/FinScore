@@ -33,6 +33,7 @@ def reset_state() -> None:
 
 def auth_overlay() -> None:
     """Render the authentication overlay."""
+from __future__ import annotations
 
     state = _get_state()
 
