@@ -32,6 +32,7 @@ def calcular_indices_contabeis(df: pd.DataFrame) -> pd.DataFrame:
 
     # Alavancagem / Endividamento
     df = df.copy()
+    df.columns = df.columns.str.replace(' ', '_')
     df['p_Divida_Bruta']   = df['p_Passivo_Total'] - df['p_Patrimonio_Liquido']
     df['p_Divida_Liquida'] = df['p_Divida_Bruta'] - df['p_Caixa']
     idx['Alavancagem']     = df['p_Divida_Liquida'] / ebitda
