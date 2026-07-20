@@ -1,0 +1,74 @@
+
+PCA e FINSCORE
+----------------
+O PCA encontra combinações lineares dos indicadores que explicam a maior parte da variância dos dados.
+
+Formalmente, se temos uma matriz de indicadores padronizados X, o PCA busca vetores w tais que:
+
+PC_1 = Xw_1
+	​
+com w_1 escolhido para maximizar:
+
+Var(Xw_1)
+
+Ou seja: o PCA responde à pergunta:
+
+“Qual combinação dos indicadores contábeis varia mais?”
+
+Mas análise de crédito quer responder outra pergunta:
+
+“Qual é a capacidade da empresa de pagar, absorver choque e não inadimplir?”
+
+PCA pode ajudar quando há muitos indicadores correlacionados.
+
+Mas isso só é defensável se:
+
+houver uma base grande de empresas;
+* os indicadores forem comparáveis entre setores;
+* os outliers forem tratados;
+* o PCA for treinado fora da empresa analisada;
+* o score final for validado contra algum evento de risco.
+
+Sem isso, o PCA vira apenas uma ordenação estatística interna.
+
+PCA é não supervisionado. Ele não usa a variável que interessa:
+
+default_i ∈ {0,1}
+
+Logo, ele não aprende diretamente o que distingue empresa boa de empresa ruim. Ele só aprende onde há maior variação nos indicadores.
+
+| Método                    | Uso                                            |
+| ------------------------- | ---------------------------------------------- |
+| Scorecard por pesos fixos | Bom para protótipo e explicabilidade           |
+| Regressão logística       | Probabilidade de inadimplência                 |
+| Análise discriminante     | Linha Altman/Z-Score clássica                  |
+| Random forest / boosting  | Boa predição, menor explicabilidade            |
+| Modelos survival/hazard   | Tempo até inadimplência                        |
+| PCA                       | Apenas redução de variáveis, não decisão final |
+
+
+PCA faz sentido para reduzir redundância entre muitos indicadores contábeis, desde que haja base grande, tratamento de outliers e validação.
+
+O PCA é estatisticamente válido para reduzir dimensionalidade, mas não é, por si só, um modelo de risco de crédito. Na metodologia atual, ele parece estar sendo usado além do que consegue entregar. Para o FinScore, a estrutura mais defensável seria: indicadores financeiros interpretáveis, pesos econômicos explícitos, tratamento de outliers, validação empírica contra inadimplência e, só de forma complementar, PCA treinado em base ampla.
+
+PCA pode ser usado para descobrir fatores latentes e reduzir redundância dentro dos núcleos econômico-operacional e financeiro-patrimonial. Depois, esses fatores podem alimentar clusters ou subescores. Mas PCA não deve ser confundido com modelo de crédito nem com medida direta de capacidade de pagamento.
+
+O PCA é útil para evitar duplicidade. Exemplo: margem líquida, ROA, ROE, margem EBITDA e giro do ativo podem carregar informação sobre desempenho econômico. Em vez de cinco variáveis parcialmente redundantes.
+
+Separar antes em núcleos é melhor do que jogar tudo no mesmo PCA. Um PCA global pode misturar liquidez, rentabilidade, endividamento e eficiência numa dimensão estatística difícil de interpretar. Um PCA dentro de blocos preserva mais sentido econômico.
+
+| Núcleo                 | PCA capturaria algo como                                 |
+| ---------------------- | -------------------------------------------------------- |
+| Econômico-operacional  | geração de resultado, margem, produtividade, crescimento |
+| Financeiro-patrimonial | liquidez, solvência, alavancagem, colchão patrimonial    |
+
+
+| Conceito      | Pergunta                                                |
+| ------------- | ------------------------------------------------------- |
+| Variância     | O que mais muda nos dados?                              |
+| Sensibilidade | O que mais altera a capacidade de pagamento ou o risco? |
+| Materialidade | O que, se piorar, quebra a empresa?                     |
+
+
+O problema é que o PCA não cria informação nova. Ele apenas reorganiza a informação existente segundo a maior variância observada. Com três anos, essa variância pode ser mais ruído, evento atípico ou escolha contábil do que risco econômico real.
+

@@ -1,0 +1,141 @@
+
+============================
+APERFEIÇOAMENTO FINSCORE
+V. 2 (Pudim)
+============================
+
+Problemas V. 1 (Brigadeiro):
+    (1) PCA em apenas três anos pode ser estatisticamente frágil;
+        * Um ano atípico domina o resultado;
+        * Melhora absoluta pode parecer piora relativa;
+        * O score final passa a depender da amostra escolhida;
+    
+    (2) Problemas de formatação do relatório
+        * Percentuais errados;
+    
+    (3) Indicadores iguais a 0 devem entrar no cálculo como NaN, pois isso implica no cálculo do PCA;
+    
+    (4) Corrigir o conceito de passivo total
+$$
+
+df["p_Passivo_Exigivel"] = df["p_Ativo_Total"] - df["p_Patrimonio_Liquido"]
+
+df_indices["Endividamento"] = (
+    df["p_Passivo_Exigivel"] / df["p_Ativo_Total"]
+)
+
+E, se quiser separar risco de dívida financeira:
+
+df_indices["Divida_Financeira_EBITDA"] = (
+    df["p_Divida_Financeira_Total"] - df["p_Caixa"]
+) / df["r_EBITDA"]
+
+$$
+
+    (5) Tratar ROE extremo por PL artificialmente baixo
+        * Opção A — excluir ROE quando PL/Ativo for muito baixo;
+        * Opção B — winsorizar ROE;
+        * Opção C — usar log.
+    
+    (6) Capar cobertura de juros;
+
+    (7) Remover PMP quando r_Custos = 0;
+
+    (8) Separar “capacidade econômica” de “estrutura patrimonial”
+
+    (9) Criar tratamento formal de outliers (log?)
+
+    (10) Clusterizar índices.
+
+
+Núcleo 1 — Econômico-operacional
+--------------------------------------------
+
+| Indicador              | Sinal esperado |
+| ---------------------- | -------------: |
+| Crescimento da receita |              + |
+| Margem EBITDA          |              + |
+| Margem líquida         |              + |
+| ROA                    |              + |
+| Giro do ativo          |              + |
+| Cobertura de juros     |    +, com teto |
+
+
+PCA dentro desse bloco:
+Feco_1, Feco_2
+	​
+Interpretação possível:
+* Feco_1: geração de resultado;
+* Feco_2: eficiência/produtividade.
+
+Núcleo 2 — Financeiro-patrimonial
+--------------------------------------------
+
+| Indicador                    | Sinal esperado |
+| ---------------------------- | -------------: |
+| Liquidez corrente            |              + |
+| CCL/ativo                    |              + |
+| Caixa/receita                |              + |
+| PL/ativo                     |              + |
+| Dívida líquida/EBITDA        |              - |
+| Endividamento exigível/ativo |              - |
+| PMR                          |              - |
+
+PCA dentro desse bloco:
+Ffin_1, Ffin_2
+
+Interpretação possível:
+* Ffin_1: solvência/liquidez;
+* Ffin_2: pressão de capital de giro/alavancagem.
+
+Depois:
+
+FinScore = αFeco + βFfin + γFcred
+	​
+Mas os sinais precisam ser economicamente orientados. O PCA pode gerar um componente em que “mais alto” signifique pior situação. Então o script precisa ajustar o sinal dos fatores.
+
+| Dimensão               | Peso sugerido | Exemplos                                             |
+| ---------------------- | ------------: | ---------------------------------------------------- |
+| Capacidade operacional |           35% | EBITDA, margem, lucro, receita                       |
+| Solvência/liquidez     |           25% | liquidez corrente, caixa, CCL/ativo                  |
+| Endividamento          |           20% | dívida líquida/EBITDA, juros, passivo exigível/ativo |
+| Capital de giro        |           10% | PMR, contas a receber, fornecedores                  |
+| Patrimônio             |           10% | PL/ativo, retenção de lucros                         |
+
+A melhora central seria esta:
+
+| Antes                                 | Depois                                                            |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| PCA global sobre todos os indicadores | PCA separado por núcleo                                           |
+| Score pontual determinístico          | Score com intervalo de confiança/sensibilidade                    |
+| Variância = risco                     | Variância = fator estatístico, ajustado por lógica econômica      |
+| Um ano atípico domina                 | Outliers tratados e penalizados, não deixados livres              |
+| Aprova/reprova direto                 | Aprova, aprova com ressalvas ou reprova conforme score e robustez |
+
+
+
+    (11) Testar Monte Carlo:
+
+Monte Carlo talvez seja ainda mais adequado
+
+Monte Carlo é melhor que bootstrap quando você tem poucos dados, desde que as premissas fiquem explícitas.
+
+A ideia seria simular cenários plausíveis:
+
+| Variável      | Simulação possível                              |
+| ------------- | ----------------------------------------------- |
+| Receita       | crescimento histórico ± choque                  |
+| Margem EBITDA | variação em torno da média/mediana histórica    |
+| PMR           | deterioração ou melhora do prazo de recebimento |
+| Caixa         | queda sob cenário de estresse                   |
+| Dívida        | aumento por necessidade de capital de giro      |
+| PL            | redução por distribuição de lucros              |
+| Juros         | aumento de despesa financeira                   |
+
+A pergunta muda de:
+“Qual é o score exato da empresa?”
+
+para:
+“Qual é a probabilidade de a empresa cair abaixo de determinada faixa de score sob cenários razoáveis?”
+
+Ver: "4. Arquitetura recomendada do novo FinScore com PCA" em 'V. 2. (Pudim)'
