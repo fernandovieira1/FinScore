@@ -1,0 +1,228 @@
+==========================
+ESBOÇO V. 2.0.0 (PUDIM)
+==========================
+
+4. Arquitetura recomendada do novo FinScore com PCA
+
+Eu faria o índice em cinco camadas.
+
+Camada 1 — Tratamento dos indicadores
+---------------------------------------
+
+Antes do PCA:
+# Exemplo
+df_indices["Cobertura de Juros"] = np.log1p(
+    df_indices["Cobertura de Juros"].clip(lower=0, upper=20)
+)
+
+df_indices["ROE"] = np.where(
+    df["p_Patrimonio_Liquido"] / df["p_Ativo_Total"] < 0.05,
+    np.nan,
+    df_indices["ROE"]
+)
+
+df_indices["Período Médio de Pagamento"] = np.where(
+    df["r_Custos"] > 0,
+    df["p_Contas_a_Pagar"] / df["r_Custos"] * 365,
+    np.nan
+)
+
+Também corrigiria ou revisaria:
+Endividamento = Passivo_Exigivel / Ativo_Total
+
+e não:
+Passivo_Total / Ativo_Total
+
+se Passivo_Total estiver sendo usado como ativo total ou como passivo + PL.
+
+Camada 2 — Separação em núcleos
+---------------------------------------
+
+nucleo_eco = [
+    "Crescimento Receita",
+    "Margem EBITDA",
+    "Margem Líquida",
+    "ROA",
+    "Giro do Ativo",
+    "Cobertura de Juros"
+]
+
+nucleo_fin = [
+    "Liquidez Corrente",
+    "CCL/Ativo Total",
+    "Caixa/Receita",
+    "PL/Ativo",
+    "Endividamento",
+    "DL/EBITDA",
+    "Período Médio de Recebimento"
+]
+
+Antes do PCA, todos os indicadores devem ter o mesmo sentido:
+
+maior = melhor
+
+Então:
+indicadores_ruins = ["Endividamento", "DL/EBITDA", "Período Médio de Recebimento"]
+
+df_indices[indicadores_ruins] = -df_indices[indicadores_ruins]
+
+Camada 3 — PCA por núcleo
+---------------------------------------
+
+from sklearn.preprocessing import RobustScaler
+from sklearn.decomposition import PCA
+
+def pca_nucleo(df, colunas, var_min=0.85):
+    X = df[colunas].dropna(axis=1, how="all")
+    X = X.fillna(X.median())
+
+    scaler = RobustScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    pca = PCA(n_components=min(X_scaled.shape[0] - 1, X_scaled.shape[1]))
+    scores = pca.fit_transform(X_scaled)
+
+    var = pca.explained_variance_ratio_
+    k = np.searchsorted(np.cumsum(var), var_min) + 1
+
+    fator = scores[:, :k].dot(var[:k] / var[:k].sum())
+
+    return fator, pca, scaler, var
+
+Com três anos, o número máximo efetivo de componentes será:
+n−1=2
+
+Então não adianta extrair muitos componentes. O ideal é aceitar no máximo PC1 e PC2 por núcleo.
+
+Camada 4 — Consolidação temporal e score latente
+---------------------------------------
+
+fator_eco, pca_eco, scaler_eco, var_eco = pca_nucleo(df_indices, nucleo_eco)
+fator_fin, pca_fin, scaler_fin, var_fin = pca_nucleo(df_indices, nucleo_fin)
+
+alpha = 0.60  # econômico-operacional
+beta = 0.40   # financeiro-patrimonial
+
+score_ano = alpha * fator_eco + beta * fator_fin
+
+pesos_tempo = np.array([0.15, 0.25, 0.60])
+score_latente = np.dot(score_ano, pesos_tempo)
+
+Aqui há uma decisão de crédito importante: eu daria mais peso ao núcleo econômico-operacional se a empresa for asset-light ou de serviços, mas não deixaria o financeiro-patrimonial abaixo de 35% ou 40%.
+
+Camada 5 — Escala 0–1000 com transformação logística
+---------------------------------------
+
+Não usaria min-max com três anos. Usaria logística:
+FinScore=1+e−k(S−θ)1000​
+
+def escala_logistica(score_latente, k=1.2, theta=0):
+    return 1000 / (1 + np.exp(-k * (score_latente - theta)))
+
+Assim, valores extremos não explodem o score.
+
+5. Como incluir bootstrap no índice
+---------------------------------------
+
+A lógica:
+
+B = 5000
+scores_boot = []
+
+for b in range(B):
+    # 1. sorteia pesos temporais próximos dos pesos-base
+    pesos_b = np.random.dirichlet(np.array([0.15, 0.25, 0.60]) * 40)
+
+    # 2. adiciona ruído aos indicadores
+    X_b = df_indices.copy()
+    ruido = np.random.normal(1.0, 0.05, size=X_b.shape)
+    X_b = X_b * ruido
+
+    # 3. sorteia subconjunto de indicadores por núcleo
+    eco_b = np.random.choice(nucleo_eco, size=max(3, int(len(nucleo_eco)*0.8)), replace=False)
+    fin_b = np.random.choice(nucleo_fin, size=max(3, int(len(nucleo_fin)*0.8)), replace=False)
+
+    # 4. recalcula PCA por núcleo
+    fator_eco_b, _, _, _ = pca_nucleo(X_b, list(eco_b))
+    fator_fin_b, _, _, _ = pca_nucleo(X_b, list(fin_b))
+
+    # 5. consolida
+    score_ano_b = 0.60 * fator_eco_b + 0.40 * fator_fin_b
+    score_latente_b = np.dot(score_ano_b, pesos_b)
+
+    score_final_b = escala_logistica(score_latente_b)
+
+    scores_boot.append(score_final_b)
+
+scores_boot = np.array(scores_boot)
+
+score_mediano = np.median(scores_boot)
+score_p10 = np.percentile(scores_boot, 10)
+score_p90 = np.percentile(scores_boot, 90)
+
+A decisão poderia usar:
+score_conservador = score_p10
+
+ou:
+score_conservador = score_mediano - 0.5 * np.std(scores_boot)
+
+Isso evita que um score pontual conduza sozinho a decisão.
+
+6. Como incluir Monte Carlo
+---------------------------------------
+
+O Monte Carlo pode simular o próximo ano.
+
+Exemplo simplificado:
+
+N = 10000
+scores_mc = []
+
+for i in range(N):
+    df_sim = df_dados_contabeis.copy()
+
+    crescimento_receita = np.random.normal(0.10, 0.08)
+    choque_margem = np.random.normal(0.00, 0.05)
+    choque_pmr = np.random.normal(1.00, 0.15)
+    choque_caixa = np.random.normal(1.00, 0.20)
+
+    ano_base = df_sim.iloc[-1].copy()
+    novo_ano = ano_base.copy()
+
+    novo_ano["r_Receita_Total"] *= (1 + crescimento_receita)
+    novo_ano["r_EBITDA"] *= (1 + crescimento_receita + choque_margem)
+    novo_ano["r_Lucro_Liquido"] *= (1 + crescimento_receita + choque_margem)
+    novo_ano["p_Contas_a_Receber"] *= choque_pmr
+    novo_ano["p_Caixa"] *= choque_caixa
+
+    df_proj = pd.concat([df_sim.iloc[1:], novo_ano.to_frame().T], ignore_index=True)
+
+    indices_proj = calcular_indices_contabeis(df_proj)
+    # aplicar tratamento robusto + PCA + score
+
+    # scores_mc.append(score_resultante)
+
+
+A saída útil seria:
+prob_abaixo_250 = np.mean(scores_mc < 250)
+prob_abaixo_125 = np.mean(scores_mc < 125)
+
+Isso é forte para parecer de crédito:
+
+“Embora o score mediano seja X, em cenário de estresse há Y% de probabilidade de cair abaixo da faixa neutra.”
+
+
+9. Minha recomendação final
+---------------------------------------
+
+Eu manteria o PCA, mas com esta arquitetura:
+
+Indicadores tratados→PCA por núcleo → score latente → bootstrap de estabilidade → Monte Carlo de estresse → FinScore mediano + conservador → decisão com ressalvas
+
+O bootstrap entra para responder:
+“O score é estável ou depende demais de um ano/indicador?”
+
+O Monte Carlo entra para responder:
+“Sob choques plausíveis, a empresa continua com capacidade econômica?”
+
+Essa combinação é mais coerente com a escassez de dados do que regressão logística e mais segura do que PCA puro.
