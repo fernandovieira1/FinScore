@@ -77,11 +77,10 @@ sudo adduser --system --group --home /opt/finscore --no-create-home finscore
    ```bash
    # Linux/macOS
    scp FinScore.zip usuario@SEU_SERVIDOR:/tmp/
-   
+
    # Windows (PowerShell)
    scp .\FinScore.zip usuario@SEU_SERVIDOR:/tmp/
    ```
-
 2. No servidor, extraia e configure permissões:
 
    ```bash
@@ -106,6 +105,7 @@ sudo -u finscore .venv/bin/pip install -r requirements.txt
 **Cenário B: Servidor sem internet**
 
 Prepare as dependências em uma máquina com internet:
+
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
 pip download -r requirements.txt -d wheels
@@ -114,6 +114,7 @@ deactivate
 ```
 
 No servidor, instale via cache local:
+
 ```bash
 cd /opt/finscore
 sudo -u finscore python3.11 -m venv .venv
@@ -177,6 +178,7 @@ sudo systemctl status finscore.service --no-pager
 ```
 
 Logs:
+
 ```bash
 sudo journalctl -u finscore.service -f
 ```
@@ -211,21 +213,22 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
 ### 9) Atualizar versão
 
 1. Envie o novo arquivo:
+
    ```bash
    scp FinScore.zip usuario@SEU_SERVIDOR:/tmp/
    ```
-
 2. Pare o serviço:
+
    ```bash
    sudo systemctl stop finscore.service
    ```
-
 3. Faça backup:
+
    ```bash
    sudo cp -r /opt/finscore /opt/finscore.bak_$(date +%Y%m%d_%H%M)
    ```
-
 4. Extraia e atualize:
+
    ```bash
    sudo rm -rf /tmp/finscore_temp
    sudo unzip /tmp/FinScore.zip -d /tmp/finscore_temp
@@ -236,17 +239,17 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
    sudo chown -R finscore:finscore /opt/finscore
    sudo rm -rf /tmp/finscore_temp
    ```
-
 5. Atualize dependências (se `requirements.txt` mudou):
+
    ```bash
    # Com internet
    sudo -u finscore /opt/finscore/.venv/bin/pip install -r /opt/finscore/requirements.txt --upgrade
-   
+
    # Sem internet (usando wheels/)
    sudo -u finscore /opt/finscore/.venv/bin/pip install --no-index --find-links /opt/finscore/wheels -r /opt/finscore/requirements.txt --upgrade
    ```
-
 6. Reinicie:
+
    ```bash
    sudo systemctl start finscore.service
    sudo systemctl status finscore.service --no-pager
@@ -263,12 +266,13 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
 ## ⚡ Instalação Local
 
 1. Extraia o arquivo:
+
    ```bash
    unzip FinScore.zip
    cd FinScore
    ```
-
 2. Crie ambiente virtual e instale dependências:
+
    ```bash
    python3.11 -m venv .venv
    source .venv/bin/activate  # Linux/macOS
@@ -276,13 +280,13 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
-
 3. Execute:
+
    ```bash
    streamlit run app_front/app.py
    ```
-
 4. Acesse:
+
    ```
    http://localhost:8501
    ```
@@ -301,12 +305,14 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
 ### Navegação
 
 O sistema libera seções progressivamente:
+
 - **Lançamentos** disponível após clicar em "Iniciar"
 - **Análise** e **Parecer** disponíveis após o cálculo do FinScore
 
 ## 📊 Dados de Entrada
 
 Formatos aceitos:
+
 - **Arquivo Excel (.xlsx)**: Upload de planilhas
 - **Google Sheets**: Integração via link
 - **Entrada Manual**: Digitação direta
@@ -353,6 +359,5 @@ fernandovieira1@outlook.com
 
 ---
 
-*FinScore - Transformando dados contábeis em inteligência financeira* 
-Beta Version 1.0.00 (brigadeiro) (04/11/2025)
-
+*FinScore - Transformando dados contábeis em inteligência financeira*
+Beta Version 1.0.00 (Brigadeiro) (04/11/2025)
