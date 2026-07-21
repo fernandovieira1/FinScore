@@ -2,7 +2,8 @@
 ESBOÇO V. 2.0.0 (PUDIM)
 ==========================
 
-4. Arquitetura recomendada do novo FinScore com PCA
+Arquitetura recomendada do novo FinScore com PCA
+===================================================
 
 Eu faria o índice em cinco camadas.
 
