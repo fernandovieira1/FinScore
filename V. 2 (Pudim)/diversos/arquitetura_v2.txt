@@ -7,8 +7,9 @@ Arquitetura recomendada do novo FinScore com PCA
 
 Eu faria o índice em cinco camadas.
 
+------------------------------------------------------
 Camada 1 — Tratamento dos indicadores
----------------------------------------
+------------------------------------------------------
 
 Antes do PCA:
 # Exemplo
@@ -36,8 +37,9 @@ Passivo_Total / Ativo_Total
 
 se Passivo_Total estiver sendo usado como ativo total ou como passivo + PL.
 
+------------------------------------------------------
 Camada 2 — Separação em núcleos
----------------------------------------
+------------------------------------------------------
 
 nucleo_eco = [
     "Crescimento Receita",
@@ -67,8 +69,9 @@ indicadores_ruins = ["Endividamento", "DL/EBITDA", "Período Médio de Recebimen
 
 df_indices[indicadores_ruins] = -df_indices[indicadores_ruins]
 
+------------------------------------------------------
 Camada 3 — PCA por núcleo
----------------------------------------
+------------------------------------------------------
 
 from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
@@ -95,8 +98,9 @@ n−1=2
 
 Então não adianta extrair muitos componentes. O ideal é aceitar no máximo PC1 e PC2 por núcleo.
 
+------------------------------------------------------
 Camada 4 — Consolidação temporal e score latente
----------------------------------------
+------------------------------------------------------
 
 fator_eco, pca_eco, scaler_eco, var_eco = pca_nucleo(df_indices, nucleo_eco)
 fator_fin, pca_fin, scaler_fin, var_fin = pca_nucleo(df_indices, nucleo_fin)
@@ -111,8 +115,9 @@ score_latente = np.dot(score_ano, pesos_tempo)
 
 Aqui há uma decisão de crédito importante: eu daria mais peso ao núcleo econômico-operacional se a empresa for asset-light ou de serviços, mas não deixaria o financeiro-patrimonial abaixo de 35% ou 40%.
 
+------------------------------------------------------
 Camada 5 — Escala 0–1000 com transformação logística
----------------------------------------
+------------------------------------------------------
 
 Não usaria min-max com três anos. Usaria logística:
 FinScore=1+e−k(S−θ)1000​
@@ -169,8 +174,9 @@ score_conservador = score_mediano - 0.5 * np.std(scores_boot)
 
 Isso evita que um score pontual conduza sozinho a decisão.
 
+------------------------------------------------------
 6. Como incluir Monte Carlo
----------------------------------------
+------------------------------------------------------
 
 O Monte Carlo pode simular o próximo ano.
 
@@ -227,3 +233,7 @@ O Monte Carlo entra para responder:
 “Sob choques plausíveis, a empresa continua com capacidade econômica?”
 
 Essa combinação é mais coerente com a escassez de dados do que regressão logística e mais segura do que PCA puro.
+
+A premissa correta é:
+entrada = rubricas diretamente transcritas do BP/DRE
+Python = agregações, resultados derivados e índices

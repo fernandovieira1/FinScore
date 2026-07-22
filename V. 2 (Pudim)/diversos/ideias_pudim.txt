@@ -4,17 +4,25 @@ APERFEIÇOAMENTO FINSCORE
 V. 2 (Pudim)
 ============================
 
-Problemas V. 1 (Brigadeiro):
+
+-------------------------------------------------------------------------------------------------------
+PROBLEMAS V. 1 (BRIGADEIRO): 
+-------------------------------------------------------------------------------------------------------
+
+    [x] A ser tratado na nova metodologia
     (1) PCA em apenas três anos pode ser estatisticamente frágil;
         * Um ano atípico domina o resultado;
         * Melhora absoluta pode parecer piora relativa;
         * O score final passa a depender da amostra escolhida;
     
+    [ ] RESOLVER
     (2) Problemas de formatação do relatório
         * Percentuais errados;
     
+    [ ] RESOLVER
     (3) Indicadores iguais a 0 devem entrar no cálculo como NaN, pois isso implica no cálculo do PCA;
     
+    [x] Contas redefinidas
     (4) Corrigir o conceito de passivo total
 $$
 
@@ -31,20 +39,25 @@ df_indices["Divida_Financeira_EBITDA"] = (
 ) / df["r_EBITDA"]
 
 $$
-
+    [ ] RESOLVER
     (5) Tratar ROE extremo por PL artificialmente baixo
         * Opção A — excluir ROE quando PL/Ativo for muito baixo;
         * Opção B — winsorizar ROE;
         * Opção C — usar log.
     
+    [ ] RESOLVER
     (6) Capar cobertura de juros;
 
+    [ ] RESOLVER
     (7) Remover PMP quando r_Custos = 0;
 
+    [ ] RESOLVER
     (8) Separar “capacidade econômica” de “estrutura patrimonial”
 
+    [ ] RESOLVER
     (9) Criar tratamento formal de outliers (log?)
 
+    [ ] RESOLVER
     (10) Clusterizar índices.
 
 
@@ -114,6 +127,7 @@ A melhora central seria esta:
 
 
 
+    [ ] RESOLVER
     (11) Testar Monte Carlo:
 
 Monte Carlo talvez seja ainda mais adequado
@@ -141,6 +155,117 @@ para:
 Ver: "4. Arquitetura recomendada do novo FinScore com PCA" em 'V. 2. (Pudim)'
 
 
+    [ ] RESOLVER
     (12) Carregar dados contábeis via IA (importar pdf / xlsx / word / e-mail)
 
 
+-------------------------------------------------------------------------------------------------------
+IDEIAS V. 2 (PUDIM): 
+-------------------------------------------------------------------------------------------------------
+
+Arquitetura recomendada do novo FinScore com PCA
+===================================================
+
+------------------------------------------------------
+Camada 1 — Tratamento dos indicadores
+------------------------------------------------------
+BP/DRE
+→ padronização das contas e dos sinais
+→ validação contábil
+→ cálculo das contas derivadas
+→ cálculo dos índices contábeis
+→ validação dos índices
+→ tratamento estatístico
+→ base preparada para separação em núcleos
+
+| Etapa                         | Operação principal                                       | Validações necessárias                                                                              |
+| ----------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **1. BP/DRE**                 | Importar as contas primárias dos três exercícios         | tipo numérico; exercício correto; unidade monetária; contas obrigatórias; ausência de duplicidade   |
+| **2. Padronização contábil**  | Uniformizar nomes, sinais e unidades                     | Ativo = Passivo + PL; subtotais coerentes; receitas, custos e despesas conforme convenção definida  |
+| **3. Contas derivadas**       | Calcular contas não informadas diretamente               | fórmula disponível; componentes válidos; reconciliação com as demonstrações                         |
+| **4. Índices contábeis**      | Calcular liquidez, rentabilidade, estrutura e eficiência | denominador nulo ou próximo de zero; resultado economicamente interpretável; regra para PL negativo |
+| **5. Validação estatística**  | Identificar problemas na série dos índices               | valores ausentes; infinitos; extremos; mudanças abruptas; inconsistência temporal                   |
+| **6. Tratamento estatístico** | Preparar os índices para os núcleos e para a PCA         | winsorização ou clipping; transformação; orientação dos sinais; padronização                        |
+
+
+Regras essenciais
+Não substituir automaticamente valores ausentes por zero.
+Não calcular índices quando o denominador for zero ou economicamente inadequado.
+Manter o valor original, o valor tratado e o motivo do tratamento.
+PL negativo não deve ser corrigido artificialmente: índices como ROE podem ficar sem interpretação econômica e devem receber tratamento específico.
+Winsorização deve ser aplicada aos índices, e não indiscriminadamente às contas contábeis.
+Indicadores em que valores maiores representam pior condição devem ter sua orientação invertida somente após o cálculo e antes da PCA.
+Toda inconsistência deve gerar um alerta, sem necessariamente impedir o cálculo do FinScore.
+
+
+------------------------------------------------------
+Camada 2 — Separação dos índices em núcleos
+------------------------------------------------------
+Núcleo econômico-operacional + Núcleo financeiro-patrimonial 
+
+Núcleo econômico-operacional
+
+Pode reunir:
+
+crescimento da receita;
+margem bruta ou operacional;
+margem líquida;
+ROA;
+giro do ativo;
+prazos operacionais;
+cobertura de juros, dependendo da interpretação adotada.
+Núcleo financeiro-patrimonial
+
+Pode reunir:
+
+liquidez corrente;
+liquidez seca;
+endividamento;
+composição do endividamento;
+dívida onerosa;
+relação dívida/EBITDA;
+participação do patrimônio líquido no financiamento do ativo.
+
+
+------------------------------------------------------
+Camada 3 — PCA
+------------------------------------------------------
+Calcular os dois núcleos >>> Pesos diferentes
+
+alpha = 0.60  # econômico-operacional
+beta = 0.40   # financeiro-patrimonial
+
+score_ano = alpha * fator_eco + beta * fator_fin
+
+pesos_tempo = np.array([0.15, 0.25, 0.60])
+score_latente = np.dot(score_ano, pesos_tempo)
+
+------------------------------------------------------
+Camada 4 — Escala 0–1000 com transformação logística
+------------------------------------------------------
+Não usar min-max com três anos. Usar logística:
+FinScore=1+e−k(S−θ)1000​
+
+def escala_logistica(score_latente, k=1.2, theta=0):
+    return 1000 / (1 + np.exp(-k * (score_latente - theta)))
+
+Assim, valores extremos não explodem o score.
+
+
+------------------------------------------------------
+Camada 5. Monte Carlo
+------------------------------------------------------
+* Propagação de cenários plausíveis pelo modelo
+* Não compensa a falta de observações
+
+Simular contas primárias selecionadas 
+→ recalcular contas derivadas 
+→ recalcular índices 
+→ projetar nos componentes da PCA 
+→ recalcular o FinScore.
+
+
+------------------------------------------------------
+Camada 6. Cálculo FinScore
+------------------------------------------------------
+Lorem Ipsum...
