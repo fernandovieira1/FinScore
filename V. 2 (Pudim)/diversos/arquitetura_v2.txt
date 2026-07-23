@@ -248,6 +248,13 @@ O produto inicial não seria um terceiro score misturado, mas um diagnóstico in
 | Qualquer | Ausente         | Avaliação incompleta                                            |
 | Qualquer | Restrição grave | Encaminhamento para regra prudencial específica                 |
 
+Versão 2.00.07 funciona com cenários:
+| Cenário | FinScore prudencial |
+| ------- | ------------------: |
+| Base    |              566,94 |
+| Adverso |              500,00 |
+| Severo  |              483,48 |
+
 
 9. Recomendação final
 ---------------------------------------
