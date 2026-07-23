@@ -219,12 +219,48 @@ Isso é forte para parecer de crédito:
 “Embora o score mediano seja X, em cenário de estresse há Y% de probabilidade de cair abaixo da faixa neutra.”
 
 
-9. Minha recomendação final
+
+------------------------------------------------------
+Camada 7 — Evidência externa de crédito
+------------------------------------------------------
+
+Ela conteria:
+
+Serasa Score Empresa;
+data da consulta;
+horizonte preditivo informado;
+probabilidade de inadimplência, se fornecida;
+classe de risco;
+negativações;
+protestos;
+ações judiciais relevantes;
+quantidade e valor das pendências;
+consultas recentes;
+histórico ou tendência do score, se disponível.
+
+O produto inicial não seria um terceiro score misturado, mas um diagnóstico integrado:
+| FinScore | Serasa          | Interpretação                                                   |
+| -------- | --------------- | --------------------------------------------------------------- |
+| Alto     | Alto            | Convergência favorável                                          |
+| Alto     | Baixo           | Boa capacidade contábil, mas comportamento externo desfavorável |
+| Baixo    | Alto            | Bom histórico recente, mas fragilidade econômico-financeira     |
+| Baixo    | Baixo           | Convergência desfavorável                                       |
+| Qualquer | Ausente         | Avaliação incompleta                                            |
+| Qualquer | Restrição grave | Encaminhamento para regra prudencial específica                 |
+
+
+9. Recomendação final
 ---------------------------------------
 
-Eu manteria o PCA, mas com esta arquitetura:
+Manter o PCA, mas com esta arquitetura:
 
-Indicadores tratados→PCA por núcleo → score latente → bootstrap de estabilidade → Monte Carlo de estresse → FinScore mediano + conservador → decisão com ressalvas
+Indicadores tratados
+→ PCA por núcleo 
+→ score latente 
+→ bootstrap de estabilidade 
+→ Monte Carlo de estresse 
+→ FinScore mediano + conservador 
+→ decisão com ressalvas
 
 O bootstrap entra para responder:
 “O score é estável ou depende demais de um ano/indicador?”
@@ -234,6 +270,7 @@ O Monte Carlo entra para responder:
 
 Essa combinação é mais coerente com a escassez de dados do que regressão logística e mais segura do que PCA puro.
 
-A premissa correta é:
+A sequência seria:
 entrada = rubricas diretamente transcritas do BP/DRE
 Python = agregações, resultados derivados e índices
+Parecer analítico: critérios qualitativos calibrados previamente + resultados finscore + serasa

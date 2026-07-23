@@ -269,3 +269,60 @@ Simular contas primárias selecionadas
 Camada 6. Cálculo FinScore
 ------------------------------------------------------
 Lorem Ipsum...
+
+| Núcleo — média das simulações | Sem PCA | Com PCA |
+| ----------------------------- | ------: | ------: |
+| Econômico-operacional         |   963,6 |   927,0 |
+| Financeiro-patrimonial        |   583,5 |   485,8 |
+| FinScore                      |   754,6 |   684,3 |
+
+A capacidade econômico-financeira central situa-se próxima de 699 pontos, mas pode cair para cerca de 643 (percentil 5 do Monte Carlo) em cenários adversos previstos pela simulação.
+
+| Resultado             | Pergunta respondida                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| Sem PCA — estrutural  | Qual é o diagnóstico segundo pesos econômicos previamente definidos?                  |
+| Com PCA — adaptativo  | Como o diagnóstico muda quando a trajetória específica da empresa determina os pesos? |
+| Diferença entre ambos | Quanto a conclusão depende da forma de ponderação?                                    |
+
+PCA detecta sensibilidade observada, não necessariamente importância econômica.
+
+Manteria três produtos distintos:
+
+FinScore estrutural como resultado principal, porque é mais estável, comparável entre empresas e explicável;
+FinScore adaptativo por PCA como resultado complementar, capaz de revelar dependência da trajetória recente;
+
+Quanto maior a Diferença, mais a avaliação depende do método de ponderação — e menor deve ser a confiança em uma pontuação única.
+
+Por exemplo:
+FinScore estrutural: 763
+FinScore adaptativo: 699
+Divergência metodológica: 64 pontos
+Interpretação: diagnóstico sensível à ponderação da trajetória observada.
+
+| Produto                    | Função metodológica                             |
+| -------------------------- | ----------------------------------------------- |
+| FinScore estrutural        | Resultado central                               |
+| FinScore com PCA           | Especificação adaptativa complementar           |
+| Menor dos dois             | Referência prudencial para decisão, se desejada |
+| Diferença absoluta         | Sensibilidade à ponderação                      |
+| Monte Carlo de cada versão | Sensibilidade às contas e premissas             |
+| Estabilidade do PCA        | Confiabilidade da ponderação adaptativa         |
+
+
+A classificação poderia ser:
+
+divergência até 25 pontos: baixa;
+25–50: moderada;
+50–100: relevante;
+acima de 100: elevada.
+
+Outros modelos
+| Família                          | Dados principais                                       | Método                                             | Produto                                  |
+| -------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | ---------------------------------------- |
+| Scorecards tradicionais          | Cadastro, histórico e comportamento de pagamento       | Regressão logística, probit, análise discriminante | Escore ou probabilidade de inadimplência |
+| Modelos bancários internos       | Demonstrações, bureau, comportamento, garantias, setor | Modelo estatístico + julgamento especializado      | Rating, PD, LGD e EAD                    |
+| Modelos contábeis de insolvência | Índices de balanço e DRE                               | Combinação estatística de índices, como Altman     | Risco relativo de insolvência            |
+| Modelos estruturais              | Valor e volatilidade dos ativos, passivos e mercado    | Merton/KMV                                         | Probabilidade de default                 |
+| Machine learning                 | Dados financeiros, transacionais e alternativos        | Random forest, gradient boosting, redes neurais    | Classificação ou PD                      |
+| Sistemas especialistas           | Índices, regras, faixas e experiência dos analistas    | Pontuação normativa                                | Rating ou recomendação                   |
+| Modelos híbridos                 | Dados quantitativos + fatores qualitativos             | Modelo estatístico, regras e revisão humana        | Rating final                             |
