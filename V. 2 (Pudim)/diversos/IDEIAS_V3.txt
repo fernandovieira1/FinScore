@@ -1,0 +1,7 @@
+IDEIAS VERSÃO 3 FINSCORE
+---------------------------
+
+(0) Feedback de todas as operações feitas com as versões 1 e 2 do Finscore.
+(1) Incluir clasificação por setor econômico das empresas e testar variações de pesos.
+(2) Avaliar a possibilidade de incluir histórico de empresas que já efetuaram operações de crédito com a Assertif.
+(3) Amostra externa de empresas comparáveis.
