@@ -1,2 +1,4 @@
-source .venv/bin/activate
-deactivate
+python3 -m venv .venv (CRIAR)
+
+source .venv/bin/activate (ATIVAR)
+deactivate (DESATIVAR)
