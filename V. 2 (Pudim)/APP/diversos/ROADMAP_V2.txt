@@ -1,0 +1,27 @@
+===========================
+ATUALIZAÇÕES VERSÃO 2
+===========================
+
+## 0. AMBIENTE
+-----------------------------
+[x] Bibliotecas e python 3.12
+[ ] Chave GPT
+
+## 1. MODELO
+-----------------------------
+[ ] Atualizar análise para 'FinScore_V2_13.ipynb'
+[ ] Validar sugestões Elpidio
+
+## 2. PARECER
+-----------------------------
+[ ] Criar nova estrutura do Parecer
+[ ] Validar com Assertif
+[ ] Testes (todos os 17 enviados pelo Elpídio)
+
+## 3. DOCUMENTAÇÃO
+-----------------------------
+[ ] Sobre
+    ( ) Metodologia
+    ( ) Glossário
+    ( ) FAQ
+[ ] Inserir Versão no App (definir onde: ao lado de 'Guia Rápido', no menu superior?)

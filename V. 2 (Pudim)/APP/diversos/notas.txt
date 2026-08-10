@@ -1,0 +1,6 @@
+streamlit run app_front/app.py (rodar o app)
+
+
+BRIGADEIRO
+123456789101112131
+2021
