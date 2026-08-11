@@ -9,12 +9,12 @@ ATUALIZAÇÕES VERSÃO 2
 
 ## 1. MODELO
 -----------------------------
-[ ] Atualizar análise para '/home/ferna/dev_linux/FinScore/V. 2 (Pudim)/APP/diversos/FinScoreV12.3.py'
-[ ] Adaptar no app importação da planilha (colunas mudaram em relação à versão anterior) / Novo >>> Dados
-[ ] Adaptar no app colunas / Processo >>> Análise >>> Dados Contábeis/Contas
-[ ] Adaptar no app gráficos / Processo >>> Análise >>> Gráficos
-[ ] Adaptar no app tabelas / Processo >>> Análise >>> Tabelas
-[ ] Adaptar no app resultados / Processo >>> Análise >>> Scores
+[x] Atualizar análise para '/home/ferna/dev_linux/FinScore/V. 2 (Pudim)/APP/diversos/FinScoreV12.3.py'
+[x] Adaptar no app importação da planilha (colunas mudaram em relação à versão anterior) / Novo >>> Dados
+[x] Adaptar no app colunas / Processo >>> Análise >>> Dados Contábeis/Contas
+[x] Adaptar no app gráficos / Processo >>> Análise >>> Gráficos
+[x] Adaptar no app tabelas / Processo >>> Análise >>> Tabelas
+[x] Adaptar no app resultados / Processo >>> Análise >>> Scores
 
 [ ] Validar sugestões Elpidio
 

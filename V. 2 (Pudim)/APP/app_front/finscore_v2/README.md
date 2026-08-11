@@ -79,6 +79,35 @@ revisão das ocorrências em Dados Contábeis; quando as simulações estão
 desabilitadas, preserva os cenários determinísticos e informa a ausência do
 Monte Carlo.
 
+## Gráficos da análise
+
+A aba `Processo → Análise → Gráficos` usa apenas contas e resultados do
+contrato Pudim. As visualizações são agrupadas em:
+
+- estrutura patrimonial, capital de giro, resultado e dívida;
+- mapa de notas observadas e composição temporal;
+- núcleos EO/FP, consolidação do FinScore e pesos PCA por núcleo;
+- cenários determinísticos e distribuições Monte Carlo independente e
+  correlacionada.
+
+Os gráficos não reproduzem fórmulas do motor. Um resultado bloqueado não gera
+visualizações analíticas; sem simulações, os cenários determinísticos continuam
+visíveis e a ausência do Monte Carlo é informada explicitamente.
+
+## Scores da análise
+
+A aba `Processo → Análise → Scores` substitui os campos Brigadeiro de score
+bruto/ajustado pelos resultados nativos do Pudim:
+
+- FinScore prudencial e scores estrutural/adaptativo pós-gargalo;
+- núcleos EO e FP em ambos os métodos;
+- confiabilidade, status de uso e aptidão para decisão;
+- score pré-cap, cap aplicável, divergência e regras acionadas;
+- Serasa apresentado separadamente como evidência externa.
+
+Quando o gate bloqueia o cálculo, a aba não exibe scores artificiais e orienta
+a revisão das ocorrências em Dados Contábeis.
+
 ## Contrato de saída
 
 O retorno é um `FinScoreOutput`, dicionário tipado com versão de contrato

@@ -26,6 +26,11 @@ try:
 except ImportError:
     from views.analise_contas import render_contas_pudim
 
+try:
+    from .graficos_pudim import render_graficos_pudim
+except ImportError:
+    from views.graficos_pudim import render_graficos_pudim
+
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
     from .scores import render as render_scores
@@ -1214,87 +1219,12 @@ def _artifact_box(
 
 
 def _render_graficos_tab_content():
-    df = prepare_graficos_data()
-    if df is None:
-        st.info("Carregue os dados em **Novo -> Dados** para visualizar os gráficos.")
-        return
-
     ss = st.session_state
-    out = ss.get("out") or {}
-    indices_df = out.get("df_indices")
-    row = _latest_row_dict(df)
-
-    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
-    st.markdown("#### 🪙 1. Balanço Patrimonial")
-    if not _try_call_plot(
-        df,
-        [
-            "render_ativos",
-            "render_ativos_grafico",
-            "render_ativo_total",
-            "render_estoques",
-            "render_contas_a_receber",
-        ],
-    ):
-        _todo_placeholder("Ativos")
-    if not _try_call_plot(df, ["render_passivos", "render_passivo_total", "render_contas_a_pagar"]):
-        _todo_placeholder("Passivos")
-    if not _try_call_plot(df, ["render_pl", "render_patrimonio_liquido"]):
-        _todo_placeholder("Patrimônio Líquido")
-    capital_rendered = render_ativo_passivo_circulante(df)
-    if not capital_rendered:
-        capital_rendered = _try_call_plot(df, ["render_capital_giro", "render_liquidez_corrente"])
-    if not capital_rendered:
-        _todo_placeholder("Capital de Giro e Liquidez")
-
-    st.divider()
-
-    st.markdown("#### 🧮 2. Demonstração de Resultado")
-    operacional_rendered = render_receita_total(df)
-    if _try_call_plot(df, ["render_custos", "render_depreciacao", "render_amortizacao"]):
-        operacional_rendered = True
-    if not operacional_rendered:
-        _todo_placeholder("Operacional")
-    financeiro_rendered = render_juros_lucro_receita(df)
-    if not financeiro_rendered:
-        financeiro_rendered = _try_call_plot(df, ["render_despesa_juros"])
-    if not financeiro_rendered:
-        _todo_placeholder("Financeiro")
-    impostos_rendered = _try_call_plot(df, ["render_impostos", "render_despesa_impostos"])
-    if not impostos_rendered:
-        _todo_placeholder("Tributos")
-    resultado_rendered = _try_call_plot(df, ["render_lucro_liquido", "render_resultado_liquido"])
-    if not resultado_rendered:
-        _todo_placeholder("Resultado")
-
-    st.divider()
-
-    st.markdown("#### 📊 3. Índices Contábeis")
-    liquidez_rendered = _try_call_plot(df, ["render_liquidez_indices"])
-    if not liquidez_rendered:
-        _todo_placeholder("Liquidez")
-    endividamento_rendered = _try_call_plot(df, ["render_endividamento_indices"])
-    if not endividamento_rendered:
-        _todo_placeholder("Endividamento/Estrutura")
-    rentabilidade_rendered = _try_call_plot(df, ["render_rentabilidade_indices"])
-    if not rentabilidade_rendered:
-        _todo_placeholder("Rentabilidade")
-    eficiencia_rendered = _try_call_plot(df, ["render_eficiencia_indices"])
-    if not eficiencia_rendered:
-        _todo_placeholder("Eficiência Operacional / Ciclo")
-
-    st.divider()
-
-    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
-    loadings_rendered = _try_call_plot(df, ["render_pca_loadings"])
-    if not loadings_rendered:
-        _todo_placeholder("Cargas (loadings)")
-    variancia_rendered = _try_call_plot(df, ["render_pca_variancia"])
-    if not variancia_rendered:
-        _todo_placeholder("Variância explicada (explained variance)")
-    scores_rendered = _try_call_plot(df, ["render_pca_scores"])
-    if not scores_rendered:
-        _todo_placeholder("Projeções (scores) por período/empresa")
+    out = ss.get("out")
+    if not out:
+        st.info("Calcule o FinScore em **Novo** para visualizar os gráficos.")
+        return
+    render_graficos_pudim(out)
 
 def _render_indices_tables(df):
     categories = _split_indices_columns(df)

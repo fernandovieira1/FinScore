@@ -533,6 +533,7 @@ def render():
 # são apenas copiados e formatados; nenhum índice ou score é recalculado na view.
 INDICATOR_LABELS = {
     "crescimento_receita": "Crescimento da Receita",
+    "margem_bruta": "Margem Bruta",
     "margem_liquida": "Margem Líquida",
     "margem_ebit": "Margem EBIT",
     "giro_ativo": "Giro do Ativo",
@@ -541,8 +542,8 @@ INDICATOR_LABELS = {
     "liquidez_corrente": "Liquidez Corrente",
     "liquidez_seca": "Liquidez Seca",
     "liquidez_imediata": "Liquidez Imediata",
-    "ccl_sobre_ativo": "CCL / Ativo",
-    "divida_liquida_sobre_ebit": "Dívida Líquida / EBIT",
+    "ccl_ativo": "CCL / Ativo",
+    "divida_liquida_ativo": "Dívida Líquida / Ativo",
     "cobertura_juros": "Cobertura de Juros",
     "composicao_endividamento": "Composição do Endividamento",
 }
