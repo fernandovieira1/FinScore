@@ -23,6 +23,9 @@ def preparar_dados_contabeis(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
         raise ValueError(f"Colunas ausentes nos dados contábeis: {missing}")
 
     source = raw[required].dropna(how="all", subset=core.PRIMARY).copy()
+    # Metadados da camada de importação não participam do cálculo. Em especial,
+    # pandas propaga ``attrs`` para Series e tenta compará-los durante ``melt``.
+    source.attrs = {}
     if len(source) != 3:
         raise ValueError(
             f"Os dados devem ter 3 exercícios preenchidos; encontrei {len(source)}."
@@ -153,7 +156,7 @@ def executar_finscore(
     serasa_score: float | int | None = None,
     serasa_data: str | None = None,
     serasa_restricao_grave: bool = False,
-    correcoes_manuais: list[dict[str, Any]] | None = None,
+    correcoes_manuais: list[dict[str, Any]] | pd.DataFrame | None = None,
     executar_simulacoes: bool = True,
     numero_simulacoes: int = 1000,
     semente: int = 20260723,
@@ -165,10 +168,16 @@ def executar_finscore(
     processed_at = datetime.now()
     core.DATA_HORA_PROCESSAMENTO = processed_at
     reported, import_report = preparar_dados_contabeis(dados)
+    if correcoes_manuais is None:
+        manual_corrections: list[dict[str, Any]] = []
+    elif isinstance(correcoes_manuais, pd.DataFrame):
+        manual_corrections = correcoes_manuais.to_dict(orient="records")
+    else:
+        manual_corrections = list(correcoes_manuais)
     analysis, quality, corrections, status = core.validate_correct_and_prepare(
         reported,
         import_report,
-        correcoes_manuais or [],
+        manual_corrections,
     )
     traceability = core.build_traceability(reported, analysis, corrections)
     alerts = core.detect_material_bias(reported, analysis, corrections)

@@ -1,6 +1,7 @@
 # app_front/views/lancamentos.py
 from __future__ import annotations
 import math
+import traceback
 from datetime import datetime
 
 import pandas as pd
@@ -436,13 +437,17 @@ def _sec_dados():
             elif ss.df is None:
                 st.error("Envie os dados contábeis acima antes de calcular.")
             else:
+                processing_stage = "preparação do cálculo"
                 try:
                     with st.spinner("Calculando FinScore…"):
+                        processing_stage = "execução do motor Pudim"
                         res = run_finscore(ss.df, ss.meta)
                     # Aceita dict ou tupla/lista
+                    processing_stage = "validação do retorno"
                     out = res[0] if isinstance(res, (list, tuple)) else res
                     if not isinstance(out, dict):
                         raise ValueError("Formato de retorno inesperado do run_finscore.")
+                    processing_stage = "gravação do resultado na sessão"
                     ss.out = out
                     ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
                     ss["liberar_analise"] = True
@@ -451,11 +456,14 @@ def _sec_dados():
                     for key in ("_lock_parecer", "_force_parecer", "_DIRECT_TO_PARECER"):
                         ss.pop(key, None)
                     st.success("Processamento concluido.")
+                    processing_stage = "navegação para Análise"
                     if not nav.go("analise"):
                         nav.force("analise")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Erro no processamento: {e}")
+                    st.error(f"Erro no processamento ({processing_stage}): {e}")
+                    with st.expander("Detalhes técnicos do erro"):
+                        st.code(traceback.format_exc(), language="text")
 
 def render():
     ss = st.session_state

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from app_front.finscore_v2 import executar_finscore
 from app_front.finscore_v2.core import PRIMARY
 from app_front.services.io_validation import (
     EXPECTED_COLUMNS,
@@ -45,6 +46,16 @@ class IOValidationV2Test(unittest.TestCase):
         self.assertTrue(data["p_Obrigacoes_Trabalhistas_CP"].isna().all())
         report = obter_relatorio_importacao(data)
         self.assertTrue((report["tipo"] == "ausencia").any())
+
+    def test_import_metadata_does_not_break_engine_traceability(self) -> None:
+        data, _, error = ler_planilha(self.reference_path)
+
+        self.assertIsNone(error)
+        self.assertIsInstance(data.attrs["finscore_import_report"], list)
+        result = executar_finscore(data, executar_simulacoes=False)
+
+        self.assertFalse(result["df_rastreabilidade_contas"].empty)
+        self.assertEqual(len(result["df_rastreabilidade_contas"]), 63)
 
     def test_invalid_text_is_reported_and_preserved(self) -> None:
         raw = self.reference_data.astype(object)

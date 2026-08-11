@@ -1,12 +1,28 @@
 python3 -m venv .venv (CRIAR)
 
-source .venv/bin/activate (ATIVAR)
+source .venv/bin/activate (ATIVAR em /APP)
 deactivate (DESATIVAR)
-
 
 streamlit run app_front/app.py (rodar o app)
 
 
-PUDIM EM COZIMENTO
+Callamarys
+Cool Seed
+Grupo Cofesa - Super G Supermercado
+Grupo E-Construmarket - E-Construmarket Tecnologia
+Grupo E-Construmarket - Mobicloud Tecnologia
+Grupo E-Construmarket - SSA-Miro Solucoes
+Grupo Fornax - Flammers Participacoes
+Grupo Fornax - Fornax Consultoria
+Grupo Fornax - Modo Serviços RH
+Grupo Fornax - Mooven Assessoria
+Grupo JNP - JNH Hoteis
+Grupo JNP - JNS Seguradora
+Grupo Mega Motos - Mega Administradora de Bens
+Grupo Mega Motos - Mega Motos Com Imp Exp
+Grupo TMDL-Log Road - Log Road Transporte Rodoviario
+Grupo TMDL-Log Road - TMDL Armazens Gerais
+Pacto Energia
+
 123456789101112131
 2021

@@ -67,6 +67,25 @@ class FinScoreV2EngineTest(unittest.TestCase):
                 executar_simulacoes=False,
             )
 
+    def test_empty_corrections_dataframe_is_accepted_by_engine(self) -> None:
+        result = executar_finscore(
+            self.reference_data,
+            correcoes_manuais=pd.DataFrame(),
+            executar_simulacoes=False,
+        )
+
+        self.assertEqual(result["modelo"]["nome"], "Pudim")
+
+    def test_dataframe_stored_in_input_attrs_does_not_break_melt(self) -> None:
+        data = self.reference_data.copy()
+        data.attrs["finscore_import_report"] = pd.DataFrame(
+            [{"tipo": "ausencia", "conta": "p_Obrigacoes_Trabalhistas_CP"}]
+        )
+
+        result = executar_finscore(data, executar_simulacoes=False)
+
+        self.assertEqual(len(result["df_rastreabilidade_contas"]), 63)
+
     def test_methodological_self_tests_pass(self) -> None:
         tests = executar_autotestes()
         self.assertEqual(len(tests), 32)

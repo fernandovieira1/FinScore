@@ -36,8 +36,10 @@ ATUALIZAÇÕES VERSÃO 2
 ## 4. AJUSTES
 -----------------------------
 [ ] Processo >>> Lançamentos >>> Cliente
+     ( ) CNPJ não formata automaticamente
      ( ) Ano final não calculando automaticamente
      ( ) Data de consulta ao serasa não formatando a data automaticamente
 [ ] Processo >>> Lançamentos >>> Dados
      ( ) Excluir 'Formato Pudim 2.0.13: aba lancamentos, três exercícios e 21 contas primárias. Células vazias são preservadas como informação ausente.'
      ( ) Testar link Google Sheets
+     ( ) Dados que bloqueiam - tirar dúvidas

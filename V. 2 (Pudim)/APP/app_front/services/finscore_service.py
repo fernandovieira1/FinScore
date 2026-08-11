@@ -113,6 +113,21 @@ def _coerce_bool(value: object, *, field: str) -> bool:
     raise ValueError(f"{field} deve ser um valor booleano.")
 
 
+def _normalizar_correcoes_manuais(value: object) -> list[dict[str, Any]]:
+    """Normaliza correções sem avaliar DataFrames como booleanos."""
+    if value is None:
+        return []
+    if isinstance(value, pd.DataFrame):
+        return [] if value.empty else value.to_dict(orient="records")
+    if isinstance(value, (list, tuple)):
+        if not all(isinstance(item, dict) for item in value):
+            raise ValueError("Cada correção manual deve ser um registro/dicionário.")
+        return [dict(item) for item in value]
+    raise ValueError(
+        "correcoes_manuais deve ser uma lista de registros ou uma tabela."
+    )
+
+
 def _simulation_config(
     executar_simulacoes: Optional[bool],
     numero_simulacoes: Optional[int],
@@ -252,7 +267,9 @@ def run_finscore(
             meta.get("serasa_restricao_grave", False),
             field="serasa_restricao_grave",
         ),
-        correcoes_manuais=meta.get("correcoes_manuais") or None,
+        correcoes_manuais=_normalizar_correcoes_manuais(
+            meta.get("correcoes_manuais")
+        ),
         executar_simulacoes=run_simulations,
         numero_simulacoes=simulations,
         semente=seed,

@@ -10,10 +10,10 @@ import pandas as pd
 
 try:
     from finscore_v2 import preparar_dados_contabeis
-    from finscore_v2.core import PRIMARY
+    from finscore_v2.core import PRIMARY, QUALITY_COLUMNS
 except ModuleNotFoundError:  # Importação pelo pacote ``app_front`` nos testes.
     from app_front.finscore_v2 import preparar_dados_contabeis
-    from app_front.finscore_v2.core import PRIMARY
+    from app_front.finscore_v2.core import PRIMARY, QUALITY_COLUMNS
 
 
 SHEET_NAME = "lancamentos"
@@ -116,7 +116,9 @@ def validar_dataframe_importado(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Data
     # Executa o mesmo parser usado pelo motor apenas para diagnóstico. O
     # DataFrame devolvido continua sendo ``original`` e preserva textos/NaN.
     _, report = preparar_dados_contabeis(original)
-    original.attrs[IMPORT_REPORT_ATTR] = report.copy()
+    # ``DataFrame.attrs`` é propagado pelo pandas. Guardar outro DataFrame aqui
+    # quebra operações como ``melt``/``concat``, que comparam attrs usando ``==``.
+    original.attrs[IMPORT_REPORT_ATTR] = report.to_dict(orient="records")
     original.attrs[EXTRA_COLUMNS_ATTR] = extra
     return original, report
 
@@ -125,7 +127,11 @@ def obter_relatorio_importacao(df: pd.DataFrame | None) -> pd.DataFrame:
     if df is None:
         return pd.DataFrame()
     report = df.attrs.get(IMPORT_REPORT_ATTR)
-    return report.copy() if isinstance(report, pd.DataFrame) else pd.DataFrame()
+    if isinstance(report, pd.DataFrame):  # Compatibilidade com sessões antigas.
+        return report.copy()
+    if isinstance(report, list):
+        return pd.DataFrame(report, columns=QUALITY_COLUMNS)
+    return pd.DataFrame(columns=QUALITY_COLUMNS)
 
 
 def obter_colunas_extras(df: pd.DataFrame | None) -> list[str]:

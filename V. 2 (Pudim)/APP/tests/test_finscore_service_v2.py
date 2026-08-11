@@ -99,6 +99,43 @@ class FinScoreServiceV2Test(unittest.TestCase):
                 numero_simulacoes=99,
             )
 
+    def test_empty_corrections_dataframe_does_not_use_ambiguous_truth_value(self) -> None:
+        meta = dict(self.meta)
+        meta["correcoes_manuais"] = pd.DataFrame()
+
+        result = run_finscore(
+            self.reference_data,
+            meta,
+            executar_simulacoes=False,
+        )
+
+        self.assertEqual(result["modelo"]["nome"], "Pudim")
+        self.assertTrue(result["df_correcoes_auditoria"].empty)
+
+    def test_corrections_dataframe_is_converted_to_records(self) -> None:
+        meta = dict(self.meta)
+        meta["correcoes_manuais"] = pd.DataFrame([
+            {
+                "ano": 2025,
+                "conta": "r_Receitas_Financeiras",
+                "valor": 305_878.0,
+                "fonte": "Documento de teste",
+                "justificativa": "Ajuste documentado para teste de integração.",
+                "confirmado": True,
+            }
+        ])
+
+        result = run_finscore(
+            self.reference_data,
+            meta,
+            executar_simulacoes=False,
+        )
+
+        corrections = result["df_correcoes_auditoria"]
+        manual = corrections[corrections["etapa"].eq("CORRECAO_MANUAL")]
+        self.assertEqual(len(manual), 1)
+        self.assertEqual(manual.iloc[0]["conta"], "r_Receitas_Financeiras")
+
 
 if __name__ == "__main__":
     unittest.main()
