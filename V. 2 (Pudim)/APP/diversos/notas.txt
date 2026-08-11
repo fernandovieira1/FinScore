@@ -1,6 +1,12 @@
+python3 -m venv .venv (CRIAR)
+
+source .venv/bin/activate (ATIVAR)
+deactivate (DESATIVAR)
+
+
 streamlit run app_front/app.py (rodar o app)
 
 
-BRIGADEIRO
+PUDIM EM COZIMENTO
 123456789101112131
 2021
