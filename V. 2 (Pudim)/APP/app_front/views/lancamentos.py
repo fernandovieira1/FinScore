@@ -1,12 +1,20 @@
 # app_front/views/lancamentos.py
 from __future__ import annotations
 import math
+from datetime import datetime
+
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
 from components import nav
-from services.io_validation import validar_cliente, ler_planilha, check_minimo
+from services.io_validation import (
+    gerar_modelo_planilha,
+    ler_planilha,
+    obter_colunas_extras,
+    obter_relatorio_importacao,
+    validar_cliente,
+)
 from services.finscore_service import run_finscore, ajustar_coluna_ano
 
 # Rótulos com ícones (ordem fixa na UI)
@@ -138,15 +146,32 @@ def _auto_save_cliente():
     def valida_data_br(data):
         if not data:
             return ""
-        m = re.match(r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$", data)
-        return data if m else ""
+        try:
+            datetime.strptime(data, "%d/%m/%Y")
+            return data
+        except ValueError:
+            return ""
     serasa_data = valida_data_br(mascara_data_br(serasa_data_input))
+
+    serasa_restricao_grave = st.checkbox(
+        "Há restrição grave identificada na consulta ao Serasa",
+        value=bool(meta.get("serasa_restricao_grave", False)),
+        help="O Serasa é tratado como evidência externa e não é somado ao FinScore.",
+    )
 
     # Normalização
     empresa = empresa.strip() if empresa else ""
     cnpj = mascara_cnpj(cnpj.strip()) if cnpj else ""
 
-    new_meta = {"empresa": empresa, "cnpj": cnpj, "ano_inicial": ai, "ano_final": af, "serasa": serasa, "serasa_data": serasa_data}
+    new_meta = {
+        "empresa": empresa,
+        "cnpj": cnpj,
+        "ano_inicial": ai,
+        "ano_final": af,
+        "serasa": serasa,
+        "serasa_data": serasa_data,
+        "serasa_restricao_grave": serasa_restricao_grave,
+    }
     # Não remove campos vazios, para garantir que a validação capture todos
     ss.meta.update(new_meta)
 
@@ -304,6 +329,22 @@ def _sec_dados():
     
     # ... resto do código existente ...
     st.markdown("<h3 style='text-align: center;'>📏 Dados Contábeis</h3>", unsafe_allow_html=True)
+    st.caption(
+        "Formato Pudim 2.0.13: aba `lancamentos`, três exercícios e 21 contas primárias. "
+        "Células vazias são preservadas como informação ausente."
+    )
+    initial_year = ss.meta.get("ano_inicial")
+    try:
+        template_years = tuple(range(int(initial_year), int(initial_year) + 3))
+    except (TypeError, ValueError):
+        template_years = None
+    st.download_button(
+        "Baixar modelo de planilha Pudim",
+        data=gerar_modelo_planilha(template_years),
+        file_name="modelo_finscore_pudim_2_0_13.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
     modo = st.radio(
         "Como deseja fornecer os dados contábeis?",
         ["Upload de arquivo Excel", "Link do Google Sheets"],
@@ -333,16 +374,32 @@ def _sec_dados():
         df_exibicao, anos_rotulos = ajustar_coluna_ano(df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
         st.success(f"✅ Dados carregados (aba: {aba}).")
         _render_data_preview(df_exibicao, anos_rotulos=anos_rotulos)
+        extras = obter_colunas_extras(df)
+        if extras:
+            st.info(
+                "Colunas adicionais ignoradas pelo modelo: "
+                + ", ".join(str(column) for column in extras)
+            )
+        report = obter_relatorio_importacao(df)
+        if not report.empty:
+            critical = report[report["severidade"].eq("CRITICA")]
+            warnings = report[report["severidade"].eq("AVISO")]
+            if not critical.empty:
+                st.error(
+                    "Há valores inválidos que bloquearão o cálculo até serem corrigidos."
+                )
+                st.dataframe(critical, use_container_width=True, hide_index=True)
+            if not warnings.empty:
+                st.warning(
+                    "Há informações ausentes. Elas foram preservadas como ausentes, não como zero."
+                )
+                st.dataframe(warnings, use_container_width=True, hide_index=True)
         ss.df = df_exibicao.copy()  # type: ignore[attr-defined]
         if anos_rotulos:
             ss.meta["anos_rotulos"] = anos_rotulos
         else:
             ss.meta.pop("anos_rotulos", None)
-        chec = check_minimo(ss.df)
-        if chec["BP_faltando"] or chec["DRE_faltando"]:
-            st.warning("Checagem de campos minimos (informativa):")
-            st.write({"Ausentes BP": chec["BP_faltando"], "Ausentes DRE": chec["DRE_faltando"]})
-        st.success("Dados contabeis salvos.")
+        st.success("Dados contábeis preservados e salvos na sessão.")
         ss.out = None  # Limpa resultados se dados mudaram
     else:
         _render_cached_data_preview()

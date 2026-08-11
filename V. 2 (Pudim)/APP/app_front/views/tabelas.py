@@ -1,8 +1,12 @@
 # app_front/pages/tabelas.py
 from __future__ import annotations
+from typing import Any
+
 import streamlit as st
 import pandas as pd
 import numpy as np
+
+from .analise_contas import formatar_nome_conta
 
 
 MILLION = 1_000_000
@@ -524,3 +528,154 @@ def render():
     else:
         st.info("Sem destaques de PCA para exibir.")
 
+
+# Contrato de apresentação da metodologia Pudim 2.0.13. Os DataFrames abaixo
+# são apenas copiados e formatados; nenhum índice ou score é recalculado na view.
+INDICATOR_LABELS = {
+    "crescimento_receita": "Crescimento da Receita",
+    "margem_liquida": "Margem Líquida",
+    "margem_ebit": "Margem EBIT",
+    "giro_ativo": "Giro do Ativo",
+    "capitalizacao": "Capitalização",
+    "endividamento_exigivel": "Endividamento Exigível",
+    "liquidez_corrente": "Liquidez Corrente",
+    "liquidez_seca": "Liquidez Seca",
+    "liquidez_imediata": "Liquidez Imediata",
+    "ccl_sobre_ativo": "CCL / Ativo",
+    "divida_liquida_sobre_ebit": "Dívida Líquida / EBIT",
+    "cobertura_juros": "Cobertura de Juros",
+    "composicao_endividamento": "Composição do Endividamento",
+}
+
+TABLE_KEYS = {
+    "indices": "df_indices_observados",
+    "notas": "df_notas_observadas",
+    "motivos_indisponibilidade": "df_motivos_nan",
+    "score_temporal": "df_score_temporal",
+    "contribuicoes": "df_contribuicoes_score",
+    "diagnostico_pca": "df_diagnostico_pca",
+    "pesos_pca": "df_pesos_pca",
+    "cargas_pca": "df_cargas_pca",
+    "caps_prudenciais": "df_caps_prudenciais",
+    "intervalos_incerteza": "df_intervalos_incerteza",
+    "redundancia_fp": "df_sensibilidade_redundancia_fp",
+    "cenarios_deterministicos": "df_cenarios_deterministicos",
+    "resumo_simulacoes": "df_resumo_simulacoes",
+    "comparacao_monte_carlo": "df_comparacao_monte_carlo",
+    "sensibilidade": "df_sensibilidade",
+    "amplitudes": "df_amplitudes",
+    "comparacao_aceitos_rejeitados": "df_comparacao_aceitos_rejeitados",
+}
+
+
+def _copy_table(value: Any) -> pd.DataFrame:
+    return value.copy(deep=True) if isinstance(value, pd.DataFrame) else pd.DataFrame()
+
+
+def _add_year(table: pd.DataFrame, output: dict[str, Any]) -> pd.DataFrame:
+    if table.empty or "ano" in table.columns:
+        return table
+    reported = output.get("df_contas_reportadas")
+    if isinstance(reported, pd.DataFrame) and "ano" in reported and len(reported) == len(table):
+        table.insert(0, "ano", reported["ano"].to_list())
+    return table
+
+
+def _prepare_display_table(table: pd.DataFrame, output: dict[str, Any]) -> pd.DataFrame:
+    result = _add_year(table.copy(deep=True), output)
+    if "indicador" in result:
+        result["indicador"] = result["indicador"].map(
+            lambda value: INDICATOR_LABELS.get(str(value), str(value))
+        )
+    if "conta" in result:
+        result.insert(
+            result.columns.get_loc("conta") + 1,
+            "nome_conta",
+            result["conta"].map(formatar_nome_conta),
+        )
+    result = result.rename(columns={
+        "ano": "Ano", "indicador": "Indicador", "nucleo": "Núcleo",
+        "metodo": "Método", "motivo": "Motivo", "dependencias": "Dependências",
+    })
+    result = result.rename(columns={
+        column: INDICATOR_LABELS[column]
+        for column in result.columns if column in INDICATOR_LABELS
+    })
+    numeric = result.select_dtypes(include=["number"]).columns
+    result[numeric] = result[numeric].round(4)
+    return result
+
+
+def catalogar_tabelas_pudim(output: dict[str, Any]) -> dict[str, pd.DataFrame]:
+    """Obtém cópias prontas para exibição sem alterar o contrato do motor."""
+    return {
+        name: _prepare_display_table(_copy_table(output.get(key)), output)
+        for name, key in TABLE_KEYS.items()
+    }
+
+
+def _show_contract_table(title: str, table: pd.DataFrame, empty_message: str) -> None:
+    st.markdown(f"#### {title}")
+    if table.empty:
+        st.info(empty_message)
+        return
+    st.dataframe(table, use_container_width=True, hide_index=True)
+
+
+def render_tabelas_pudim(output: dict[str, Any]) -> None:
+    """Renderiza somente resultados calculados pelo motor Pudim."""
+    status = output.get("status_qualidade", {})
+    st.markdown("<h3 style='text-align:left;'>📊 Tabelas — Pudim 2.0.13</h3>", unsafe_allow_html=True)
+    st.caption("Resultados auditáveis fornecidos diretamente pelo contrato do motor.")
+    if not status.get("apto_calculo", False):
+        st.error(
+            f"Cálculo bloqueado: {status.get('status', 'dados não aptos para scoring')}. "
+            "Revise as ocorrências na aba Dados Contábeis."
+        )
+        return
+
+    tables = catalogar_tabelas_pudim(output)
+    tab_indices, tab_composicao, tab_pca, tab_prudencial, tab_cenarios = st.tabs([
+        "Índices e notas", "Composição do score", "PCA",
+        "Prudencial", "Cenários e simulações",
+    ])
+    with tab_indices:
+        _show_contract_table("Índices observados", tables["indices"], "Sem índices calculados.")
+        _show_contract_table("Notas observadas", tables["notas"], "Sem notas calculadas.")
+        _show_contract_table(
+            "Indicadores indisponíveis", tables["motivos_indisponibilidade"],
+            "Todos os indicadores utilizados estão disponíveis.",
+        )
+    with tab_composicao:
+        _show_contract_table("Score temporal", tables["score_temporal"], "Sem composição temporal.")
+        _show_contract_table("Contribuições ao score", tables["contribuicoes"], "Sem contribuições calculadas.")
+    with tab_pca:
+        _show_contract_table("Diagnóstico por núcleo", tables["diagnostico_pca"], "Sem diagnóstico de PCA.")
+        _show_contract_table("Pesos por núcleo", tables["pesos_pca"], "Sem pesos de PCA.")
+        _show_contract_table("Cargas por núcleo", tables["cargas_pca"], "Sem cargas de PCA.")
+    with tab_prudencial:
+        _show_contract_table("Caps prudenciais", tables["caps_prudenciais"], "Nenhum cap prudencial foi registrado.")
+        _show_contract_table("Intervalos de incerteza", tables["intervalos_incerteza"], "Sem intervalos de incerteza.")
+        _show_contract_table("Redundância do núcleo FP", tables["redundancia_fp"], "Sem análise de redundância.")
+    with tab_cenarios:
+        _show_contract_table("Cenários determinísticos", tables["cenarios_deterministicos"], "Sem cenários determinísticos.")
+        if int(output.get("modelo", {}).get("numero_simulacoes", 0)) == 0:
+            st.info("Monte Carlo não foi executado neste cálculo.")
+        else:
+            _show_contract_table("Resumo das simulações", tables["resumo_simulacoes"], "Sem resumo das simulações.")
+            _show_contract_table("Comparação Monte Carlo", tables["comparacao_monte_carlo"], "Sem comparação Monte Carlo.")
+            _show_contract_table("Sensibilidade", tables["sensibilidade"], "Sem resultados de sensibilidade.")
+            _show_contract_table("Amplitudes", tables["amplitudes"], "Sem amplitudes calculadas.")
+            _show_contract_table(
+                "Aceitos e rejeitados", tables["comparacao_aceitos_rejeitados"],
+                "Sem comparação entre resultados aceitos e rejeitados.",
+            )
+
+
+# A entrada pública desta view passa a usar a metodologia Pudim.
+def render():
+    output = st.session_state.get("out")
+    if not output:
+        st.info("Calcule o FinScore em **Novo** para visualizar as tabelas.")
+        return
+    render_tabelas_pudim(output)

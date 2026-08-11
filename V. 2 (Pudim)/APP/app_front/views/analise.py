@@ -21,6 +21,11 @@ from components.navigation_flow import NavigationFlow
 from components.schemas import ReviewSchema
 from components import nav
 
+try:
+    from .analise_contas import render_contas_pudim
+except ImportError:
+    from views.analise_contas import render_contas_pudim
+
 # imports RELATIVOS (arquivos no MESMO pacote 'views')
 try:
     from .scores import render as render_scores
@@ -62,6 +67,7 @@ try:
         get_pca_scores_table,
         get_top_indices_table,
         get_pca_loadings_table,
+        render_tabelas_pudim,
     )
 except Exception as exc:
     _TABELAS_IMPORT_ERROR = str(exc)
@@ -81,6 +87,9 @@ except Exception as exc:
     def get_pca_loadings_table():
         st.error("Nao foi possivel preparar a tabela de loadings do PCA.")
         return None
+
+    def render_tabelas_pudim(_output):
+        st.error(f"Nao foi possivel importar 'tabelas.py'. Detalhe: {_TABELAS_IMPORT_ERROR}")
 
 
 try:
@@ -1303,93 +1312,14 @@ def _render_indices_tables(df):
 
 
 def _render_dados_contabeis_tab_content():
-    """Renderiza a aba 'Dados Contábeis' com dados brutos formatados da planilha."""
+    """Renderiza contas reportadas, analíticas, derivadas e auditáveis do Pudim."""
     ss = st.session_state
     out = ss.get("out")
-    
+
     if not out:
         st.info("Calcule o FinScore em **Novo** para visualizar os dados contábeis.")
         return
-    
-    df_raw = out.get("df_raw")
-    
-    if df_raw is None or df_raw.empty:
-        st.warning("Nenhum dado contábil disponível.")
-        return
-    
-    # Informações no topo
-    st.markdown("<h3 style='text-align: left;'>📖 Contas</h3>", unsafe_allow_html=True)
-    
-    meta = ss.get("meta", {})
-    empresa = meta.get("empresa", "-")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;'>Nome da Empresa</p>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{empresa}</h3>",
-            unsafe_allow_html=True,
-        )
-    
-    with col2:
-        st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;'>Períodos</p>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(df_raw)}</h3>",
-            unsafe_allow_html=True,
-        )
-    
-    with col3:
-        # Contar colunas numéricas (exceto 'Ano')
-        numeric_cols = df_raw.select_dtypes(include=['number']).columns.tolist()
-        if 'ano' in [c.lower() for c in df_raw.columns]:
-            numeric_cols = [c for c in numeric_cols if c.lower() != 'ano']
-        
-        st.markdown(
-            "<p style='text-align:center;margin-bottom:0.25rem;'>Total de Contas</p>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<h3 style='text-align:center;margin:0;font-size: 140%;'>{len(numeric_cols)}</h3>",
-            unsafe_allow_html=True,
-        )
-    
-    st.divider()
-    
-    # Criar cópia do dataframe para não modificar o original
-    df_display = df_raw.copy()
-    
-    # Limitar a 3 linhas
-    df_display = df_display.head(3)
-    
-    # Formatar nomes das colunas
-    df_display.columns = [_format_column_name(col) for col in df_display.columns]
-    
-    # Identificar colunas numéricas (exceto 'Ano' se existir)
-    numeric_cols_display = df_display.select_dtypes(include=['number']).columns.tolist()
-    if 'Ano' in numeric_cols_display:
-        numeric_cols_display.remove('Ano')
-    
-    # Formatar coluna Ano (se existir) - sem vírgulas ou pontos
-    if 'Ano' in df_display.columns:
-        df_display['Ano'] = df_display['Ano'].apply(lambda x: str(int(x)) if pd.notna(x) else '-')
-    
-    # Formatar valores numéricos como moeda
-    for col in numeric_cols_display:
-        df_display[col] = df_display[col].apply(_format_currency_value)
-    
-    # Exibir tabela formatada
-    st.dataframe(
-        df_display,
-        use_container_width=True,
-        hide_index=True
-    )
+    render_contas_pudim(out, ss.get("meta", {}))
 
 
 def _render_tabelas_tab_content():
@@ -1398,74 +1328,7 @@ def _render_tabelas_tab_content():
     if not out:
         st.info("Calcule o FinScore em **Novo** para visualizar as tabelas.")
         return
-
-    indices_df = out.get("df_indices")
-    top_indices_df = out.get("top_indices_df")
-
-    st.markdown("<h3 style='text-align: left;'>📔 Demonstrativos Contábeis</h3>", unsafe_allow_html=True)
-    st.markdown("#### 🪙 1. Balanço Patrimonial")
-    if not _try_show_table(["table_ativos", "get_ativos_table"]):
-        _todo_placeholder("Ativos")
-    if not _try_show_table(["table_passivos", "get_passivos_table"]):
-        _todo_placeholder("Passivos")
-    if not _try_show_table(["table_pl", "get_pl_table", "get_patrimonio_liquido_table"]):
-        _todo_placeholder("Patrimonio Liquido")
-    if not _try_show_table(["table_capital_giro", "get_ccl_table", "get_liquidez_table"]):
-        _todo_placeholder("Capital de Giro / Liquidez")
-
-    st.divider()
-
-    st.markdown("#### 🧮 2. Demonstração de Resultado")
-    if not _try_show_table([
-        "table_operacional",
-        "get_operacional_table",
-        "get_receita_table",
-        "get_custos_table",
-        "get_depreciacao_table",
-        "get_amortizacao_table",
-    ]):
-        _todo_placeholder("Operacional")
-    if not _try_show_table(["table_financeiro", "get_financeiro_table", "get_despesa_juros_table"]):
-        _todo_placeholder("Financeiro")
-    if not _try_show_table(["table_impostos", "get_impostos_table", "get_despesa_impostos_table"]):
-        _todo_placeholder("Tributos")
-    if not _try_show_table(["table_resultado", "get_resultado_liquido_table", "get_lucro_liquido_table"]):
-        _todo_placeholder("Resultado")
-
-    st.divider()
-
-    st.markdown("#### 📊 3. Indices Contábeis")
-    liquidez_table = _try_show_table(["table_liquidez_indices"])
-    if not liquidez_table:
-        _todo_placeholder("Liquidez")
-    endividamento_table = _try_show_table(["table_endividamento_indices"])
-    if not endividamento_table:
-        _todo_placeholder("Endividamento/Estrutura")
-    rent_table = _try_show_table(["table_rentabilidade_indices"])
-    if not rent_table:
-        _todo_placeholder("Rentabilidade")
-    eficiencia_table = _try_show_table(["table_eficiencia_indices"])
-    if not eficiencia_table:
-        _todo_placeholder("Eficiencia Operacional / Ciclo")
-
-    st.divider()
-
-    st.markdown("#### 🧲 4. Componentes Principais (PCA)")
-    pca_loadings_table = _try_show_table(["get_pca_loadings_table"])
-    if not pca_loadings_table:
-        _todo_placeholder("Cargas (loadings)")
-
-    if not _try_show_table(["get_pca_variance_table"]):
-        _todo_placeholder("Variancia explicada (explained variance)")
-
-    pca_scores_table = _try_show_table(["get_pca_scores_table"])
-    if not pca_scores_table:
-        _todo_placeholder("Projecoes (scores) por periodo/empresa")
-
-    st.markdown("### - Destaques de componentes (top indices)")
-    top_table = _try_show_table(["get_top_indices_table"])
-    if not top_table:
-        _todo_placeholder("Destaques de componentes (top indices)")
+    render_tabelas_pudim(out)
 
 
 
