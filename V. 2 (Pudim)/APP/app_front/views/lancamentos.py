@@ -10,10 +10,10 @@ import streamlit.components.v1 as components
 
 from components import nav
 from services.io_validation import (
-    gerar_modelo_planilha,
     ler_planilha,
     obter_colunas_extras,
     obter_relatorio_importacao,
+    preparar_relatorio_importacao_para_exibicao,
     validar_cliente,
 )
 from services.finscore_service import run_finscore, ajustar_coluna_ano
@@ -330,43 +330,11 @@ def _sec_dados():
     
     # ... resto do código existente ...
     st.markdown("<h3 style='text-align: center;'>📏 Dados Contábeis</h3>", unsafe_allow_html=True)
-    st.caption(
-        "Formato Pudim 2.0.13: aba `lancamentos`, três exercícios e 21 contas primárias. "
-        "Células vazias são preservadas como informação ausente."
-    )
-    initial_year = ss.meta.get("ano_inicial")
-    try:
-        template_years = tuple(range(int(initial_year), int(initial_year) + 3))
-    except (TypeError, ValueError):
-        template_years = None
-    st.download_button(
-        "Baixar modelo de planilha Pudim",
-        data=gerar_modelo_planilha(template_years),
-        file_name="modelo_finscore_pudim_2_0_13.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True,
-    )
-    modo = st.radio(
-        "Como deseja fornecer os dados contábeis?",
-        ["Upload de arquivo Excel", "Link do Google Sheets"],
-        horizontal=True,
-    )
 
     df, aba, erro = None, None, None
-    if modo == "Upload de arquivo Excel":
-        up = st.file_uploader("Envie o arquivo (.xlsx)", type=["xlsx"])
-        if up:
-            df, aba, erro = ler_planilha(up)
-    else:
-        url = st.text_input("Cole o link do Google Sheets (pressione ENTER para ver a prévia)", placeholder="https://docs.google.com/…")
-        if url:
-            try:
-                sid = url.split("/d/")[1].split("/")[0]
-                gid = url.split("gid=")[-1].split("&")[0] if "gid=" in url else "0"
-                export = f"https://docs.google.com/spreadsheets/d/{sid}/export?format=xlsx&id={sid}&gid={gid}"
-                df, aba, erro = ler_planilha(export)
-            except Exception as e:
-                erro = str(e)
+    up = st.file_uploader("Envie o arquivo (.xlsx)", type=["xlsx"])
+    if up:
+        df, aba, erro = ler_planilha(up)
 
     if erro:
         st.error(f"Erro ao ler a planilha: {erro}")
@@ -389,12 +357,20 @@ def _sec_dados():
                 st.error(
                     "Há valores inválidos que bloquearão o cálculo até serem corrigidos."
                 )
-                st.dataframe(critical, use_container_width=True, hide_index=True)
+                st.dataframe(
+                    preparar_relatorio_importacao_para_exibicao(critical),
+                    use_container_width=True,
+                    hide_index=True,
+                )
             if not warnings.empty:
                 st.warning(
                     "Há informações ausentes. Elas foram preservadas como ausentes, não como zero."
                 )
-                st.dataframe(warnings, use_container_width=True, hide_index=True)
+                st.dataframe(
+                    preparar_relatorio_importacao_para_exibicao(warnings),
+                    use_container_width=True,
+                    hide_index=True,
+                )
         ss.df = df_exibicao.copy()  # type: ignore[attr-defined]
         if anos_rotulos:
             ss.meta["anos_rotulos"] = anos_rotulos

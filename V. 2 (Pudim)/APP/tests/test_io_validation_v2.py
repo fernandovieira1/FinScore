@@ -10,10 +10,12 @@ from app_front.finscore_v2 import executar_finscore
 from app_front.finscore_v2.core import PRIMARY
 from app_front.services.io_validation import (
     EXPECTED_COLUMNS,
+    IMPORT_REPORT_DISPLAY_COLUMNS,
     gerar_modelo_planilha,
     ler_planilha,
     obter_colunas_extras,
     obter_relatorio_importacao,
+    preparar_relatorio_importacao_para_exibicao,
     validar_cliente,
     validar_dataframe_importado,
 )
@@ -67,6 +69,19 @@ class IOValidationV2Test(unittest.TestCase):
         critical = report[report["severidade"].eq("CRITICA")]
         self.assertEqual(critical.iloc[0]["conta"], "p_Ativo_Total")
         self.assertTrue(bool(critical.iloc[0]["bloqueia_calculo"]))
+
+    def test_gate_flags_are_kept_internally_but_hidden_from_upload_report(self) -> None:
+        raw = self.reference_data.astype(object)
+        raw.loc[0, "p_Ativo_Total"] = "não é número"
+        _, report = validar_dataframe_importado(raw)
+
+        display = preparar_relatorio_importacao_para_exibicao(report)
+
+        self.assertEqual(list(display.columns), IMPORT_REPORT_DISPLAY_COLUMNS)
+        self.assertNotIn("bloqueia_calculo", display.columns)
+        self.assertNotIn("bloqueia_decisao", display.columns)
+        self.assertNotIn("bloqueia_score", display.columns)
+        self.assertIn("bloqueia_calculo", report.columns)
 
     def test_brigadeiro_workbook_has_specific_error(self) -> None:
         data, sheet, error = ler_planilha(DATA_DIR / "DADOS_TESTE_FS.xlsx")

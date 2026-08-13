@@ -20,6 +20,13 @@ SHEET_NAME = "lancamentos"
 EXPECTED_COLUMNS = ("ano", *PRIMARY)
 IMPORT_REPORT_ATTR = "finscore_import_report"
 EXTRA_COLUMNS_ATTR = "finscore_extra_columns"
+IMPORT_REPORT_DISPLAY_COLUMNS = [
+    "severidade",
+    "tipo",
+    "conta",
+    "exercicios",
+    "detalhe",
+]
 
 BRIGADEIRO_COLUMNS = {
     "p_Caixa",
@@ -132,6 +139,16 @@ def obter_relatorio_importacao(df: pd.DataFrame | None) -> pd.DataFrame:
     if isinstance(report, list):
         return pd.DataFrame(report, columns=QUALITY_COLUMNS)
     return pd.DataFrame(columns=QUALITY_COLUMNS)
+
+
+def preparar_relatorio_importacao_para_exibicao(
+    report: pd.DataFrame,
+) -> pd.DataFrame:
+    """Oculta flags internas de gate, preservando-as no contrato do motor."""
+    columns = [
+        column for column in IMPORT_REPORT_DISPLAY_COLUMNS if column in report.columns
+    ]
+    return report.loc[:, columns].copy()
 
 
 def obter_colunas_extras(df: pd.DataFrame | None) -> list[str]:
