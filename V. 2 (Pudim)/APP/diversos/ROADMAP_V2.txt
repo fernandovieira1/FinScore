@@ -47,4 +47,5 @@ ATUALIZAÇÕES VERSÃO 2
 
  ## 5. ESTRUTURA
 -----------------------------
+Versões Futuras
 [ ] AS operações não são salvas em bancos de dados e não são recuperáveis
