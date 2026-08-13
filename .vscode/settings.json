@@ -1,5 +1,6 @@
 {
     "qwen-code.provider": "api-key",
     "qwen-code.apiKey": "sk-qmeZxGnFKc35Mhx5LTHVzl6niTScD5A5ECFFF95B811F1BFC4E638067045AE",
-    "qwen-code.codingPlanRegion": "global"
+    "qwen-code.codingPlanRegion": "global",
+    "remote.autoForwardPortsFallback": 0
 }

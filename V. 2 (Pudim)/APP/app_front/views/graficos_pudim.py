@@ -1,4 +1,4 @@
-"""Visualizações do contrato FinScore Pudim 2.0.13.
+"""Visualizações do contrato FinScore Pudim.
 
 Este módulo não calcula indicadores ou scores. Ele apenas seleciona e apresenta
 valores já produzidos pelo motor.
@@ -274,7 +274,8 @@ def _show_figure(fig: go.Figure, empty_message: str) -> None:
 def render_graficos_pudim(output: dict[str, Any]) -> None:
     """Renderiza os gráficos oficiais da etapa de análise Pudim."""
     status = output.get("status_qualidade", {})
-    st.markdown("<h3 style='text-align:left;'>📈 Gráficos — Pudim 2.0.13</h3>", unsafe_allow_html=True)
+    version = output.get("modelo", {}).get("versao", "—")
+    st.markdown(f"<h3 style='text-align:left;'>📈 Gráficos — Pudim {version}</h3>", unsafe_allow_html=True)
     st.caption("Visualizações de dados e resultados fornecidos pelo contrato do motor.")
     if not status.get("apto_calculo", False):
         st.error(
@@ -302,4 +303,3 @@ def render_graficos_pudim(output: dict[str, Any]) -> None:
             st.info("Monte Carlo não foi executado neste cálculo.")
         else:
             _show_figure(monte_carlo, "Sem resultados Monte Carlo para exibir.")
-

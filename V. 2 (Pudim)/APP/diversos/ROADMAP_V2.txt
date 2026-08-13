@@ -5,6 +5,7 @@ ATUALIZAÇÕES VERSÃO 2
 ## 0. AMBIENTE
 -----------------------------
 [x] Bibliotecas e python 3.12
+[x] Modelo versão 2.14 como baseline
 [ ] Chave GPT
 
 ## 1. MODELO
@@ -43,3 +44,7 @@ ATUALIZAÇÕES VERSÃO 2
      (x) Excluir link Google Sheets
      (x) Dados que bloqueiam - tirar dúvidas
      (x) Remoção de tabela com colunas com opção de bloquear cálculo, aprovação e score
+
+ ## 5. ESTRUTURA
+-----------------------------
+[ ] AS operações não são salvas em bancos de dados e não são recuperáveis

@@ -1,4 +1,4 @@
-"""Resumo dos resultados FinScore Pudim 2.0.13."""
+"""Resumo dos resultados FinScore Pudim."""
 
 from __future__ import annotations
 

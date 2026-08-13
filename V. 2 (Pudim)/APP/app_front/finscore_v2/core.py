@@ -1,4 +1,4 @@
-"""Núcleo metodológico FinScore Pudim 2.0.13.
+"""Núcleo metodológico FinScore Pudim 2.0.14.
 
 ARQUIVO GERADO. A fonte de verdade é ``diversos/FinScoreV12.3.py``.
 Regere com ``scripts/extract_finscore_v2.py`` após uma mudança metodológica.
@@ -19,13 +19,13 @@ def parse_export_flag(value: str) -> bool:
     if value not in {'0', '1'}:
         raise ValueError("FINSCORE_EXPORTAR deve ser '0' ou '1'.")
     return value == '1'
-VERSAO_MODELO = '2.0.13'
+VERSAO_MODELO = '2.0.14'
 import hashlib as _hashlib
 import json as _json
 import re as _re
 from pathlib import Path as _Path
-NOME_NOTEBOOK_MODELO = 'FinScore_V2_13_retificado.ipynb'
-HASH_CODIGO_MODELO = 'a80c3aaff323eb29fd92d5112af1bd9981a1895a46c25662588442147de0babb'
+NOME_NOTEBOOK_MODELO = 'FinScore_V2_14.ipynb'
+HASH_CODIGO_MODELO = 'fe6bf0850926e0094ad6653e984a80f762ee6319184f70ac6cfce5eb31fd902e'
 
 def calcular_hash_codigo_modelo(caminho) -> str:
     notebook = _json.loads(_Path(caminho).read_text(encoding='utf-8'))

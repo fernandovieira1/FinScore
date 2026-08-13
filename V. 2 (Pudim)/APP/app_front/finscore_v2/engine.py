@@ -1,4 +1,4 @@
-"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.13."""
+"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.14."""
 
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ def executar_finscore(
     numero_simulacoes: int = 1000,
     semente: int = 20260723,
 ) -> FinScoreOutput:
-    """Executa integralmente a metodologia 2.0.13 sobre dados em memória."""
+    """Executa a metodologia 2.0.14 (cálculo 2.13 + exportação auditável)."""
     if executar_simulacoes and numero_simulacoes < 100:
         raise ValueError("Use ao menos 100 simulações.")
 

@@ -1,7 +1,8 @@
-# Motor FinScore Pudim 2.0.13
+# Motor FinScore Pudim 2.0.14
 
-Este pacote é a versão reutilizável, sem efeitos colaterais, da metodologia
-congelada em `APP/diversos/FinScoreV12.3.py`.
+Esta versão mantém os cálculos metodológicos da 2.0.13 e restaura, na 2.0.14,
+a exportação auditável integral existente na 2.12. O notebook de referência é
+`MODELO/algoritmos/Versao 14/FinScore_V2_14.ipynb`.
 
 ## Organização
 
@@ -107,6 +108,13 @@ bruto/ajustado pelos resultados nativos do Pudim:
 
 Quando o gate bloqueia o cálculo, a aba não exibe scores artificiais e orienta
 a revisão das ocorrências em Dados Contábeis.
+
+## Exportação da análise
+
+Ao final de `Processo → Análise`, o expansor `Exportar análise completa`
+disponibiliza um arquivo XLSX gerado em memória. Ele reproduz as 33 abas, ordem,
+colunas e formatação operacional da exportação 2.12, agora sob a versão 2.0.14.
+O download é opcional e não altera os resultados mantidos na sessão.
 
 ## Contrato de saída
 

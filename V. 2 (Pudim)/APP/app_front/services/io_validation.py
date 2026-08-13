@@ -106,7 +106,7 @@ def validar_dataframe_importado(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Data
         if _detect_brigadeiro(columns):
             raise ValueError(
                 "A planilha usa o formato da versão 1 (Brigadeiro). "
-                "Envie uma planilha no formato Pudim 2.0.13 com as 21 contas primárias."
+                "Envie uma planilha no formato Pudim com as 21 contas primárias."
             )
         casefold_map = {column.casefold(): column for column in source.columns}
         case_mismatches = [

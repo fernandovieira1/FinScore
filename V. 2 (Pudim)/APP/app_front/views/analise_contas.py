@@ -202,7 +202,8 @@ def render_contas_pudim(output: dict[str, Any], meta: dict[str, Any]) -> None:
     reliability = output.get("confiabilidade", {})
     summary = resumir_contas(output)
 
-    st.markdown("<h3 style='text-align:left;'>📖 Contas — Pudim 2.0.13</h3>", unsafe_allow_html=True)
+    version = output.get("modelo", {}).get("versao", "—")
+    st.markdown(f"<h3 style='text-align:left;'>📖 Contas — Pudim {version}</h3>", unsafe_allow_html=True)
     st.caption(
         f"{meta.get('empresa') or '-'} · três exercícios · valores em reais. "
         "Ausência de informação não é tratada como zero."

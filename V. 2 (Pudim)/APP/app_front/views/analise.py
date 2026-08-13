@@ -20,6 +20,7 @@ from components.llm_client import call_review_llm
 from components.navigation_flow import NavigationFlow
 from components.schemas import ReviewSchema
 from components import nav
+from services.analysis_export import gerar_planilha_analise, nome_arquivo_analise
 
 try:
     from .analise_contas import render_contas_pudim
@@ -1316,6 +1317,24 @@ def render():
         render_scores()
 
     if ss.get("out"):
+        st.divider()
+        with st.expander("Exportar análise completa"):
+            st.caption(
+                "Baixe a planilha com resultados, qualidade, trilha de auditoria, "
+                "PCA, cenários e simulações desta análise."
+            )
+            try:
+                export_data = gerar_planilha_analise(ss["out"], ss.get("meta", {}))
+                st.download_button(
+                    "Baixar planilha completa (.xlsx)",
+                    data=export_data,
+                    file_name=nome_arquivo_analise(ss["out"], ss.get("meta", {})),
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+            except Exception as exc:
+                st.error(f"Não foi possível preparar a planilha: {exc}")
+
         st.divider()
         col = st.columns([1, 1, 1])[1]
         with col:

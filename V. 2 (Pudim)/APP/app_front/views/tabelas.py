@@ -529,7 +529,7 @@ def render():
         st.info("Sem destaques de PCA para exibir.")
 
 
-# Contrato de apresentação da metodologia Pudim 2.0.13. Os DataFrames abaixo
+# Contrato de apresentação da metodologia Pudim. Os DataFrames abaixo
 # são apenas copiados e formatados; nenhum índice ou score é recalculado na view.
 INDICATOR_LABELS = {
     "crescimento_receita": "Crescimento da Receita",
@@ -626,7 +626,8 @@ def _show_contract_table(title: str, table: pd.DataFrame, empty_message: str) ->
 def render_tabelas_pudim(output: dict[str, Any]) -> None:
     """Renderiza somente resultados calculados pelo motor Pudim."""
     status = output.get("status_qualidade", {})
-    st.markdown("<h3 style='text-align:left;'>📊 Tabelas — Pudim 2.0.13</h3>", unsafe_allow_html=True)
+    version = output.get("modelo", {}).get("versao", "—")
+    st.markdown(f"<h3 style='text-align:left;'>📊 Tabelas — Pudim {version}</h3>", unsafe_allow_html=True)
     st.caption("Resultados auditáveis fornecidos diretamente pelo contrato do motor.")
     if not status.get("apto_calculo", False):
         st.error(

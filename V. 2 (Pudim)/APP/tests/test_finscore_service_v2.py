@@ -38,7 +38,7 @@ class FinScoreServiceV2Test(unittest.TestCase):
 
         self.assertIs(validar_contrato(result), result)
         self.assertEqual(result["modelo"]["nome"], "Pudim")
-        self.assertEqual(result["modelo"]["versao"], "2.0.13")
+        self.assertEqual(result["modelo"]["versao"], "2.0.14")
         self.assertAlmostEqual(
             result["finscore_observado"]["finscore_prudencial"],
             394.4314699700764,
