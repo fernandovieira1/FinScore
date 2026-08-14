@@ -1,0 +1,29 @@
+https://finscore-lab.abacusai.cloud
+
+#1	≈98% do score vem do último exercício + manobras de fechamento movem faixa
+Correlação entre score real e score 'só último ano' = 0,98. Invertendo a ordem dos anos, a Mooven vai de 249,87 a 769,34 (+519). Manobras de 31/12 (rolar 60% da dívida CP→LP, AFAC de 10% do ativo) movem até +73 pontos e trocam faixa Berkley 
+
+#2	Cegueira de escala: R$ 0,06 de ativo pontua igual a R$ 6,4 bilhões
+Tudo são razões — não há piso de porte, materialidade nem maturidade. Empresa-veículo com proporções saudáveis entra na faixa A (caso Modo RH, ativo R$ 15,76; caso TMDL, ano de constituição com ativo R$ 99). 
+
+#3 composicao_endividamento pune ausência legítima de dívida de longo prazo
+PC/(PC+PNC) = 1,00 quando não há passivo de longo prazo → âncora (1, 0) dá nota ZERO à empresa conservadora financiada por capital próprio (efeito ~9 pontos). Ausência legítima tratada como pior caso.
+
+#4 CURVE_MAX_SCORE, revisar se ele compõe o calculo
+
+#5 Recusa não explicava o motivo (caso Flammers)
+A Flammers aparecia como 'não roda: motivo desconhecido'. Diagnóstico: receita líquida zero nos 3 exercícios anula as 4 margens → cobertura do núcleo EO 0,25 < 0,70. A esteira do Lab publica o motivo legível na recusa (motivo_rejeicao), incluindo indicadores ausentes.
+
+#6 Tolerâncias inconsistentes entre validação e Monte Carlo (caso Log Road)
+Validação usa tolerância RELATIVA 0,5%; o _rebuild_total do Monte Carlo usa ABSOLUTA −1e-9. Base com excesso de detalhamento entre R$ 0,01 e 0,5% do subtotal (Log Road 2022: R$ 3.921 ≤ R$ 7.657) PASSA na validação, recebe score (280,55) e QUEBRA o Monte Carlo (ValueError na execução da célula 35 do notebook — a chamada via run_sensitivity; a função _rebuild_total que lança a exceção é definida na célula 34; reproduzido no aceite). A esteira do Lab valida com tolerância unificada ANTES da escoragem; a correção definitiva no motor canônico está proposta ao autor (3 opções compatíveis).
+
+#7 Verificar Balanço dominado por caixa é aprovado por todos os modelos. Caso adversarial 'balanco_dominado_por_caixa': empresa cujo ativo é quase todo caixa, sem operação proporcional. Todos os modelos aprovam: PUDIM V2 678,36 (B), V3 704,56 (B), legado 847,5 (A); com reescala sobe a 809,98 (A)
+
+analisar a abas: 
+- SCORE X Substancia
+- Validação qualitativa 
+- Contraste Externo 
+- Pudim V3 ( ideia se faz sentido implementação) 
+- Painel 
+- Empresas & Pipeline 
+- Matriz de migração (organizado a fixa de empresa por modelo)
