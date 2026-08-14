@@ -57,4 +57,7 @@ ATUALIZAÇÕES VERSÃO 2
  ## 5. ESTRUTURA
 -----------------------------
 Versões Futuras
-[ ] AS operações não são salvas em bancos de dados e não são recuperáveis
+[ ] As operações não são salvas em bancos de dados e não são recuperáveis
+[ ] Variações de pesos por setor pendentes de implementação
+[ ] Histórico de default a ser inserido na próxima versão
+[ ] FinScore deverá prover limites de crédito (valores)?
