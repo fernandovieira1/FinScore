@@ -75,6 +75,7 @@ def formatar_nome_conta(code: str) -> str:
         "Cmv Cpv Csv": "CMV / CPV / CSV",
         "Ir Csll": "IR/CSLL",
         "Ebit": "EBIT",
+        "Ncg": "NCG",
         "Cp": "Curto Prazo",
         "Lp": "Longo Prazo",
     }

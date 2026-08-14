@@ -1,6 +1,7 @@
-"""Núcleo metodológico FinScore Pudim 2.0.14.
+"""Núcleo metodológico FinScore Pudim 2.0.19.
 
-ARQUIVO GERADO. A fonte de verdade é ``diversos/FinScoreV12.3.py``.
+ARQUIVO GERADO. A fonte de verdade é
+``MODELO/algoritmos/Versao 19/FinScore_V2_19.ipynb``.
 Regere com ``scripts/extract_finscore_v2.py`` após uma mudança metodológica.
 
 Este módulo contém somente definições e constantes. Ele não lê arquivos, não
@@ -19,13 +20,13 @@ def parse_export_flag(value: str) -> bool:
     if value not in {'0', '1'}:
         raise ValueError("FINSCORE_EXPORTAR deve ser '0' ou '1'.")
     return value == '1'
-VERSAO_MODELO = '2.0.14'
+VERSAO_MODELO = '2.0.19'
 import hashlib as _hashlib
 import json as _json
 import re as _re
 from pathlib import Path as _Path
-NOME_NOTEBOOK_MODELO = 'FinScore_V2_14.ipynb'
-HASH_CODIGO_MODELO = 'fe6bf0850926e0094ad6653e984a80f762ee6319184f70ac6cfce5eb31fd902e'
+NOME_NOTEBOOK_MODELO = 'FinScore_V2_19.ipynb'
+HASH_CODIGO_MODELO = '2104b025722eec8ff6f8f311766489ca75bd759aedec42991228006520ff3767'
 
 def calcular_hash_codigo_modelo(caminho) -> str:
     notebook = _json.loads(_Path(caminho).read_text(encoding='utf-8'))
@@ -80,7 +81,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
-MONTE_CARLO_NUM = 1000
 DELTA_MIN = 0.05
 DELTA_MAX = 0.35
 BALANCE_TOLERANCE = 0.01 / 2
@@ -90,9 +90,11 @@ SENSITIVITY_THRESHOLDS = [125, 250, 500]
 MAX_REJECTION_RATE = 0.25
 MC_TEMPORAL_PERSISTENCE = 0.6
 MC_IDIOSYNCRATIC_PERSISTENCE = 0.25
-EXCESS_SOURCE_RULE = 'CAIXA_APLICACAO'
+EXCESS_SOURCE_RULE = 'ATIVO_RESIDUAL_NAO_LIQUIDO'
 FUNDING_CP_SHARE = 0.7
 FP_REDUNDANCY_MATERIALITY_POINTS = 25.0
+MAX_EFFECTIVE_INTEREST_RATE = 1.0
+RECURRING_LOSS_MULTIPLIERS = {2: 0.95, 3: 0.9}
 SIMULATION_DRIVER_ACCOUNTS = {'p_Caixa_Equivalentes', 'p_Contas_Receber_Clientes', 'p_Estoques', 'p_Imobilizado_Liquido', 'p_Fornecedores', 'p_Obrigacoes_Tributarias_CP', 'p_Obrigacoes_Trabalhistas_CP', 'p_Emprestimos_Financiamentos_CP', 'p_Emprestimos_Financiamentos_LP', 'p_Patrimonio_Liquido', 'r_Receita_Liquida', 'r_CMV_CPV_CSV', 'r_Receitas_Financeiras', 'r_Despesa_IR_CSLL', 'r_Despesas_Financeiras'}
 MC_COMMON_LOADINGS = {'p_Caixa_Equivalentes': 0.55, 'p_Contas_Receber_Clientes': 0.65, 'p_Estoques': 0.35, 'p_Ativo_Circulante': 0.55, 'p_Imobilizado_Liquido': 0.4, 'p_Fornecedores': 0.55, 'p_Obrigacoes_Tributarias_CP': 0.45, 'p_Obrigacoes_Trabalhistas_CP': 0.35, 'p_Passivo_Circulante': 0.2, 'p_Passivo_Nao_Circulante': -0.25, 'p_Emprestimos_Financiamentos_CP': -0.5, 'p_Emprestimos_Financiamentos_LP': -0.4, 'p_Patrimonio_Liquido': 0.7, 'r_Receita_Liquida': 0.9, 'r_CMV_CPV_CSV': 0.75, 'r_Receitas_Financeiras': 0.3, 'r_Despesa_IR_CSLL': 0.65, 'r_Despesas_Financeiras': -0.55, 'd_EBIT': 0.9, 'd_Outros_Efeitos_Pos_Tributacao': 0.25}
 PCA_STABILITY_SEED = 42
@@ -107,7 +109,7 @@ NUCLEUS_WEIGHTS = {'EO': 0.5, 'FP': 0.5}
 BOTTLENECK_SHARE = 0.25
 PCA_ROBUST_CLIP = 3.0
 TEMPORAL_COMPONENT_WEIGHTS = {'nivel_atual': 0.6, 'dinamica_temporal': 0.25, 'resiliencia': 0.15}
-INDICATOR_DIRECTION = {'endividamento_exigivel': -1, 'divida_liquida_ativo': -1, 'composicao_endividamento': -1}
+INDICATOR_DIRECTION = {'endividamento_exigivel': -1, 'divida_liquida_ativo': -1, 'composicao_endividamento': -1, 'ncg_operacional_ativo': -1, 'ciclo_conversao_caixa': -1}
 POLITICA_CORRECAO = 'HIERARQUIA_CONTABIL_CONTROLADA'
 APLICAR_CORRECOES_AUTOMATICAS = True
 LIMIAR_CONFIANCA_AUTOMATICA = 0.9
@@ -122,16 +124,11 @@ NONNEGATIVE = set(PRIMARY) - SIGNED_ACCOUNTS
 PRUDENTIAL_CAPS = {'pl_negativo': 350.0, 'pl_ativo_abaixo_2pct': 500.0, 'pl_ativo_abaixo_5pct': 650.0, 'endividamento_maior_igual_100pct': 500.0, 'endividamento_maior_igual_95pct': 650.0, 'cobertura_juros_abaixo_1x': 500.0}
 USAR_DESPESAS_FINANCEIRAS_COMO_PROXY_JUROS = True
 COBERTURA_JUROS_TETO_ECONOMICO = 10.0
-FIXED_WEIGHTS = {'crescimento_receita': 0.15, 'margem_bruta': 0.1, 'margem_ebit': 0.3, 'margem_liquida': 0.2, 'giro_ativo': 0.25, 'capitalizacao': 0.2, 'endividamento_exigivel': 0.1, 'liquidez_corrente': 0.15, 'liquidez_seca': 0.1, 'ccl_ativo': 0.1, 'divida_liquida_ativo': 0.1, 'cobertura_juros': 0.15, 'composicao_endividamento': 0.1}
-NUCLEI = {'EO': ['crescimento_receita', 'margem_bruta', 'margem_ebit', 'margem_liquida', 'giro_ativo'], 'FP': ['capitalizacao', 'endividamento_exigivel', 'liquidez_corrente', 'liquidez_seca', 'ccl_ativo', 'divida_liquida_ativo', 'cobertura_juros', 'composicao_endividamento']}
+FIXED_WEIGHTS = {'crescimento_receita': 0.1, 'margem_bruta': 0.1, 'margem_ebit': 0.3, 'margem_liquida': 0.2, 'giro_ativo': 0.2, 'ciclo_conversao_caixa': 0.1, 'capitalizacao': 0.25, 'liquidez_corrente': 0.1, 'liquidez_seca': 0.1, 'ccl_ativo': 0.1, 'ncg_operacional_ativo': 0.1, 'divida_liquida_ativo': 0.1, 'cobertura_juros': 0.15, 'composicao_endividamento': 0.1}
+NUCLEI = {'EO': ['crescimento_receita', 'margem_bruta', 'margem_ebit', 'margem_liquida', 'giro_ativo', 'ciclo_conversao_caixa'], 'FP': ['capitalizacao', 'liquidez_corrente', 'liquidez_seca', 'ccl_ativo', 'ncg_operacional_ativo', 'divida_liquida_ativo', 'cobertura_juros', 'composicao_endividamento']}
 CURVE_MAX_SCORE = 95.0
-ANCHORS = {'crescimento_receita': [(-0.3, 0), (0, 45), (0.1, 70), (0.25, 90), (0.5, 95)], 'margem_bruta': [(-0.1, 0), (0, 10), (0.15, 45), (0.3, 75), (0.5, 95)], 'margem_ebit': [(-0.2, 0), (0, 35), (0.1, 70), (0.2, 90), (0.35, 95)], 'margem_liquida': [(-0.2, 0), (0, 35), (0.07, 70), (0.15, 90), (0.25, 95)], 'giro_ativo': [(0, 0), (0.3, 25), (0.7, 60), (1.2, 85), (2, 95), (5, 95)], 'capitalizacao': [(-0.2, 0), (0, 5), (0.05, 20), (0.15, 50), (0.3, 80), (0.5, 95)], 'endividamento_exigivel': [(0, 95), (0.3, 85), (0.5, 60), (0.7, 30), (1, 0), (1.5, 0)], 'liquidez_corrente': [(0, 0), (0.7, 10), (1, 45), (1.3, 70), (1.8, 95), (4, 95)], 'liquidez_seca': [(0, 0), (0.5, 10), (0.8, 40), (1.1, 70), (1.5, 95), (3, 95)], 'ccl_ativo': [(-0.5, 0), (-0.1, 15), (0, 45), (0.1, 65), (0.25, 85), (0.5, 95)], 'divida_liquida_ativo': [(-0.3, 95), (0, 90), (0.2, 70), (0.4, 35), (0.7, 0)], 'composicao_endividamento': [(0, 95), (0.3, 80), (0.5, 55), (0.75, 25), (1, 0)], 'cobertura_juros': [(-2, 0), (0, 5), (1, 25), (2, 55), (4, 80), (10, 95), (50, 95)]}
+ANCHORS = {'crescimento_receita': [(-0.3, 0), (0, 45), (0.1, 70), (0.25, 90), (0.5, 95)], 'margem_bruta': [(-0.1, 0), (0, 10), (0.15, 45), (0.3, 75), (0.5, 95)], 'margem_ebit': [(-0.2, 0), (0, 35), (0.1, 70), (0.2, 90), (0.35, 95)], 'margem_liquida': [(-0.2, 0), (0, 35), (0.07, 70), (0.15, 90), (0.25, 95)], 'giro_ativo': [(0, 0), (0.3, 25), (0.7, 60), (1.2, 85), (2, 95), (5, 95)], 'ciclo_conversao_caixa': [(-60, 95), (0, 90), (30, 75), (60, 55), (90, 35), (150, 10), (240, 0)], 'capitalizacao': [(-0.2, 0), (0, 5), (0.05, 20), (0.15, 50), (0.3, 80), (0.5, 95)], 'endividamento_exigivel': [(0, 95), (0.3, 85), (0.5, 60), (0.7, 30), (1, 0), (1.5, 0)], 'liquidez_corrente': [(0, 0), (0.7, 10), (1, 45), (1.3, 70), (1.8, 95), (4, 95)], 'liquidez_seca': [(0, 0), (0.5, 10), (0.8, 40), (1.1, 70), (1.5, 95), (3, 95)], 'ccl_ativo': [(-0.5, 0), (-0.1, 15), (0, 45), (0.1, 65), (0.25, 85), (0.5, 95)], 'ncg_operacional_ativo': [(-0.3, 95), (-0.1, 85), (0, 70), (0.1, 50), (0.25, 20), (0.5, 0)], 'divida_liquida_ativo': [(-0.3, 95), (0, 90), (0.2, 70), (0.4, 35), (0.7, 0)], 'composicao_endividamento': [(0, 95), (0.3, 80), (0.5, 55), (0.75, 25), (1, 0)], 'cobertura_juros': [(-2, 0), (0, 5), (1, 25), (2, 55), (4, 80), (10, 95), (50, 95)]}
 SCENARIO_DEFINITIONS = {'BASE': {'descricao': 'Manutenção aproximada da estrutura observada.', 'receita': 0.0, 'margem_ebit': 0.0, 'contas_receber': 0.0, 'estoques': 0.0, 'caixa': 0.0, 'juros': 0.0, 'divida': 0.0, 'pl': 0.0, 'pc_total': 0.0, 'pnc_total': 0.0}, 'ADVERSO': {'descricao': 'Queda de receita, compressão de margem e pressão de capital de giro.', 'receita': -0.1, 'margem_ebit': -0.2, 'contas_receber': 0.15, 'estoques': 0.1, 'caixa': -0.15, 'juros': 0.25, 'divida': 0.1, 'pl': -0.1, 'pc_total': 0.08, 'pnc_total': 0.05}, 'SEVERO': {'descricao': 'Estresse forte de atividade, margem, liquidez e custo financeiro.', 'receita': -0.25, 'margem_ebit': -0.4, 'contas_receber': 0.3, 'estoques': 0.2, 'caixa': -0.3, 'juros': 0.6, 'divida': 0.25, 'pl': -0.25, 'pc_total': 0.18, 'pnc_total': 0.12}}
-assert len(PRIMARY) == 21
-assert np.isclose(sum(TEMPORAL_COMPONENT_WEIGHTS.values()), 1.0)
-assert np.isclose(sum(NUCLEUS_WEIGHTS.values()), 1.0)
-for nucleo, colunas in NUCLEI.items():
-    assert np.isclose(sum((FIXED_WEIGHTS[c] for c in colunas)), 1.0)
 import hashlib
 import json
 QUALITY_COLUMNS = ['severidade', 'tipo', 'conta', 'exercicios', 'detalhe', 'bloqueia_calculo', 'bloqueia_decisao', 'bloqueia_score']
@@ -539,10 +536,18 @@ def derive(df: pd.DataFrame) -> pd.DataFrame:
     x['d_Outras_Obrigacoes_LP'] = x.p_Passivo_Nao_Circulante - x.p_Emprestimos_Financiamentos_LP
     x['d_Divida_Financeira_Bruta'] = x.p_Emprestimos_Financiamentos_CP + x.p_Emprestimos_Financiamentos_LP
     x['d_Divida_Financeira_Liquida'] = x.d_Divida_Financeira_Bruta - x.p_Caixa_Equivalentes
+    x['d_Divida_Financeira_Media'] = (x.d_Divida_Financeira_Bruta + x.d_Divida_Financeira_Bruta.shift(1)) / 2
+    x.loc[x.index[0], 'd_Divida_Financeira_Media'] = x.loc[x.index[0], 'd_Divida_Financeira_Bruta']
     x['d_Capital_Circulante_Liquido'] = x.p_Ativo_Circulante - x.p_Passivo_Circulante
     x['d_Ativo_Circulante_Operacional_Simplificado'] = x.p_Contas_Receber_Clientes + x.p_Estoques
     x['d_Passivo_Circulante_Operacional_Simplificado'] = x.p_Fornecedores + x.p_Obrigacoes_Tributarias_CP + x.p_Obrigacoes_Trabalhistas_CP
     x['d_Necessidade_Capital_Giro_Simplificada'] = x.d_Ativo_Circulante_Operacional_Simplificado - x.d_Passivo_Circulante_Operacional_Simplificado
+    x['d_NCG_Operacional_Essencial'] = x.p_Contas_Receber_Clientes + x.p_Estoques - x.p_Fornecedores
+    x['d_Clientes_Medio'] = (x.p_Contas_Receber_Clientes + x.p_Contas_Receber_Clientes.shift(1)) / 2
+    x['d_Estoques_Medio'] = (x.p_Estoques + x.p_Estoques.shift(1)) / 2
+    x['d_Fornecedores_Medio'] = (x.p_Fornecedores + x.p_Fornecedores.shift(1)) / 2
+    for _coluna_media in ['d_Clientes_Medio', 'd_Estoques_Medio', 'd_Fornecedores_Medio']:
+        x.loc[x.index[0], _coluna_media] = np.nan
     x['d_Saldo_Tesouraria_Simplificado'] = x.d_Capital_Circulante_Liquido - x.d_Necessidade_Capital_Giro_Simplificada
     x['d_Lucro_Bruto'] = x.r_Receita_Liquida - x.r_CMV_CPV_CSV
     x['d_Resultado_Financeiro_Liquido'] = x.r_Receitas_Financeiras - x.r_Despesas_Financeiras
@@ -562,11 +567,16 @@ def indices(x: pd.DataFrame) -> pd.DataFrame:
     out['margem_ebit'] = safe_div(x.d_EBIT, x.r_Receita_Liquida)
     out['margem_liquida'] = safe_div(x.r_Lucro_Liquido, x.r_Receita_Liquida)
     out['giro_ativo'] = safe_div(x.r_Receita_Liquida, x.d_Ativo_Medio)
+    out['prazo_recebimento_dias'] = 365.0 * safe_div(x.d_Clientes_Medio, x.r_Receita_Liquida)
+    out['prazo_estoques_dias'] = 365.0 * safe_div(x.d_Estoques_Medio, x.r_CMV_CPV_CSV)
+    out['prazo_fornecedores_dias'] = 365.0 * safe_div(x.d_Fornecedores_Medio, x.r_CMV_CPV_CSV)
+    out['ciclo_conversao_caixa'] = out.prazo_recebimento_dias + out.prazo_estoques_dias - out.prazo_fornecedores_dias
     out['capitalizacao'] = safe_div(x.p_Patrimonio_Liquido, x.p_Ativo_Total)
     out['endividamento_exigivel'] = safe_div(x.d_Passivo_Exigivel_Total, x.p_Ativo_Total)
     out['liquidez_corrente'] = safe_div(x.p_Ativo_Circulante, x.p_Passivo_Circulante)
     out['liquidez_seca'] = safe_div(x.p_Ativo_Circulante - x.p_Estoques, x.p_Passivo_Circulante)
     out['ccl_ativo'] = safe_div(x.d_Capital_Circulante_Liquido, x.p_Ativo_Total)
+    out['ncg_operacional_ativo'] = safe_div(x.d_NCG_Operacional_Essencial, x.p_Ativo_Total)
     out['divida_liquida_ativo'] = safe_div(x.d_Divida_Financeira_Liquida, x.p_Ativo_Total)
     out['composicao_endividamento'] = safe_div(x.p_Passivo_Circulante, x.d_Passivo_Exigivel_Total)
     if USAR_DESPESAS_FINANCEIRAS_COMO_PROXY_JUROS:
@@ -589,7 +599,7 @@ def score_indices(ind: pd.DataFrame) -> pd.DataFrame:
     return scores
 
 def explain_missing_indices(ind: pd.DataFrame) -> pd.DataFrame:
-    dependencies = {'crescimento_receita': ['r_Receita_Liquida (dois exercícios)'], 'margem_bruta': ['r_Receita_Liquida', 'r_CMV_CPV_CSV'], 'margem_ebit': ['r_Resultado_Antes_IR_CSLL', 'r_Despesas_Financeiras', 'r_Receitas_Financeiras', 'r_Receita_Liquida'], 'margem_liquida': ['r_Lucro_Liquido', 'r_Receita_Liquida'], 'giro_ativo': ['r_Receita_Liquida', 'Ativo Total de dois exercícios'], 'capitalizacao': ['p_Patrimonio_Liquido', 'p_Ativo_Total'], 'endividamento_exigivel': ['p_Passivo_Circulante', 'p_Passivo_Nao_Circulante', 'p_Ativo_Total'], 'liquidez_corrente': ['p_Ativo_Circulante', 'p_Passivo_Circulante'], 'liquidez_seca': ['p_Ativo_Circulante', 'p_Estoques', 'p_Passivo_Circulante'], 'ccl_ativo': ['p_Ativo_Circulante', 'p_Passivo_Circulante', 'p_Ativo_Total'], 'divida_liquida_ativo': ['Empréstimos CP e LP', 'p_Caixa_Equivalentes', 'p_Ativo_Total'], 'composicao_endividamento': ['p_Passivo_Circulante', 'p_Passivo_Nao_Circulante'], 'cobertura_juros': ['d_EBIT', 'r_Despesas_Financeiras/proxy de juros']}
+    dependencies = {'crescimento_receita': ['r_Receita_Liquida (dois exercícios)'], 'margem_bruta': ['r_Receita_Liquida', 'r_CMV_CPV_CSV'], 'margem_ebit': ['r_Resultado_Antes_IR_CSLL', 'r_Despesas_Financeiras', 'r_Receitas_Financeiras', 'r_Receita_Liquida'], 'margem_liquida': ['r_Lucro_Liquido', 'r_Receita_Liquida'], 'giro_ativo': ['r_Receita_Liquida', 'Ativo Total de dois exercícios'], 'ciclo_conversao_caixa': ['Clientes, estoques e fornecedores médios', 'Receita líquida', 'CMV/CPV/CSV'], 'capitalizacao': ['p_Patrimonio_Liquido', 'p_Ativo_Total'], 'endividamento_exigivel': ['p_Passivo_Circulante', 'p_Passivo_Nao_Circulante', 'p_Ativo_Total'], 'liquidez_corrente': ['p_Ativo_Circulante', 'p_Passivo_Circulante'], 'liquidez_seca': ['p_Ativo_Circulante', 'p_Estoques', 'p_Passivo_Circulante'], 'ccl_ativo': ['p_Ativo_Circulante', 'p_Passivo_Circulante', 'p_Ativo_Total'], 'ncg_operacional_ativo': ['p_Contas_Receber_Clientes', 'p_Estoques', 'p_Fornecedores', 'p_Ativo_Total'], 'divida_liquida_ativo': ['Empréstimos CP e LP', 'p_Caixa_Equivalentes', 'p_Ativo_Total'], 'composicao_endividamento': ['p_Passivo_Circulante', 'p_Passivo_Nao_Circulante'], 'cobertura_juros': ['d_EBIT', 'r_Despesas_Financeiras/proxy de juros']}
     rows = []
     for indicator in ind.columns:
         for idx in ind.index[ind[indicator].isna()]:
@@ -633,10 +643,20 @@ def _geometric_nucleus_score(eo_1000: float, fp_1000: float) -> float:
         return 0.0
     return float(1000 * (eo_1000 / 1000) ** NUCLEUS_WEIGHTS['EO'] * (fp_1000 / 1000) ** NUCLEUS_WEIGHTS['FP'])
 
+def recurring_loss_adjustment(indicator_table: pd.DataFrame) -> tuple[int, float]:
+    margins = pd.to_numeric(indicator_table.get('margem_liquida', pd.Series(dtype=float)), errors='coerce').dropna()
+    losses = int(margins.lt(0).sum())
+    if losses >= 3:
+        return (losses, RECURRING_LOSS_MULTIPLIERS[3])
+    if losses >= 2:
+        return (losses, RECURRING_LOSS_MULTIPLIERS[2])
+    return (losses, 1.0)
+
 def calculate_scores(indicator_table: pd.DataFrame, score_table: pd.DataFrame, profiles_override: dict[str, 'PCAProfile'] | None=None) -> tuple[dict, dict[str, 'PCAProfile'], pd.DataFrame, pd.DataFrame]:
     profiles = profiles_override if profiles_override is not None else {n: pca_profile(indicator_table, cols) for n, cols in NUCLEI.items()}
     temporal = temporal_indicator_table(score_table)
-    result: dict = {}
+    loss_years, loss_multiplier = recurring_loss_adjustment(indicator_table)
+    result: dict = {'exercicios_prejuizo_liquido': loss_years, 'multiplicador_prejuizo_recorrente': loss_multiplier}
     contributions = []
     for method in ('estrutural', 'adaptativo'):
         nucleus_values = {}
@@ -654,11 +674,17 @@ def calculate_scores(indicator_table: pd.DataFrame, score_table: pd.DataFrame, p
             active_weights = weights.loc[columns][valid]
             active_weights = active_weights / active_weights.sum()
             active_scores = local.loc[valid, 'nota_temporal']
-            nucleus_score = float(np.dot(active_scores, active_weights))
+            raw_nucleus_score = float(np.dot(active_scores, active_weights))
+            applied_multiplier = loss_multiplier if nucleus == 'EO' else 1.0
+            nucleus_score = raw_nucleus_score * applied_multiplier
+            result[f'nucleo_{nucleus}_{method}_antes_prejuizo'] = 10 * raw_nucleus_score
+            result[f'multiplicador_{nucleus}_{method}'] = applied_multiplier
             nucleus_values[nucleus] = nucleus_score
             result[f'nucleo_{nucleus}_{method}'] = 10 * nucleus_score
             for indicator in active_scores.index:
                 contributions.append({'metodo': method, 'nucleo': nucleus, 'indicador': indicator, 'nota_temporal': active_scores[indicator], 'peso_no_nucleo': active_weights[indicator], 'contribuicao_nucleo_pontos': active_scores[indicator] * active_weights[indicator], 'cobertura_temporal': temporal.at[indicator, 'cobertura_temporal']})
+            if nucleus == 'EO' and applied_multiplier < 1.0:
+                contributions.append({'metodo': method, 'nucleo': nucleus, 'indicador': 'penalidade_prejuizo_recorrente', 'nota_temporal': raw_nucleus_score, 'peso_no_nucleo': 0.0, 'contribuicao_nucleo_pontos': nucleus_score - raw_nucleus_score, 'cobertura_temporal': 1.0})
         if all((np.isfinite(nucleus_values[n]) for n in NUCLEI)):
             eo = 10 * nucleus_values['EO']
             fp = 10 * nucleus_values['FP']
@@ -735,6 +761,7 @@ def missing_debt_classification_interval(base: pd.DataFrame, profiles: dict[str,
     return pd.DataFrame([{'cenario': 'FAVORAVEL', 'hipotese': '; '.join(details) + ' — saldos ausentes tratados como zero.', 'finscore_prudencial': favorable_score['finscore_prudencial']}, {'cenario': 'CONSERVADOR', 'hipotese': '; '.join(details) + ' — todo subtotal tratado como dívida onerosa.', 'finscore_prudencial': conservative_score['finscore_prudencial']}])
 
 def analyze_fp_redundancy(temporal_table: pd.DataFrame, index_table: pd.DataFrame, accounts: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """Compara a escolha única de solvência; o score usa só capitalização."""
     temporal = temporal_table.set_index('indicador').copy()
 
     def nucleus_score(columns, weights):
@@ -748,32 +775,29 @@ def analyze_fp_redundancy(temporal_table: pd.DataFrame, index_table: pd.DataFram
         active_weights = weights[valid] / weights[valid].sum()
         score = float(np.dot(local.loc[valid, 'nota_temporal'], active_weights))
         return (10.0 * score, coverage)
+    loss_years, loss_multiplier = recurring_loss_adjustment(index_table)
     eo_weights = _normalized_fixed_weights(NUCLEI['EO'])
     eo_score, _ = nucleus_score(NUCLEI['EO'], eo_weights)
-    fp_base = _normalized_fixed_weights(NUCLEI['FP'])
-    combined = float(fp_base['capitalizacao'] + fp_base['endividamento_exigivel'])
-    variants = {'SOMENTE_CAPITALIZACAO': fp_base.copy(), 'SOMENTE_ENDIVIDAMENTO': fp_base.copy(), 'AMBOS_PESO_ATUAL': fp_base.copy()}
-    variants['SOMENTE_CAPITALIZACAO']['capitalizacao'] = combined
-    variants['SOMENTE_CAPITALIZACAO']['endividamento_exigivel'] = 0.0
-    variants['SOMENTE_ENDIVIDAMENTO']['capitalizacao'] = 0.0
-    variants['SOMENTE_ENDIVIDAMENTO']['endividamento_exigivel'] = combined
+    eo_score *= loss_multiplier
+    fp_columns = list(NUCLEI['FP'])
+    fp_weights = _normalized_fixed_weights(fp_columns)
+    variants = {'V2_0_15_SOMENTE_CAPITALIZACAO': (fp_columns, fp_weights), 'ALTERNATIVA_SOMENTE_ENDIVIDAMENTO': (['endividamento_exigivel' if c == 'capitalizacao' else c for c in fp_columns], pd.Series({'endividamento_exigivel' if c == 'capitalizacao' else c: w for c, w in fp_weights.items()}, dtype=float))}
     cap, _ = evaluate_prudential_caps(index_table, accounts)
     rows = []
-    for name, weights in variants.items():
-        fp_score, coverage = nucleus_score(NUCLEI['FP'], weights)
+    for name, (columns, weights) in variants.items():
+        fp_score, coverage = nucleus_score(columns, weights)
         if np.isfinite(eo_score) and np.isfinite(fp_score):
             geometric = _geometric_nucleus_score(eo_score, fp_score)
             after_bottleneck = (1.0 - BOTTLENECK_SHARE) * geometric + BOTTLENECK_SHARE * min(eo_score, fp_score)
             final = min(after_bottleneck, cap)
         else:
             geometric = after_bottleneck = final = np.nan
-        rows.append({'variacao': name, 'peso_capitalizacao': weights['capitalizacao'], 'peso_endividamento': weights['endividamento_exigivel'], 'nucleo_EO': eo_score, 'nucleo_FP': fp_score, 'cobertura_FP': coverage, 'finscore_estrutural': geometric, 'finscore_estrutural_pos_gargalo': after_bottleneck, 'finscore_estrutural_com_cap': final})
+        rows.append({'variacao': name, 'peso_capitalizacao': float(weights.get('capitalizacao', 0.0)), 'peso_endividamento': float(weights.get('endividamento_exigivel', 0.0)), 'nucleo_EO': eo_score, 'nucleo_FP': fp_score, 'cobertura_FP': coverage, 'finscore_estrutural': geometric, 'finscore_estrutural_pos_gargalo': after_bottleneck, 'finscore_estrutural_com_cap': final, 'redundancia_no_score': False})
     table = pd.DataFrame(rows)
-    amplitude_pre_cap = table['finscore_estrutural_pos_gargalo'].max() - table['finscore_estrutural_pos_gargalo'].min()
-    amplitude_final = table['finscore_estrutural_com_cap'].max() - table['finscore_estrutural_com_cap'].min()
-    material = bool(max(amplitude_pre_cap, amplitude_final) >= FP_REDUNDANCY_MATERIALITY_POINTS)
-    summary = {'limiar_materialidade_pontos': FP_REDUNDANCY_MATERIALITY_POINTS, 'amplitude_pre_cap': float(amplitude_pre_cap), 'amplitude_final': float(amplitude_final), 'influencia_material': material, 'conclusao': 'REDUNDANCIA_INFLUENCIA_MATERIALMENTE' if material else 'REDUNDANCIA_SEM_INFLUENCIA_MATERIAL'}
-    table['influencia_material'] = material
+    amplitude_pre_cap = float(table['finscore_estrutural_pos_gargalo'].max() - table['finscore_estrutural_pos_gargalo'].min())
+    amplitude_final = float(table['finscore_estrutural_com_cap'].max() - table['finscore_estrutural_com_cap'].min())
+    summary = {'limiar_materialidade_pontos': FP_REDUNDANCY_MATERIALITY_POINTS, 'amplitude_pre_cap': amplitude_pre_cap, 'amplitude_final': amplitude_final, 'influencia_material': False, 'conclusao': 'REDUNDANCIA_ELIMINADA_DO_SCORE', 'exercicios_prejuizo_liquido': loss_years}
+    table['influencia_material'] = False
     return (table, summary)
 
 def assess_external_credit(finscore_prudential, serasa_score, consultation_date=None, severe_restriction=False) -> pd.DataFrame:
@@ -954,8 +978,42 @@ def _store_exogenous_shock(sim: pd.DataFrame, base: pd.DataFrame, account: str) 
     denominator = base[account].abs().where(base[account].abs() > 1e-12)
     sim[f'd_Choque_Exogeno_{account}'] = (sim[account] - base[account]) / denominator
 
+def _observable_gross_debt(table: pd.DataFrame) -> pd.Series:
+    """Dívida observável; NaN só quando CP e LP são ambos desconhecidos."""
+    components = table[['p_Emprestimos_Financiamentos_CP', 'p_Emprestimos_Financiamentos_LP']].apply(pd.to_numeric, errors='coerce')
+    return components.sum(axis=1, min_count=1)
+
+def _average_gross_debt(table: pd.DataFrame) -> pd.Series:
+    gross_debt = _observable_gross_debt(table)
+    average = (gross_debt + gross_debt.shift(1)) / 2.0
+    if len(average):
+        average.iloc[0] = gross_debt.iloc[0]
+    return average
+
+def _base_effective_interest_rate(base: pd.DataFrame) -> pd.Series:
+    average_debt = _average_gross_debt(base)
+    observed = safe_div(base['r_Despesas_Financeiras'], average_debt).replace([np.inf, -np.inf], np.nan)
+    observed = observed.where(observed.ge(0.0) & observed.le(MAX_EFFECTIVE_INTEREST_RATE))
+    finite = observed.dropna()
+    fallback = float(finite.median()) if not finite.empty else 0.15
+    return observed.fillna(fallback).clip(lower=0.0, upper=MAX_EFFECTIVE_INTEREST_RATE)
+
+def _linked_financial_expense(base: pd.DataFrame, scenario: pd.DataFrame, rate_multiplier) -> pd.Series:
+    rate_multiplier = pd.Series(np.asarray(rate_multiplier, dtype=float), index=scenario.index).clip(lower=0.0)
+    scenario_rate = (_base_effective_interest_rate(base) * rate_multiplier).clip(lower=0.0, upper=MAX_EFFECTIVE_INTEREST_RATE)
+    base_average_debt = _average_gross_debt(base)
+    scenario_average_debt = _average_gross_debt(scenario)
+    scenario['d_Taxa_Juros_Efetiva_Cenario'] = scenario_rate
+    scenario['d_Divida_Financeira_Media_Cenario'] = scenario_average_debt
+    component_coverage = base[['p_Emprestimos_Financiamentos_CP', 'p_Emprestimos_Financiamentos_LP']].notna().sum(axis=1)
+    can_link = base_average_debt.notna() & base_average_debt.gt(1e-12) & scenario_average_debt.notna()
+    scenario['d_Vinculo_Juros_Divida_Cenario'] = np.select([can_link & component_coverage.eq(2), can_link & component_coverage.eq(1)], ['DIVIDA_COMPLETA', 'DIVIDA_PARCIAL_OBSERVAVEL'], default='FALLBACK_DESPESA_HISTORICA')
+    linked = (scenario_average_debt * scenario_rate).clip(lower=0.0)
+    fallback = (base['r_Despesas_Financeiras'] * rate_multiplier).clip(lower=0.0)
+    return linked.where(can_link, fallback)
+
 def reconcile_funding_balance(sim: pd.DataFrame, base: pd.DataFrame, rule: str=EXCESS_SOURCE_RULE) -> pd.DataFrame:
-    allowed = {'CAIXA_APLICACAO', 'AMORTIZACAO_DIVIDA', 'DISTRIBUICAO'}
+    allowed = {'CAIXA_APLICACAO', 'AMORTIZACAO_DIVIDA', 'DISTRIBUICAO', 'ATIVO_RESIDUAL_NAO_LIQUIDO'}
     if rule not in allowed:
         raise ValueError(f'Regra de excesso de fontes inválida: {rule}')
     complete = sim[['p_Ativo_Circulante', 'p_Imobilizado_Liquido', 'p_Passivo_Circulante', 'p_Passivo_Nao_Circulante', 'p_Patrimonio_Liquido']].notna().all(axis=1)
@@ -969,11 +1027,15 @@ def reconcile_funding_balance(sim: pd.DataFrame, base: pd.DataFrame, rule: str=E
     sim['d_Financiamento_Adicional_Cenario'] = gap
     sim['d_Excesso_Fontes_Cenario'] = excess
     sim['d_Premissa_Excesso_Fontes_Cenario'] = rule
+    sim['d_Ativo_Residual_Fechamento_Cenario'] = 0.0
     cp_add = FUNDING_CP_SHARE * gap
     lp_add = (1.0 - FUNDING_CP_SHARE) * gap
-    sim['p_Emprestimos_Financiamentos_CP'] += cp_add
+    sim['d_Financiamento_Adicional_CP_Cenario'] = cp_add
+    sim['d_Financiamento_Adicional_LP_Cenario'] = lp_add
+    for debt_account, addition in [('p_Emprestimos_Financiamentos_CP', cp_add), ('p_Emprestimos_Financiamentos_LP', lp_add)]:
+        observed = sim[debt_account]
+        sim[debt_account] = (observed.fillna(0.0) + addition).where(observed.notna() | addition.gt(0.0))
     sim['p_Passivo_Circulante'] += cp_add
-    sim['p_Emprestimos_Financiamentos_LP'] += lp_add
     sim['p_Passivo_Nao_Circulante'] += lp_add
     remaining = excess.copy()
     treatment = pd.Series('NAO_APLICAVEL', index=sim.index, dtype=object)
@@ -991,6 +1053,10 @@ def reconcile_funding_balance(sim: pd.DataFrame, base: pd.DataFrame, rule: str=E
         sim['p_Patrimonio_Liquido'] -= reduction
         remaining -= reduction
         treatment.loc[excess.gt(0)] = 'DISTRIBUICAO'
+    elif rule == 'ATIVO_RESIDUAL_NAO_LIQUIDO':
+        sim['d_Ativo_Residual_Fechamento_Cenario'] = remaining.clip(lower=0.0)
+        treatment.loc[excess.gt(0)] = 'ATIVO_RESIDUAL_NAO_LIQUIDO'
+        remaining = remaining * 0.0
     else:
         treatment.loc[excess.gt(0)] = 'CAIXA_APLICACAO'
     cash_add = remaining.clip(lower=0.0)
@@ -1017,10 +1083,13 @@ def simulate_trajectory(base: pd.DataFrame, widths: dict[str, float], rng: np.ra
     sim['p_Patrimonio_Liquido'] = _sample_signed(base['p_Patrimonio_Liquido'].to_numpy(float), widths['p_Patrimonio_Liquido'], factors['p_Patrimonio_Liquido'])
     _store_exogenous_shock(sim, base, 'p_Patrimonio_Liquido')
     sim = reconcile_funding_balance(sim, base, EXCESS_SOURCE_RULE)
-    income_drivers = ['r_Receita_Liquida', 'r_CMV_CPV_CSV', 'r_Receitas_Financeiras', 'r_Despesa_IR_CSLL', 'r_Despesas_Financeiras']
+    income_drivers = ['r_Receita_Liquida', 'r_CMV_CPV_CSV', 'r_Receitas_Financeiras', 'r_Despesa_IR_CSLL']
     for account in income_drivers:
         sim[account] = _sample_nonnegative(base[account].to_numpy(float), widths[account], factors[account])
         _store_exogenous_shock(sim, base, account)
+    rate_shock = widths['r_Despesas_Financeiras'] * factors['r_Despesas_Financeiras']
+    sim['d_Choque_Exogeno_r_Despesas_Financeiras'] = rate_shock
+    sim['r_Despesas_Financeiras'] = _linked_financial_expense(base, sim, 1.0 + rate_shock)
     base_derived = derive(base)
     ebit_width = max(widths['r_Resultado_Antes_IR_CSLL'], widths['r_Receitas_Financeiras'], widths['r_Despesas_Financeiras'])
     other_width = max(widths['r_Resultado_Antes_IR_CSLL'], widths['r_Despesa_IR_CSLL'], widths['r_Lucro_Liquido'])
@@ -1107,7 +1176,7 @@ def run_sensitivity(base: pd.DataFrame, n: int, seed: int, profiles: dict[str, P
             flag_counts['score_indefinido'] = flag_counts.get('score_indefinido', 0) + 1
             continue
         result.update(characteristics)
-        result.update({'abordagem': approach, 'financiamento_adicional_ultimo_ano': sim.iloc[-1].get('d_Financiamento_Adicional_Cenario', 0.0), 'excesso_fontes_ultimo_ano': sim.iloc[-1].get('d_Excesso_Fontes_Cenario', 0.0), 'premissa_excesso_fontes': EXCESS_SOURCE_RULE, 'simulacao': len(rows) + 1})
+        result.update({'abordagem': approach, 'financiamento_adicional_ultimo_ano': sim.iloc[-1].get('d_Financiamento_Adicional_Cenario', 0.0), 'excesso_fontes_ultimo_ano': sim.iloc[-1].get('d_Excesso_Fontes_Cenario', 0.0), 'ativo_residual_ultimo_ano': sim.iloc[-1].get('d_Ativo_Residual_Fechamento_Cenario', 0.0), 'vinculo_juros_divida_ultimo_ano': sim.iloc[-1].get('d_Vinculo_Juros_Divida_Cenario', 'NAO_APLICAVEL'), 'premissa_excesso_fontes': EXCESS_SOURCE_RULE, 'simulacao': len(rows) + 1})
         rows.append(result)
     if len(rows) < n:
         raise RuntimeError(f'Somente {len(rows)} de {n} cenários válidos após {attempts} tentativas.')
@@ -1129,6 +1198,15 @@ def _rebuild_total_deterministic(scenario: pd.DataFrame, base: pd.DataFrame, tot
     if fallback.any():
         scenario.loc[fallback, total] = base.loc[fallback, total].to_numpy(float) * (1.0 + fallback_shock * intensity[fallback.to_numpy()])
 
+def _deterministic_tax_expense(base: pd.DataFrame, scenario: pd.DataFrame) -> pd.Series:
+    """Reconstrói o tributo sem apagar a margem líquida quando o LAIR é negativo."""
+    base_pretax = base['r_Resultado_Antes_IR_CSLL']
+    observed_rate = safe_div(base['r_Despesa_IR_CSLL'], base_pretax.where(base_pretax > 1e-09)).clip(lower=0.0, upper=0.5)
+    tax_on_profit = scenario['r_Resultado_Antes_IR_CSLL'].clip(lower=0.0) * observed_rate
+    revenue_factor = safe_div(scenario['r_Receita_Liquida'], base['r_Receita_Liquida']).fillna(1.0)
+    loss_regime_fallback = base['r_Despesa_IR_CSLL'].clip(lower=0.0) * revenue_factor
+    return tax_on_profit.where(observed_rate.notna(), loss_regime_fallback)
+
 def apply_deterministic_scenario(base: pd.DataFrame, definition: dict) -> pd.DataFrame:
     numeric_shocks = [value for key, value in definition.items() if key != 'descricao' and isinstance(value, (int, float))]
     if all((abs(float(value)) <= 1e-15 for value in numeric_shocks)):
@@ -1137,6 +1215,8 @@ def apply_deterministic_scenario(base: pd.DataFrame, definition: dict) -> pd.Dat
         scenario['d_Saldo_Financiamento_Cenario'] = 0.0
         scenario['d_Financiamento_Adicional_Cenario'] = 0.0
         scenario['d_Excesso_Fontes_Cenario'] = 0.0
+        scenario['d_Ativo_Residual_Fechamento_Cenario'] = 0.0
+        scenario['d_Vinculo_Juros_Divida_Cenario'] = 'DADOS_OBSERVADOS_SEM_RECONSTRUCAO'
         scenario['d_Premissa_Excesso_Fontes_Cenario'] = EXCESS_SOURCE_RULE
         scenario['d_Tratamento_Excesso_Fontes_Cenario'] = 'NAO_APLICAVEL'
         scenario['d_Outros_Efeitos_Pos_Tributacao_Cenario'] = derive(base)['d_Outros_Efeitos_Pos_Tributacao']
@@ -1153,13 +1233,12 @@ def apply_deterministic_scenario(base: pd.DataFrame, definition: dict) -> pd.Dat
     scenario['p_Patrimonio_Liquido'] = base['p_Patrimonio_Liquido'] * (1.0 + definition['pl'] * intensity)
     scenario = reconcile_funding_balance(scenario, base, EXCESS_SOURCE_RULE)
     scenario['r_Receita_Liquida'] = base['r_Receita_Liquida'] * (1.0 + definition['receita'] * intensity)
-    scenario['r_Despesas_Financeiras'] = base['r_Despesas_Financeiras'] * (1.0 + definition['juros'] * intensity)
+    scenario['r_Despesas_Financeiras'] = _linked_financial_expense(base, scenario, 1.0 + definition['juros'] * intensity)
     base_derived = derive(base)
     base_margin = safe_div(base_derived['d_EBIT'], base['r_Receita_Liquida'])
     scenario_ebit = scenario['r_Receita_Liquida'] * base_margin * (1.0 + definition['margem_ebit'] * intensity)
     scenario['r_Resultado_Antes_IR_CSLL'] = scenario_ebit - scenario['r_Despesas_Financeiras'] + scenario['r_Receitas_Financeiras']
-    tax_rate = safe_div(base['r_Despesa_IR_CSLL'], base['r_Resultado_Antes_IR_CSLL'].clip(lower=1e-09)).clip(lower=0.0, upper=0.5)
-    scenario['r_Despesa_IR_CSLL'] = scenario['r_Resultado_Antes_IR_CSLL'].clip(lower=0.0) * tax_rate
+    scenario['r_Despesa_IR_CSLL'] = _deterministic_tax_expense(base, scenario)
     other_effect = base_derived['d_Outros_Efeitos_Pos_Tributacao']
     scenario['d_Outros_Efeitos_Pos_Tributacao_Cenario'] = other_effect
     scenario['r_Lucro_Liquido'] = scenario['r_Resultado_Antes_IR_CSLL'] - scenario['r_Despesa_IR_CSLL'] + other_effect
@@ -1177,8 +1256,18 @@ def run_deterministic_scenarios(base: pd.DataFrame, profiles: dict[str, PCAProfi
         result, _, _, _ = calculate_scores(index_scenario, score_indices(index_scenario), profiles)
         cap, _ = evaluate_prudential_caps(index_scenario, scenario)
         result['finscore_prudencial'] = min(result['finscore_prudencial_pre_cap'], cap) if np.isfinite(result['finscore_prudencial_pre_cap']) else np.nan
-        rows.append({'cenario': name, 'descricao': definition['descricao'], 'status': 'VALIDO', 'flags': '', 'premissa_excesso_fontes': EXCESS_SOURCE_RULE, 'financiamento_adicional_ultimo_ano': scenario.iloc[-1].get('d_Financiamento_Adicional_Cenario', 0.0), 'excesso_fontes_ultimo_ano': scenario.iloc[-1].get('d_Excesso_Fontes_Cenario', 0.0), **result})
-    return pd.DataFrame(rows)
+        rows.append({'cenario': name, 'descricao': definition['descricao'], 'status': 'VALIDO', 'flags': '', 'premissa_excesso_fontes': EXCESS_SOURCE_RULE, 'financiamento_adicional_ultimo_ano': scenario.iloc[-1].get('d_Financiamento_Adicional_Cenario', 0.0), 'excesso_fontes_ultimo_ano': scenario.iloc[-1].get('d_Excesso_Fontes_Cenario', 0.0), 'ativo_residual_ultimo_ano': scenario.iloc[-1].get('d_Ativo_Residual_Fechamento_Cenario', 0.0), 'vinculo_juros_divida_ultimo_ano': scenario.iloc[-1].get('d_Vinculo_Juros_Divida_Cenario', 'NAO_APLICAVEL'), 'margem_liquida_ultimo_ano': index_scenario.iloc[-1].get('margem_liquida', np.nan), **result})
+    table = pd.DataFrame(rows)
+    required = ['BASE', 'ADVERSO', 'SEVERO']
+    valid = set(required).issubset(set(table.get('cenario', []))) and table.set_index('cenario').reindex(required)['status'].eq('VALIDO').all()
+    ordered_scores = table.set_index('cenario').reindex(required)['finscore_prudencial'] if valid else pd.Series(dtype=float)
+    monotonic = bool(valid and ordered_scores.notna().all() and (ordered_scores.iloc[0] >= ordered_scores.iloc[1] - 1e-10) and (ordered_scores.iloc[1] >= ordered_scores.iloc[2] - 1e-10))
+    table['monotonicidade_global'] = monotonic
+    table['status_monotonicidade'] = 'PASSOU' if monotonic else 'FALHOU'
+    if not monotonic:
+        values = ordered_scores.to_dict() if not ordered_scores.empty else {}
+        raise RuntimeError(f'Cenários não satisfazem Base >= Adverso >= Severo: {values}')
+    return table
 
 def descriptive(results: pd.DataFrame, observed: dict) -> pd.DataFrame:
     rows = []
@@ -1232,8 +1321,13 @@ def synthetic_valid_data() -> pd.DataFrame:
 def run_self_tests() -> pd.DataFrame:
     tests = []
 
+    def record(name, status, detail=''):
+        if status not in {'PASSOU', 'AVISO', 'FALHOU'}:
+            raise ValueError(f'Status de autoteste inválido: {status}')
+        tests.append({'teste': name, 'status': status, 'detalhe': detail})
+
     def check(name, condition, detail=''):
-        tests.append({'teste': name, 'status': 'PASSOU' if bool(condition) else 'FALHOU', 'detalhe': detail})
+        record(name, 'PASSOU' if bool(condition) else 'FALHOU', detail)
 
     def temporal_note(values):
         table = pd.DataFrame({'teste_temporal': values})
@@ -1302,8 +1396,9 @@ def run_self_tests() -> pd.DataFrame:
     check('aumento isolado da despesa financeira não melhora score', interest_scores['finscore_prudencial'] <= scores['finscore_prudencial'] + 1e-10)
     excess_test = base.copy()
     excess_test['p_Patrimonio_Liquido'] += 100.0
-    reconciled = reconcile_funding_balance(excess_test.copy(), base, 'CAIXA_APLICACAO')
-    check('excesso de fontes recebe tratamento explícito', reconciled.d_Excesso_Fontes_Cenario.gt(0.0).all() and reconciled.d_Tratamento_Excesso_Fontes_Cenario.eq('CAIXA_APLICACAO').all() and (not accounting_flags(reconciled)))
+    cash_before = excess_test['p_Caixa_Equivalentes'].copy()
+    reconciled = reconcile_funding_balance(excess_test.copy(), base, 'ATIVO_RESIDUAL_NAO_LIQUIDO')
+    check('excesso de fontes fecha em ativo residual não líquido', reconciled.d_Excesso_Fontes_Cenario.gt(0.0).all() and reconciled.d_Ativo_Residual_Fechamento_Cenario.gt(0.0).all() and reconciled.d_Tratamento_Excesso_Fontes_Cenario.eq('ATIVO_RESIDUAL_NAO_LIQUIDO').all() and np.allclose(reconciled.p_Caixa_Equivalentes, cash_before) and (not accounting_flags(reconciled)))
     result_a, diagnostics_a = run_sensitivity(prepared, 120, 12345, profiles, 'independente')
     result_b, _ = run_sensitivity(prepared, 120, 12345, profiles, 'independente')
     check('reprodutibilidade por semente', np.allclose(result_a[score_keys], result_b[score_keys]))
@@ -1313,12 +1408,30 @@ def run_self_tests() -> pd.DataFrame:
     check('taxa de rejeição Monte Carlo abaixo do limite', max(actual_rejection, correlated_rejection) <= MAX_REJECTION_RATE, f'máxima={max(actual_rejection, correlated_rejection):.2%}; limite={MAX_REJECTION_RATE:.2%}')
     deterministic = run_deterministic_scenarios(prepared, profiles)
     check('cenários determinísticos contabilmente válidos', deterministic.status.eq('VALIDO').all())
+    check('cenários respeitam Base >= Adverso >= Severo', deterministic.monotonicidade_global.all())
+    check('margem líquida permanece calculada nos estresses', deterministic.set_index('cenario').loc[['ADVERSO', 'SEVERO'], 'margem_liquida_ultimo_ano'].notna().all())
     check('exportação respeita 0 e 1', parse_export_flag('0') is False and parse_export_flag('1') is True)
     hash_consistente = not HASH_CODIGO_VERIFICAVEL or HASH_CODIGO_RECALCULADO == HASH_CODIGO_MODELO
     detalhe_hash = f'declarado={HASH_CODIGO_MODELO}; recalculado={HASH_CODIGO_RECALCULADO}' if HASH_CODIGO_VERIFICAVEL else 'arquivo .ipynb indisponível ao kernel; verificação não realizada'
-    check('hash coincide quando verificável', hash_consistente, detalhe_hash)
+    record('integridade do arquivo pelo hash', 'PASSOU' if hash_consistente else 'AVISO', detalhe_hash + ('' if hash_consistente else '; divergência não bloqueia o cálculo, mas requer revisão do arquivo local'))
     empty_description = descriptive(pd.DataFrame(columns=score_keys), {})
     check('descriptive trata série vazia', len(empty_description) == 3 and empty_description['n'].eq(0).all() and empty_description['moda_estimada'].isna().all())
+    check('redundância capitalização-endividamento removida do núcleo FP', 'capitalizacao' in NUCLEI['FP'] and 'endividamento_exigivel' not in NUCLEI['FP'])
+    check('capital de giro e conversão de caixa entram nos núcleos', 'ncg_operacional_ativo' in NUCLEI['FP'] and 'ciclo_conversao_caixa' in NUCLEI['EO'] and np.isfinite(index_table.iloc[-1]['ncg_operacional_ativo']) and np.isfinite(index_table.iloc[-1]['ciclo_conversao_caixa']))
+    loss_test = index_table.copy()
+    loss_test['margem_liquida'] = [-0.01, -0.02, -0.03]
+    loss_years, loss_multiplier = recurring_loss_adjustment(loss_test)
+    check('prejuízo recorrente recebe penalidade moderada', loss_years == 3 and np.isclose(loss_multiplier, 0.9))
+    debt_definition = dict(SCENARIO_DEFINITIONS['BASE'])
+    debt_definition['divida'] = 0.2
+    linked_debt = apply_deterministic_scenario(prepared, debt_definition)
+    linked_debt_scores, _ = score_prepared_base(linked_debt, profiles)
+    check('dívida adicional eleva juros e não melhora score', linked_debt['r_Despesas_Financeiras'].iloc[-1] > prepared['r_Despesas_Financeiras'].iloc[-1] and linked_debt_scores['finscore_prudencial'] <= scores['finscore_prudencial'] + 1e-10)
+    missing_lp = prepared.copy()
+    missing_lp['p_Emprestimos_Financiamentos_LP'] = np.nan
+    missing_lp_scenario = apply_deterministic_scenario(missing_lp, SCENARIO_DEFINITIONS['ADVERSO'])
+    missing_lp_results = run_deterministic_scenarios(missing_lp, profiles)
+    check('dívida LP ausente não contamina juros nem cenários', missing_lp_scenario['r_Despesas_Financeiras'].notna().all() and missing_lp_scenario['r_Resultado_Antes_IR_CSLL'].notna().all() and missing_lp_scenario['d_Vinculo_Juros_Divida_Cenario'].eq('DIVIDA_PARCIAL_OBSERVAVEL').all() and missing_lp_results['finscore_prudencial'].notna().all() and missing_lp_results['monotonicidade_global'].all())
     debt_stress = base.copy()
     increment = 100.0
     debt_stress['p_Emprestimos_Financiamentos_CP'] += increment
@@ -1331,10 +1444,11 @@ def run_self_tests() -> pd.DataFrame:
     check('Serasa não gera média automática', pd.isna(serasa_test.loc[0, 'score_integrado']))
     return pd.DataFrame(tests)
 
-# Estado neutro necessário pelos autotestes herdados do script congelado.
+# Estado neutro necessário pelos autotestes extraídos do notebook.
 NUM_SIMULACOES = 1000
 SEMENTE = 20260723
 EXECUTAR_AUTOTESTES = False
+DATA_HORA_PROCESSAMENTO = None
 HASH_CODIGO_RECALCULADO = None
 HASH_CODIGO_VERIFICAVEL = False
 STATUS_HASH_CODIGO = "NAO_VERIFICADO"

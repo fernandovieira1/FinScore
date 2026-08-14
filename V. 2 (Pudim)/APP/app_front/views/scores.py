@@ -19,12 +19,18 @@ def _number(value: Any) -> float | None:
 
 def formatar_pontos(value: Any) -> str:
     number = _number(value)
-    return "—" if number is None else f"{number:.1f}"
+    return "—" if number is None else f"{number:.2f}"
+
+
+def formatar_pontos_consolidado(value: Any) -> str:
+    """Formata os resultados consolidados com duas casas decimais."""
+    number = _number(value)
+    return "—" if number is None else f"{number:.2f}"
 
 
 def formatar_percentual(value: Any) -> str:
     number = _number(value)
-    return "—" if number is None else f"{number:.1%}"
+    return "—" if number is None else f"{number:.2%}"
 
 
 def resumir_scores(output: dict[str, Any]) -> dict[str, Any]:
@@ -54,6 +60,11 @@ def resumir_scores(output: dict[str, Any]) -> dict[str, Any]:
         "fp_estrutural": score.get("nucleo_FP_estrutural"),
         "eo_adaptativo": score.get("nucleo_EO_adaptativo"),
         "fp_adaptativo": score.get("nucleo_FP_adaptativo"),
+        "exercicios_prejuizo": score.get("exercicios_prejuizo_liquido"),
+        "multiplicador_prejuizo": score.get("multiplicador_prejuizo_recorrente"),
+        "eo_estrutural_antes_prejuizo": score.get(
+            "nucleo_EO_estrutural_antes_prejuizo"
+        ),
         "divergencia_modelos": score.get("divergencia_modelos"),
         "cap_aplicavel": score.get("cap_prudencial_aplicavel"),
         "intervalo_inferior": score.get("faixa_incerteza_inferior"),
@@ -96,9 +107,18 @@ def _status_banner(summary: dict[str, Any]) -> None:
 def _render_score_principal(summary: dict[str, Any]) -> None:
     st.markdown("### 📌 Resultado consolidado")
     columns = st.columns(4)
-    columns[0].metric("FinScore prudencial", formatar_pontos(summary["finscore_prudencial"]))
-    columns[1].metric("Estrutural pós-gargalo", formatar_pontos(summary["estrutural"]))
-    columns[2].metric("Adaptativo pós-gargalo", formatar_pontos(summary["adaptativo"]))
+    columns[0].metric(
+        "FinScore prudencial",
+        formatar_pontos_consolidado(summary["finscore_prudencial"]),
+    )
+    columns[1].metric(
+        "Estrutural pós-gargalo",
+        formatar_pontos_consolidado(summary["estrutural"]),
+    )
+    columns[2].metric(
+        "Adaptativo pós-gargalo",
+        formatar_pontos_consolidado(summary["adaptativo"]),
+    )
     columns[3].metric(
         "Confiabilidade",
         formatar_percentual(summary["confiabilidade"]),
@@ -117,6 +137,15 @@ def _render_nucleos(summary: dict[str, Any]) -> None:
     columns[1].metric("FP estrutural", formatar_pontos(summary["fp_estrutural"]))
     columns[2].metric("EO adaptativo", formatar_pontos(summary["eo_adaptativo"]))
     columns[3].metric("FP adaptativo", formatar_pontos(summary["fp_adaptativo"]))
+    loss_years = _number(summary["exercicios_prejuizo"])
+    multiplier = _number(summary["multiplicador_prejuizo"])
+    if loss_years is not None and multiplier is not None and multiplier < 1.0:
+        st.warning(
+            "Penalidade por prejuízo recorrente aplicada ao núcleo EO: "
+            f"{int(loss_years)} exercícios com prejuízo; multiplicador "
+            f"{multiplier:.0%}. EO estrutural antes da penalidade: "
+            f"{formatar_pontos(summary['eo_estrutural_antes_prejuizo'])}."
+        )
 
 
 def _render_prudencial(summary: dict[str, Any]) -> None:

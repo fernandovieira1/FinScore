@@ -7,7 +7,12 @@ import pandas as pd
 
 from app_front.finscore_v2 import executar_finscore
 from app_front.services.finscore_service import run_finscore
-from app_front.views.scores import formatar_percentual, formatar_pontos, resumir_scores
+from app_front.views.scores import (
+    formatar_percentual,
+    formatar_pontos,
+    formatar_pontos_consolidado,
+    resumir_scores,
+)
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
@@ -43,6 +48,8 @@ class ScoresV2Test(unittest.TestCase):
         self.assertEqual(summary["adaptativo"], observed["finscore_adaptativo_pos_gargalo"])
         self.assertEqual(summary["eo_estrutural"], observed["nucleo_EO_estrutural"])
         self.assertEqual(summary["fp_adaptativo"], observed["nucleo_FP_adaptativo"])
+        self.assertEqual(summary["exercicios_prejuizo"], 3)
+        self.assertAlmostEqual(summary["multiplicador_prejuizo"], 0.90)
 
     def test_quality_and_prudential_controls_are_preserved(self) -> None:
         summary = resumir_scores(self.output)
@@ -80,8 +87,11 @@ class ScoresV2Test(unittest.TestCase):
     def test_formatters_distinguish_missing_zero_and_percentage(self) -> None:
         self.assertEqual(formatar_pontos(None), "—")
         self.assertEqual(formatar_pontos(float("nan")), "—")
-        self.assertEqual(formatar_pontos(0), "0.0")
-        self.assertEqual(formatar_percentual(0.918), "91.8%")
+        self.assertEqual(formatar_pontos(0), "0.00")
+        self.assertEqual(formatar_pontos_consolidado(412.231), "412.23")
+        self.assertEqual(formatar_pontos_consolidado(0), "0.00")
+        self.assertEqual(formatar_pontos_consolidado(None), "—")
+        self.assertEqual(formatar_percentual(0.918), "91.80%")
 
     def test_summary_does_not_mutate_contract_tables(self) -> None:
         caps = self.output["df_caps_prudenciais"]

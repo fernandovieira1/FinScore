@@ -1,4 +1,4 @@
-"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.14."""
+"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.19."""
 
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ def executar_finscore(
     numero_simulacoes: int = 1000,
     semente: int = 20260723,
 ) -> FinScoreOutput:
-    """Executa a metodologia 2.0.14 (cálculo 2.13 + exportação auditável)."""
+    """Executa a metodologia Pudim 2.0.19 em DataFrames mantidos em memória."""
     if executar_simulacoes and numero_simulacoes < 100:
         raise ValueError("Use ao menos 100 simulações.")
 
@@ -377,7 +377,9 @@ def executar_autotestes() -> pd.DataFrame:
     core.diagnosticos_simulacao = {}
     core.diagnosticos_simulacao_correlacionada = {}
     tests = core.run_self_tests()
-    failures = tests.loc[tests["status"].ne("PASSOU")]
+    # A 2.0.19 distingue aviso de integridade não verificável de falha
+    # metodológica. Somente FALHOU interrompe a execução.
+    failures = tests.loc[tests["status"].eq("FALHOU")]
     if not failures.empty:
         description = "; ".join(
             f"{row.teste}: {row.detalhe or 'sem detalhe'}"

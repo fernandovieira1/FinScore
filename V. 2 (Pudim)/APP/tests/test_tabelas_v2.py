@@ -25,7 +25,7 @@ class TabelasV2Test(unittest.TestCase):
         self.assertEqual(set(tables), set(TABLE_KEYS))
         self.assertTrue(all(isinstance(table, pd.DataFrame) for table in tables.values()))
         self.assertEqual(len(tables["diagnostico_pca"]), 2)
-        self.assertEqual(len(tables["pesos_pca"]), 13)
+        self.assertEqual(len(tables["pesos_pca"]), 14)
 
     def test_indices_and_notes_receive_real_years_and_labels(self) -> None:
         tables = catalogar_tabelas_pudim(self.output)
@@ -34,6 +34,8 @@ class TabelasV2Test(unittest.TestCase):
         self.assertEqual(tables["notas"]["Ano"].tolist(), [2023, 2024, 2025])
         self.assertIn("Margem Líquida", tables["indices"].columns)
         self.assertIn("Margem Líquida", tables["notas"].columns)
+        self.assertIn("Ciclo de Conversão de Caixa (dias)", tables["indices"].columns)
+        self.assertIn("NCG Operacional / Ativo", tables["indices"].columns)
 
     def test_catalog_does_not_mutate_engine_output(self) -> None:
         source = self.output["df_indices_observados"]

@@ -1,12 +1,12 @@
-# Motor FinScore Pudim 2.0.14
+# Motor FinScore Pudim 2.0.19
 
-Esta versão mantém os cálculos metodológicos da 2.0.13 e restaura, na 2.0.14,
-a exportação auditável integral existente na 2.12. O notebook de referência é
-`MODELO/algoritmos/Versao 14/FinScore_V2_14.ipynb`.
+O motor é extraído das células metodológicas do notebook de referência
+`MODELO/algoritmos/Versao 19/FinScore_V2_19.ipynb` e mantém a exportação
+auditável integral de 33 abas.
 
 ## Organização
 
-- `core.py`: funções e constantes extraídas mecanicamente do congelado;
+- `core.py`: funções e constantes extraídas mecanicamente do notebook 19;
 - `engine.py`: orquestração sobre um `pandas.DataFrame` em memória;
 - `contracts.py`: contrato público tipado e validação de runtime;
 - `__init__.py`: API pública do pacote.
@@ -104,6 +104,7 @@ bruto/ajustado pelos resultados nativos do Pudim:
 - núcleos EO e FP em ambos os métodos;
 - confiabilidade, status de uso e aptidão para decisão;
 - score pré-cap, cap aplicável, divergência e regras acionadas;
+- penalidade explícita por prejuízo líquido recorrente;
 - Serasa apresentado separadamente como evidência externa.
 
 Quando o gate bloqueia o cálculo, a aba não exibe scores artificiais e orienta
@@ -113,7 +114,7 @@ a revisão das ocorrências em Dados Contábeis.
 
 Ao final de `Processo → Análise`, o expansor `Exportar análise completa`
 disponibiliza um arquivo XLSX gerado em memória. Ele reproduz as 33 abas, ordem,
-colunas e formatação operacional da exportação 2.12, agora sob a versão 2.0.14.
+colunas e formatação operacional da exportação do notebook 2.0.19.
 O download é opcional e não altera os resultados mantidos na sessão.
 
 ## Contrato de saída

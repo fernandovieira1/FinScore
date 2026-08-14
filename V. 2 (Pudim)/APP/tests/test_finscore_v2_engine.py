@@ -28,7 +28,9 @@ class FinScoreV2EngineTest(unittest.TestCase):
         )
         observed = result["finscore_observado"]
 
-        self.assertAlmostEqual(observed["finscore_prudencial"], 394.4314699700764)
+        self.assertAlmostEqual(observed["finscore_prudencial"], 412.2311278076248)
+        self.assertEqual(observed["exercicios_prejuizo_liquido"], 3)
+        self.assertAlmostEqual(observed["multiplicador_prejuizo_recorrente"], 0.90)
         self.assertAlmostEqual(
             result["confiabilidade"]["indice_confiabilidade"],
             0.9180952380952381,
@@ -88,7 +90,7 @@ class FinScoreV2EngineTest(unittest.TestCase):
 
     def test_methodological_self_tests_pass(self) -> None:
         tests = executar_autotestes()
-        self.assertEqual(len(tests), 32)
+        self.assertEqual(len(tests), 39)
         self.assertTrue(tests["status"].eq("PASSOU").all())
 
     def test_seeded_monte_carlo_matches_frozen_script(self) -> None:
@@ -104,17 +106,17 @@ class FinScoreV2EngineTest(unittest.TestCase):
 
         self.assertAlmostEqual(
             comparison.loc["prudencial", "media_independente"],
-            391.8849,
+            388.7199,
             places=4,
         )
         self.assertAlmostEqual(
             comparison.loc["prudencial", "media_correlacionada"],
-            394.5015,
+            393.8233,
             places=4,
         )
         self.assertAlmostEqual(
             comparison.loc["estrutural", "mediana_independente"],
-            424.3239,
+            415.9121,
             places=4,
         )
         self.assertEqual(len(result["df_simulacoes_independentes"]), 100)

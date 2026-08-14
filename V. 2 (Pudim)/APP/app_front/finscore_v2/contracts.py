@@ -50,16 +50,26 @@ class Reliability(TypedDict):
 
 
 class ObservedFinScore(TypedDict, total=False):
+    exercicios_prejuizo_liquido: int
+    multiplicador_prejuizo_recorrente: float
     cobertura_EO_estrutural: float
+    nucleo_EO_estrutural_antes_prejuizo: float
+    multiplicador_EO_estrutural: float
     nucleo_EO_estrutural: float
     cobertura_FP_estrutural: float
+    nucleo_FP_estrutural_antes_prejuizo: float
+    multiplicador_FP_estrutural: float
     nucleo_FP_estrutural: float
     finscore_estrutural: float
     gargalo_estrutural: float
     finscore_estrutural_pos_gargalo: float
     cobertura_EO_adaptativo: float
+    nucleo_EO_adaptativo_antes_prejuizo: float
+    multiplicador_EO_adaptativo: float
     nucleo_EO_adaptativo: float
     cobertura_FP_adaptativo: float
+    nucleo_FP_adaptativo_antes_prejuizo: float
+    multiplicador_FP_adaptativo: float
     nucleo_FP_adaptativo: float
     finscore_adaptativo: float
     gargalo_adaptativo: float

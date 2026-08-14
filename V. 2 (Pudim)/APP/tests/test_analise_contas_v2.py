@@ -58,7 +58,7 @@ class AnaliseContasV2Test(unittest.TestCase):
         self.assertEqual(summary["contas_primarias"], 21)
         self.assertEqual(summary["celulas_ausentes"], 3)
         self.assertEqual(summary["valores_alterados"], 0)
-        self.assertEqual(summary["contas_derivadas"], 20)
+        self.assertEqual(summary["contas_derivadas"], 25)
         self.assertEqual(summary["ocorrencias_criticas"], 0)
 
     def test_currency_formatter_distinguishes_absence_from_zero(self) -> None:

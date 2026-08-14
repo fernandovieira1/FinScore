@@ -38,10 +38,10 @@ class FinScoreServiceV2Test(unittest.TestCase):
 
         self.assertIs(validar_contrato(result), result)
         self.assertEqual(result["modelo"]["nome"], "Pudim")
-        self.assertEqual(result["modelo"]["versao"], "2.0.14")
+        self.assertEqual(result["modelo"]["versao"], "2.0.19")
         self.assertAlmostEqual(
             result["finscore_observado"]["finscore_prudencial"],
-            394.4314699700764,
+            412.2311278076248,
         )
         self.assertEqual(meta["anos_rotulos"], [2023, 2024, 2025])
 

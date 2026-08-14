@@ -51,7 +51,7 @@ class GraficosV2Test(unittest.TestCase):
 
         self.assertEqual([trace.name for trace in nuclei.data], ["Estrutural", "Adaptativo"])
         self.assertEqual([trace.name for trace in weights.data], ["Núcleo EO", "Núcleo FP"])
-        self.assertEqual(len(weights.data[0].x), 5)
+        self.assertEqual(len(weights.data[0].x), 6)
         self.assertEqual(len(weights.data[1].x), 8)
 
     def test_deterministic_scenarios_remain_without_monte_carlo(self) -> None:

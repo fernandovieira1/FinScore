@@ -1,7 +1,9 @@
-"""Extrai o núcleo metodológico do script congelado FinScore 2.0.13.
+"""Extrai o núcleo metodológico do notebook FinScore Pudim 2.0.19.
 
-O gerador mantém funções, classes e constantes metodológicas, mas descarta os
-blocos de execução do notebook (leitura de caminho, prints, gráficos e exportação).
+O gerador seleciona células por sua função metodológica, não por intervalos de
+linhas. Blocos de leitura, apresentação, exportação e execução do notebook são
+deliberadamente excluídos.
+
 Execute a partir da pasta APP:
 
     .venv/bin/python scripts/extract_finscore_v2.py
@@ -10,66 +12,77 @@ Execute a partir da pasta APP:
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
-SOURCE = APP_DIR / "diversos" / "FinScoreV12.3.py"
+SOURCE = (
+    APP_DIR.parent
+    / "MODELO"
+    / "algoritmos"
+    / "Versao 19"
+    / "FinScore_V2_19.ipynb"
+)
 TARGET = APP_DIR / "app_front" / "finscore_v2" / "core.py"
 
+# Células que contêm exclusivamente parâmetros/estruturas metodológicos.
+ASSIGNMENT_CELLS = {
+    28, 30, 32, 33, 34, 37, 39, 41, 42, 44, 49, 50,
+}
+# Células com funções e classes necessárias ao motor e aos autotestes.
+DEFINITION_CELLS = {17, 22, 49, 50, 52, 54, 56, 60, 62}
+
 RUNTIME_ASSIGNMENTS = {
-    "CAMINHO_PLANILHA",
-    "ABA_DADOS",
     "EXPORTAR_EXCEL",
     "CAMINHO_NOTEBOOK_MODELO",
     "HASH_CODIGO_RECALCULADO",
     "HASH_CODIGO_VERIFICAVEL",
     "STATUS_HASH_CODIGO",
-    "DATA_HORA_PROCESSAMENTO",
-    "ARQUIVO_SAIDA",
-    "NUM_SIMULACOES",
-    "SEMENTE",
-    "EXECUTAR_AUTOTESTES",
 }
 
 
 def _assigned_names(node: ast.AST) -> set[str]:
-    names: set[str] = set()
     targets = getattr(node, "targets", None)
     if targets is None:
-        target = getattr(node, "target", None)
-        targets = [target] if target is not None else []
-    for target in targets:
-        if isinstance(target, ast.Name):
-            names.add(target.id)
-    return names
+        targets = [getattr(node, "target", None)]
+    return {target.id for target in targets if isinstance(target, ast.Name)}
 
 
-def _keep(node: ast.AST) -> bool:
-    if isinstance(node, (ast.Import, ast.ImportFrom)):
-        return node.lineno <= 754
-    if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-        return 167 <= node.lineno <= 3490
-    if isinstance(node, (ast.Assign, ast.AnnAssign)):
-        if not 188 <= node.lineno <= 1660:
-            return False
-        return not (_assigned_names(node) & RUNTIME_ASSIGNMENTS)
-    if isinstance(node, (ast.Assert, ast.For)):
-        return 734 <= node.lineno <= 740
-    return False
+def _nodes_from_cell(index: int, source: str) -> list[ast.stmt]:
+    parsed = ast.parse(source, filename=f"{SOURCE}:cell-{index}")
+    selected: list[ast.stmt] = []
+    for node in parsed.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)) and index <= 62:
+            selected.append(node)
+        elif isinstance(node, (ast.FunctionDef, ast.ClassDef)) and index in DEFINITION_CELLS:
+            selected.append(node)
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            names = _assigned_names(node)
+            if index == 21 and "VERSAO_MODELO" in names:
+                selected.append(node)
+            elif index == 22 and names & {"NOME_NOTEBOOK_MODELO", "HASH_CODIGO_MODELO"}:
+                selected.append(node)
+            elif index in ASSIGNMENT_CELLS and not names & RUNTIME_ASSIGNMENTS:
+                selected.append(node)
+    return selected
 
 
 def main() -> None:
-    source_text = SOURCE.read_text(encoding="utf-8")
-    parsed = ast.parse(source_text, filename=str(SOURCE))
-    body = [node for node in parsed.body if _keep(node)]
+    notebook = json.loads(SOURCE.read_text(encoding="utf-8"))
+    body: list[ast.stmt] = []
+    for index, cell in enumerate(notebook["cells"]):
+        if cell.get("cell_type") != "code" or index > 62:
+            continue
+        body.extend(_nodes_from_cell(index, "".join(cell.get("source", []))))
+
     extracted = ast.Module(body=body, type_ignores=[])
     ast.fix_missing_locations(extracted)
-
     preamble = '''\
-"""Núcleo metodológico FinScore Pudim 2.0.13.
+"""Núcleo metodológico FinScore Pudim 2.0.19.
 
-ARQUIVO GERADO. A fonte de verdade é ``diversos/FinScoreV12.3.py``.
+ARQUIVO GERADO. A fonte de verdade é
+``MODELO/algoritmos/Versao 19/FinScore_V2_19.ipynb``.
 Regere com ``scripts/extract_finscore_v2.py`` após uma mudança metodológica.
 
 Este módulo contém somente definições e constantes. Ele não lê arquivos, não
@@ -81,10 +94,11 @@ from __future__ import annotations
 '''
     defaults = '''
 
-# Estado neutro necessário pelos autotestes herdados do script congelado.
+# Estado neutro necessário pelos autotestes extraídos do notebook.
 NUM_SIMULACOES = 1000
 SEMENTE = 20260723
 EXECUTAR_AUTOTESTES = False
+DATA_HORA_PROCESSAMENTO = None
 HASH_CODIGO_RECALCULADO = None
 HASH_CODIGO_VERIFICAVEL = False
 STATUS_HASH_CODIGO = "NAO_VERIFICADO"
@@ -92,10 +106,7 @@ MODELO_APTO = False
 diagnosticos_simulacao = {}
 diagnosticos_simulacao_correlacionada = {}
 '''
-    TARGET.write_text(
-        preamble + ast.unparse(extracted) + defaults,
-        encoding="utf-8",
-    )
+    TARGET.write_text(preamble + ast.unparse(extracted) + defaults, encoding="utf-8")
     print(f"Gerado: {TARGET}")
 
 

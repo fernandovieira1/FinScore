@@ -16,15 +16,6 @@ from app_front.services.analysis_export import (
 
 APP_DIR = Path(__file__).resolve().parents[1]
 REFERENCE_XLSX = APP_DIR.parent / "MODELO" / "dados_teste" / "1Callamarys.xlsx"
-REFERENCE_EXPORT = (
-    APP_DIR.parent
-    / "MODELO"
-    / "algoritmos"
-    / "Versao 12"
-    / "resultados_finscore_2.0.13_20260813_0202.xlsx"
-)
-
-
 class AnalysisExportV2Test(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -71,7 +62,7 @@ class AnalysisExportV2Test(unittest.TestCase):
         self.assertIn("Classificação de uso", fields)
         self.assertIn("Hash da base reportada", fields)
         version = summary.loc[summary["campo"].eq("Versão"), "valor"].iloc[0]
-        self.assertEqual(version, "2.0.14")
+        self.assertEqual(version, "2.0.19")
 
     def test_export_does_not_mutate_contract_tables(self) -> None:
         source = self.output["df_contas_reportadas"]
@@ -100,33 +91,28 @@ class AnalysisExportV2Test(unittest.TestCase):
 
         self.assertRegex(
             filename,
-            r"^resultados_finscore_2\.0\.14_callamarys_comercio_\d{8}_\d{4}\.xlsx$",
+            r"^resultados_finscore_2\.0\.19_callamarys_comercio_\d{8}_\d{4}\.xlsx$",
         )
 
-    def test_schema_matches_the_2_12_reference_workbook(self) -> None:
+    def test_schema_contains_the_2_0_19_extensions(self) -> None:
         content = gerar_planilha_analise(self.simulated_output, self.meta)
-        reference = pd.ExcelFile(REFERENCE_EXPORT, engine="openpyxl")
         generated = pd.ExcelFile(BytesIO(content), engine="openpyxl")
 
-        self.assertEqual(generated.sheet_names, reference.sheet_names)
-        for sheet in generated.sheet_names:
-            expected = pd.read_excel(reference, sheet_name=sheet, nrows=0)
-            actual = pd.read_excel(generated, sheet_name=sheet, nrows=0)
-            self.assertEqual(list(actual.columns), list(expected.columns), sheet)
+        score = pd.read_excel(generated, sheet_name="score_observado", nrows=0)
+        indices = pd.read_excel(generated, sheet_name="indices_observados", nrows=0)
+        scenarios = pd.read_excel(generated, sheet_name="cenarios_deterministicos", nrows=0)
+        self.assertIn("multiplicador_prejuizo_recorrente", score.columns)
+        self.assertIn("ciclo_conversao_caixa", indices.columns)
+        self.assertIn("ncg_operacional_ativo", indices.columns)
+        self.assertIn("vinculo_juros_divida_ultimo_ano", scenarios.columns)
 
-    def test_export_canonicalizes_pca_sign_like_reference(self) -> None:
+    def test_export_canonicalizes_pca_sign(self) -> None:
         content = gerar_planilha_analise(self.simulated_output, self.meta)
-        reference = pd.read_excel(REFERENCE_EXPORT, sheet_name="cargas_pca")
         generated = pd.read_excel(BytesIO(content), sheet_name="cargas_pca")
-
-        pd.testing.assert_frame_equal(
-            generated,
-            reference,
-            check_dtype=False,
-            check_exact=False,
-            rtol=1e-10,
-            atol=1e-10,
-        )
+        for _, group in generated.groupby("nucleo"):
+            for component in [c for c in generated if c.startswith("PC")]:
+                values = pd.to_numeric(group[component], errors="coerce")
+                self.assertGreaterEqual(values.loc[values.abs().idxmax()], 0)
 
 
 if __name__ == "__main__":

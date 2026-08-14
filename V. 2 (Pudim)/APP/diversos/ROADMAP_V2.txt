@@ -16,6 +16,15 @@ ATUALIZAÇÕES VERSÃO 2
 [x] Adaptar no app gráficos / Processo >>> Análise >>> Gráficos
 [x] Adaptar no app tabelas / Processo >>> Análise >>> Tabelas
 [x] Adaptar no app resultados / Processo >>> Análise >>> Scores
+[x] Modelo V2.0.19 testado e implementado no app:
+    - Motor extraído diretamente do notebook 2.0.19.
+    - Novos indicadores de ciclo de caixa e NCG operacional incorporados.
+    - Pesos EO/FP e regras prudenciais atualizados.
+    - Penalidade por prejuízo recorrente integrada e exibida em Scores.
+    - Cenários com juros vinculados à dívida e ativo residual não líquido.
+    - Contrato de saída ampliado.
+    - Tabelas, gráficos, Dados Contábeis e Scores adaptados.
+    - Exportação atualizada para as 33 abas da versão 2.0.19.
 
 [ ] Validar sugestões Elpidio
 

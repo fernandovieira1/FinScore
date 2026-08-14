@@ -1,4 +1,4 @@
-"""Exportação auditável FinScore 2.0.14, compatível com o XLSX da 2.12."""
+"""Exportação auditável do FinScore Pudim 2.0.19."""
 
 from __future__ import annotations
 
@@ -93,6 +93,9 @@ def _hash_regras() -> str:
         "persistencia_comum_mc": core.MC_TEMPORAL_PERSISTENCE,
         "cargas_comuns_mc": core.MC_COMMON_LOADINGS,
         "limiar_redundancia_fp": core.FP_REDUNDANCY_MATERIALITY_POINTS,
+        "multiplicadores_prejuizo_recorrente": core.RECURRING_LOSS_MULTIPLIERS,
+        "taxa_juros_efetiva_maxima": core.MAX_EFFECTIVE_INTEREST_RATE,
+        "indicadores_por_nucleo": core.NUCLEI,
     }
     return hashlib.sha256(
         json.dumps(parameters, sort_keys=True).encode("utf-8")
@@ -150,6 +153,8 @@ def _configuracao(output: dict[str, Any], meta: dict[str, Any]) -> pd.DataFrame:
         ("persistencia_comum_mc", core.MC_TEMPORAL_PERSISTENCE),
         ("persistencia_especifica_mc", core.MC_IDIOSYNCRATIC_PERSISTENCE),
         ("limiar_redundancia_fp_pontos", core.FP_REDUNDANCY_MATERIALITY_POINTS),
+        ("multiplicadores_prejuizo_recorrente", str(core.RECURRING_LOSS_MULTIPLIERS)),
+        ("taxa_juros_efetiva_maxima", core.MAX_EFFECTIVE_INTEREST_RATE),
         ("peso_EO", core.NUCLEUS_WEIGHTS["EO"]), ("peso_FP", core.NUCLEUS_WEIGHTS["FP"]),
         ("peso_gargalo", core.BOTTLENECK_SHARE), ("participacao_pca", core.PCA_ADAPTIVE_SHARE),
         ("pca_variaveis_minimas", core.PCA_MIN_ACTIVE_VARIABLES),
@@ -171,7 +176,7 @@ def _configuracao(output: dict[str, Any], meta: dict[str, Any]) -> pd.DataFrame:
 
 
 def montar_abas_exportacao(output: dict[str, Any], meta: dict[str, Any] | None = None) -> dict[str, pd.DataFrame]:
-    """Monta as mesmas 33 abas e na mesma ordem da exportação 2.12."""
+    """Monta as mesmas 33 abas e na mesma ordem do notebook 2.0.19."""
     meta = meta or {}
     sheets = {
         "resumo_modelo": _resumo_modelo(output),
@@ -249,10 +254,11 @@ def _style_workbook(workbook) -> None:
             if any(token in text for token in ["percentual", "materialidade", "confianca", "correlacao", "variancia", "participacao", "peso", "freq_", "impacto_absoluto", "cobertura", "amplitude", "choque"]):
                 for row in range(2, worksheet.max_row + 1): worksheet.cell(row, column).number_format = "0.00%"
         if worksheet.title == "indices_observados":
-            percentage = {"crescimento_receita", "margem_bruta", "margem_ebit", "margem_liquida", "capitalizacao", "endividamento_exigivel", "ccl_ativo", "divida_liquida_ativo", "composicao_endividamento"}
+            percentage = {"crescimento_receita", "margem_bruta", "margem_ebit", "margem_liquida", "capitalizacao", "endividamento_exigivel", "ccl_ativo", "ncg_operacional_ativo", "divida_liquida_ativo", "composicao_endividamento"}
             multiples = {"giro_ativo", "liquidez_corrente", "liquidez_seca", "cobertura_juros"}
+            days = {"prazo_recebimento_dias", "prazo_estoques_dias", "prazo_fornecedores_dias", "ciclo_conversao_caixa"}
             for header, column in headers.items():
-                fmt = "0.00%" if header in percentage else "0.00x" if header in multiples else None
+                fmt = "0.00%" if header in percentage else "0.00x" if header in multiples else "0.00" if header in days else None
                 if fmt:
                     for row in range(2, worksheet.max_row + 1): worksheet.cell(row, column).number_format = fmt
         heights = {"correcoes_auditoria": 72, "alertas_vies_material": 72, "qualidade_dados": 48, "motivos_nan": 48, "caps_prudenciais": 48, "intervalos_incerteza": 48}
@@ -279,5 +285,5 @@ def nome_arquivo_analise(output: dict[str, Any], meta: dict[str, Any] | None = N
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", normalized).strip("_").lower() or "empresa"
     processed = output.get("modelo", {}).get("processado_em")
     timestamp = processed.strftime("%Y%m%d_%H%M") if isinstance(processed, datetime) else datetime.now().strftime("%Y%m%d_%H%M")
-    version = str(output.get("modelo", {}).get("versao", "2.0.14"))
+    version = str(output.get("modelo", {}).get("versao", "2.0.19"))
     return f"resultados_finscore_{version}_{slug}_{timestamp}.xlsx"
