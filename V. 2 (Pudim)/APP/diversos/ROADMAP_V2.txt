@@ -56,8 +56,16 @@ ATUALIZAÇÕES VERSÃO 2
 
  ## 5. ESTRUTURA
 -----------------------------
-Versões Futuras
+[ ] Congelar pacotes V2.0.20
+
+** Versões Futuras (ver também: Checklist V3 em Feedback para Elpidio.docx)
 [ ] As operações não são salvas em bancos de dados e não são recuperáveis
+    ( ) A auditoria por hash -- em teste na versão 2 -- deve ser fixada aqui
 [ ] Variações de pesos por setor pendentes de implementação
 [ ] Histórico de default a ser inserido na próxima versão
 [ ] FinScore deverá prover limites de crédito (valores)?
+[ ] Boas ideias a validar:
+    ( ) Camada canônica (crítica 8)
+    ( ) Agentes de IA como validadores?
+    ( ) Usar Altman, Kanitz e Fleuriet como testes de plausibilidade
+
