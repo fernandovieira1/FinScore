@@ -631,8 +631,7 @@ def _show_contract_table(title: str, table: pd.DataFrame, empty_message: str) ->
 def render_tabelas_pudim(output: dict[str, Any]) -> None:
     """Renderiza somente resultados calculados pelo motor Pudim."""
     status = output.get("status_qualidade", {})
-    version = output.get("modelo", {}).get("versao", "—")
-    st.markdown(f"<h3 style='text-align:left;'>📊 Tabelas — Pudim {version}</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:left;'>📊 Tabelas</h3>", unsafe_allow_html=True)
     st.caption("Resultados auditáveis fornecidos diretamente pelo contrato do motor.")
     if not status.get("apto_calculo", False):
         st.error(

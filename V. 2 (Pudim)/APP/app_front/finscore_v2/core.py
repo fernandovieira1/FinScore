@@ -1,7 +1,7 @@
-"""Núcleo metodológico FinScore Pudim 2.0.19.
+"""Núcleo metodológico FinScore Pudim 2.0.20.
 
 ARQUIVO GERADO. A fonte de verdade é
-``MODELO/algoritmos/Versao 19/FinScore_V2_19.ipynb``.
+``MODELO/algoritmos/Versao 20/FinScore_V2_0_20.ipynb``.
 Regere com ``scripts/extract_finscore_v2.py`` após uma mudança metodológica.
 
 Este módulo contém somente definições e constantes. Ele não lê arquivos, não
@@ -20,13 +20,13 @@ def parse_export_flag(value: str) -> bool:
     if value not in {'0', '1'}:
         raise ValueError("FINSCORE_EXPORTAR deve ser '0' ou '1'.")
     return value == '1'
-VERSAO_MODELO = '2.0.19'
+VERSAO_MODELO = '2.0.20'
 import hashlib as _hashlib
 import json as _json
 import re as _re
 from pathlib import Path as _Path
-NOME_NOTEBOOK_MODELO = 'FinScore_V2_19.ipynb'
-HASH_CODIGO_MODELO = '2104b025722eec8ff6f8f311766489ca75bd759aedec42991228006520ff3767'
+NOME_NOTEBOOK_MODELO = 'FinScore_V2_20.ipynb'
+HASH_CODIGO_MODELO = '44db2a3a26600cb4713dd54a239e9da0c4562cc4c0ca5a049b519e172b052e50'
 
 def calcular_hash_codigo_modelo(caminho) -> str:
     notebook = _json.loads(_Path(caminho).read_text(encoding='utf-8'))
@@ -1443,6 +1443,61 @@ def run_self_tests() -> pd.DataFrame:
     serasa_test = assess_external_credit(scores['finscore_prudencial'], 500)
     check('Serasa não gera média automática', pd.isna(serasa_test.loc[0, 'score_integrado']))
     return pd.DataFrame(tests)
+SPRINGATE_PONTO_CORTE = 0.862
+SPRINGATE_REGRA = 'S < 0,862: sinal de distress; S >= 0,862: sem sinal de distress'
+FLEURIET_ESCOPO = 'SIMPLIFICADO_COM_AS_CONTAS_EXISTENTES'
+
+def calcular_springate(contas: pd.DataFrame) -> pd.DataFrame:
+    """Calcula o Springate por exercício sem imputar componentes ausentes."""
+    resultado = pd.DataFrame(index=contas.index)
+    resultado['ano'] = contas['ano']
+    resultado['A_CCL_AT'] = safe_div(contas['d_Capital_Circulante_Liquido'], contas['p_Ativo_Total'])
+    resultado['B_EBIT_AT'] = safe_div(contas['d_EBIT'], contas['p_Ativo_Total'])
+    resultado['C_EBT_PC'] = safe_div(contas['r_Resultado_Antes_IR_CSLL'], contas['p_Passivo_Circulante'])
+    resultado['D_RECEITA_AT'] = safe_div(contas['r_Receita_Liquida'], contas['p_Ativo_Total'])
+    componentes = ['A_CCL_AT', 'B_EBIT_AT', 'C_EBT_PC', 'D_RECEITA_AT']
+    componentes_validos = np.isfinite(resultado[componentes].to_numpy(dtype=float)).all(axis=1)
+    resultado['springate_S'] = (1.03 * resultado['A_CCL_AT'] + 3.07 * resultado['B_EBIT_AT'] + 0.66 * resultado['C_EBT_PC'] + 0.4 * resultado['D_RECEITA_AT']).where(componentes_validos)
+    resultado['classificacao'] = np.select([~componentes_validos, resultado['springate_S'].lt(SPRINGATE_PONTO_CORTE)], ['NÃO CALCULÁVEL', 'SINAL DE DISTRESS'], default='SEM SINAL DE DISTRESS')
+    resultado['observacao'] = np.where(componentes_validos, 'contraste diagnóstico; não altera o FinScore', 'conta ausente ou denominador materialmente nulo')
+    return resultado.reset_index(drop=True)
+
+def _sinal_fleuriet(valor) -> str:
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return 'NÃO CALCULÁVEL'
+    if not np.isfinite(numero):
+        return 'NÃO CALCULÁVEL'
+    if np.isclose(numero, 0.0, atol=1e-12):
+        return 'NULO'
+    return 'POSITIVO' if numero > 0 else 'NEGATIVO'
+
+def _diagnostico_fleuriet(cdg, ncg, st) -> str:
+    valores = np.asarray([cdg, ncg, st], dtype=float)
+    if not np.isfinite(valores).all():
+        return 'NÃO CALCULÁVEL'
+    if cdg > 0 and st >= 0:
+        return 'fontes permanentes cobrem a NCG; saldo de tesouraria não negativo'
+    if cdg > 0 and ncg > 0 and (st < 0):
+        return 'NCG excede o CDG; dependência de financiamento de curto prazo'
+    if cdg <= 0:
+        return 'fontes permanentes insuficientes para o ativo não circulante'
+    return 'estrutura atípica; requer análise das rubricas e da trajetória'
+
+def calcular_fleuriet_simplificado(contas: pd.DataFrame) -> pd.DataFrame:
+    """Calcula saldos Fleuriet compatíveis com a abertura contábil disponível."""
+    resultado = pd.DataFrame(index=contas.index)
+    resultado['ano'] = contas['ano']
+    resultado['ACO_s'] = contas['d_Ativo_Circulante_Operacional_Simplificado']
+    resultado['PCO_s'] = contas['d_Passivo_Circulante_Operacional_Simplificado']
+    resultado['NCG_s'] = resultado['ACO_s'] - resultado['PCO_s']
+    resultado['ANC'] = contas['d_Ativo_Nao_Circulante']
+    resultado['CDG'] = contas['p_Passivo_Nao_Circulante'] + contas['p_Patrimonio_Liquido'] - resultado['ANC']
+    resultado['ST_s'] = resultado['CDG'] - resultado['NCG_s']
+    resultado['perfil_sinais'] = [f'CDG {_sinal_fleuriet(cdg)}; NCG {_sinal_fleuriet(ncg)}; ST {_sinal_fleuriet(st)}' for cdg, ncg, st in zip(resultado['CDG'], resultado['NCG_s'], resultado['ST_s'])]
+    resultado['diagnostico'] = [_diagnostico_fleuriet(cdg, ncg, st) for cdg, ncg, st in zip(resultado['CDG'], resultado['NCG_s'], resultado['ST_s'])]
+    return resultado.reset_index(drop=True)
 
 # Estado neutro necessário pelos autotestes extraídos do notebook.
 NUM_SIMULACOES = 1000

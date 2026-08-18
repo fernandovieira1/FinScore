@@ -41,6 +41,12 @@ class FinScoreV2EngineTest(unittest.TestCase):
         )
         self.assertEqual(observed["cap_prudencial_aplicavel"], 500.0)
         self.assertEqual(observed["utilizavel_decisao"], "NAO")
+        self.assertEqual(len(result["df_springate_complementar"]), 3)
+        self.assertEqual(len(result["df_fleuriet_complementar"]), 3)
+        self.assertEqual(
+            result["status_indices_complementares"],
+            "CALCULADOS COMO CONTRASTES DIAGNÓSTICOS",
+        )
 
     def test_blank_accounting_value_remains_nan(self) -> None:
         result = executar_finscore(

@@ -1,4 +1,4 @@
-"""Exportação auditável do FinScore Pudim 2.0.19."""
+"""Exportação auditável do FinScore Pudim 2.0.20."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ SHEET_ORDER = [
     "cenarios_deterministicos", "redundancia_fp", "comparacao_monte_carlo",
     "aceitos_rejeitados", "simulacoes_independentes",
     "simulacoes_correlacionadas", "resumo_simulacao", "simulacoes",
-    "sensibilidade", "amplitudes",
+    "springate", "fleuriet_simplificado", "sensibilidade", "amplitudes",
 ]
 _AUTOTESTES_CACHE: pd.DataFrame | None = None
 
@@ -93,6 +93,8 @@ def _hash_regras() -> str:
         "persistencia_comum_mc": core.MC_TEMPORAL_PERSISTENCE,
         "cargas_comuns_mc": core.MC_COMMON_LOADINGS,
         "limiar_redundancia_fp": core.FP_REDUNDANCY_MATERIALITY_POINTS,
+        "springate_ponto_corte": core.SPRINGATE_PONTO_CORTE,
+        "fleuriet_escopo": core.FLEURIET_ESCOPO,
         "multiplicadores_prejuizo_recorrente": core.RECURRING_LOSS_MULTIPLIERS,
         "taxa_juros_efetiva_maxima": core.MAX_EFFECTIVE_INTEREST_RATE,
         "indicadores_por_nucleo": core.NUCLEI,
@@ -153,6 +155,8 @@ def _configuracao(output: dict[str, Any], meta: dict[str, Any]) -> pd.DataFrame:
         ("persistencia_comum_mc", core.MC_TEMPORAL_PERSISTENCE),
         ("persistencia_especifica_mc", core.MC_IDIOSYNCRATIC_PERSISTENCE),
         ("limiar_redundancia_fp_pontos", core.FP_REDUNDANCY_MATERIALITY_POINTS),
+        ("springate_ponto_corte", core.SPRINGATE_PONTO_CORTE),
+        ("fleuriet_escopo", core.FLEURIET_ESCOPO),
         ("multiplicadores_prejuizo_recorrente", str(core.RECURRING_LOSS_MULTIPLIERS)),
         ("taxa_juros_efetiva_maxima", core.MAX_EFFECTIVE_INTEREST_RATE),
         ("peso_EO", core.NUCLEUS_WEIGHTS["EO"]), ("peso_FP", core.NUCLEUS_WEIGHTS["FP"]),
@@ -176,7 +180,7 @@ def _configuracao(output: dict[str, Any], meta: dict[str, Any]) -> pd.DataFrame:
 
 
 def montar_abas_exportacao(output: dict[str, Any], meta: dict[str, Any] | None = None) -> dict[str, pd.DataFrame]:
-    """Monta as mesmas 33 abas e na mesma ordem do notebook 2.0.19."""
+    """Monta as mesmas 35 abas e na mesma ordem do notebook 2.0.20."""
     meta = meta or {}
     sheets = {
         "resumo_modelo": _resumo_modelo(output),
@@ -213,6 +217,8 @@ def montar_abas_exportacao(output: dict[str, Any], meta: dict[str, Any] | None =
             "simulacoes_correlacionadas": _table(output, "df_simulacoes_correlacionadas"),
             "resumo_simulacao": _table(output, "df_resumo_simulacoes"),
             "simulacoes": _table(output, "df_simulacoes"),
+            "springate": _table(output, "df_springate_complementar"),
+            "fleuriet_simplificado": _table(output, "df_fleuriet_complementar"),
             "sensibilidade": _table(output, "df_sensibilidade"),
             "amplitudes": _table(output, "df_amplitudes"),
         })
@@ -285,5 +291,5 @@ def nome_arquivo_analise(output: dict[str, Any], meta: dict[str, Any] | None = N
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", normalized).strip("_").lower() or "empresa"
     processed = output.get("modelo", {}).get("processado_em")
     timestamp = processed.strftime("%Y%m%d_%H%M") if isinstance(processed, datetime) else datetime.now().strftime("%Y%m%d_%H%M")
-    version = str(output.get("modelo", {}).get("versao", "2.0.19"))
+    version = str(output.get("modelo", {}).get("versao", "2.0.20"))
     return f"resultados_finscore_{version}_{slug}_{timestamp}.xlsx"

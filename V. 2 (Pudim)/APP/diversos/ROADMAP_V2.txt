@@ -53,6 +53,7 @@ ATUALIZAÇÕES VERSÃO 2
      (x) Excluir link Google Sheets
      (x) Dados que bloqueiam - tirar dúvidas
      (x) Remoção de tabela com colunas com opção de bloquear cálculo, aprovação e score
+[ ] Testar Monte Carlo com 500 simulações
 
  ## 5. ESTRUTURA
 -----------------------------
@@ -63,9 +64,10 @@ ATUALIZAÇÕES VERSÃO 2
     ( ) A auditoria por hash -- em teste na versão 2 -- deve ser fixada aqui
 [ ] Variações de pesos por setor pendentes de implementação
 [ ] Histórico de default a ser inserido na próxima versão
-[ ] FinScore deverá prover limites de crédito (valores)?
-[ ] Boas ideias a validar:
-    ( ) Camada canônica (crítica 8)
-    ( ) Agentes de IA como validadores?
-    ( ) Usar Altman, Kanitz e Fleuriet como testes de plausibilidade
+[ ] FinScore deverá prover limites de crédito (valores)? 
+[x] Boas ideias a validar:
+    (x) Camada canônica (crítica 8)
+    (o) Agentes de IA como validadores?
+    (x) Usar Altman, Kanitz e Fleuriet como testes de plausibilidade --> utilizado Fleuriet e Springate
+
 

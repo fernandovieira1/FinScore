@@ -33,6 +33,13 @@ def formatar_percentual(value: Any) -> str:
     return "—" if number is None else f"{number:.2%}"
 
 
+def formatar_moeda(value: Any) -> str:
+    number = _number(value)
+    if number is None:
+        return "—"
+    return f"R$ {number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def resumir_scores(output: dict[str, Any]) -> dict[str, Any]:
     """Extrai o resumo exclusivamente dos campos públicos do contrato Pudim."""
     status = dict(output.get("status_qualidade", {}))
@@ -82,7 +89,7 @@ def resumir_scores(output: dict[str, Any]) -> dict[str, Any]:
 
 
 def _empresa(meta: dict[str, Any]) -> None:
-    st.markdown("### 🏢 Empresa")
+    st.markdown("### I. Empresa")
     columns = st.columns(3)
     columns[0].metric("Nome da empresa", meta.get("empresa") or "—")
     columns[1].metric("CNPJ", meta.get("cnpj") or "—")
@@ -105,7 +112,7 @@ def _status_banner(summary: dict[str, Any]) -> None:
 
 
 def _render_score_principal(summary: dict[str, Any]) -> None:
-    st.markdown("### 📌 Resultado consolidado")
+    st.markdown("### II. FinScore")
     columns = st.columns(4)
     columns[0].metric(
         "FinScore prudencial",
@@ -131,7 +138,7 @@ def _render_score_principal(summary: dict[str, Any]) -> None:
 
 
 def _render_nucleos(summary: dict[str, Any]) -> None:
-    st.markdown("### Núcleos da avaliação")
+    st.markdown("**Núcleos da avaliação**")
     columns = st.columns(4)
     columns[0].metric("EO estrutural", formatar_pontos(summary["eo_estrutural"]))
     columns[1].metric("FP estrutural", formatar_pontos(summary["fp_estrutural"]))
@@ -149,7 +156,7 @@ def _render_nucleos(summary: dict[str, Any]) -> None:
 
 
 def _render_prudencial(summary: dict[str, Any]) -> None:
-    st.markdown("### Controle prudencial")
+    st.markdown("**Controle prudencial**")
     columns = st.columns(4)
     columns[0].metric("Score antes do cap", formatar_pontos(summary["finscore_pre_cap"]))
     columns[1].metric("Cap aplicável", formatar_pontos(summary["cap_aplicavel"]))
@@ -167,8 +174,43 @@ def _render_prudencial(summary: dict[str, Any]) -> None:
                 st.markdown(f"- **{row.regra}** — cap {formatar_pontos(row.cap)}: {row.justificativa}")
 
 
+def _render_indices_complementares(output: dict[str, Any]) -> None:
+    st.markdown("### III. Índices Complementares")
+    st.caption(
+        "Springate e Fleuriet são contrastes diagnósticos independentes e não "
+        "alteram o FinScore, seus pesos, PCA, gargalo, caps ou simulações."
+    )
+    springate = output.get("df_springate_complementar")
+    fleuriet = output.get("df_fleuriet_complementar")
+    if not isinstance(springate, pd.DataFrame) or springate.empty:
+        st.info(str(output.get("status_indices_complementares", "Não calculável.")))
+        return
+
+    latest_springate = springate.iloc[-1]
+    columns = st.columns(3)
+    columns[0].metric("Springate (S)", formatar_pontos(latest_springate.get("springate_S")))
+    columns[1].metric("Exercício", str(latest_springate.get("ano", "—")))
+    columns[2].metric("Classificação", str(latest_springate.get("classificacao", "—")))
+    with st.expander("Histórico Springate"):
+        st.dataframe(springate, use_container_width=True, hide_index=True)
+
+    st.markdown("**Fleuriet simplificado**")
+    if not isinstance(fleuriet, pd.DataFrame) or fleuriet.empty:
+        st.info("Fleuriet simplificado não calculável para esta base.")
+        return
+    latest_fleuriet = fleuriet.iloc[-1]
+    columns = st.columns(4)
+    columns[0].metric("CDG", formatar_moeda(latest_fleuriet.get("CDG")))
+    columns[1].metric("NCG simplificada", formatar_moeda(latest_fleuriet.get("NCG_s")))
+    columns[2].metric("Saldo de tesouraria", formatar_moeda(latest_fleuriet.get("ST_s")))
+    columns[3].metric("Exercício", str(latest_fleuriet.get("ano", "—")))
+    st.caption(str(latest_fleuriet.get("diagnostico", "—")))
+    with st.expander("Histórico Fleuriet simplificado"):
+        st.dataframe(fleuriet, use_container_width=True, hide_index=True)
+
+
 def _render_serasa(summary: dict[str, Any]) -> None:
-    st.markdown("### Evidência externa — Serasa")
+    st.markdown("### IV. Serasa")
     serasa = summary["serasa"]
     if not serasa:
         st.info("Nenhuma evidência Serasa foi vinculada a este cálculo.")
@@ -213,6 +255,7 @@ def render_scores_pudim(output: dict[str, Any], meta: dict[str, Any]) -> None:
     _render_score_principal(summary)
     _render_nucleos(summary)
     _render_prudencial(summary)
+    _render_indices_complementares(output)
     _render_serasa(summary)
     _render_processamento(summary)
 

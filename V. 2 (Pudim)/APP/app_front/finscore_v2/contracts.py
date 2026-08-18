@@ -119,6 +119,9 @@ class FinScoreOutput(TypedDict):
     df_diagnostico_pca: pd.DataFrame
     df_pesos_pca: pd.DataFrame
     df_cargas_pca: pd.DataFrame
+    df_springate_complementar: pd.DataFrame
+    df_fleuriet_complementar: pd.DataFrame
+    status_indices_complementares: str
     df_cenarios_deterministicos: pd.DataFrame
     df_simulacoes: pd.DataFrame
     df_simulacoes_independentes: pd.DataFrame
@@ -152,6 +155,8 @@ DATAFRAME_KEYS = (
     "df_diagnostico_pca",
     "df_pesos_pca",
     "df_cargas_pca",
+    "df_springate_complementar",
+    "df_fleuriet_complementar",
     "df_cenarios_deterministicos",
     "df_simulacoes",
     "df_simulacoes_independentes",
@@ -205,6 +210,7 @@ def validar_contrato(output: FinScoreOutput | dict[str, Any]) -> FinScoreOutput:
     errors: list[str] = []
     required_top_level = {
         "contrato_versao",
+        "status_indices_complementares",
         "hash_dados_reportados",
         "hash_dados_utilizados",
         *DICT_KEYS,
@@ -219,6 +225,8 @@ def validar_contrato(output: FinScoreOutput | dict[str, Any]) -> FinScoreOutput:
             "contrato_versao incompatível: "
             f"esperado {CONTRACT_VERSION!r}, recebido {output.get('contrato_versao')!r}"
         )
+    if not isinstance(output.get("status_indices_complementares"), str):
+        errors.append("status_indices_complementares deve ser str")
 
     for key in DICT_KEYS:
         if key in output and not isinstance(output[key], dict):

@@ -274,8 +274,7 @@ def _show_figure(fig: go.Figure, empty_message: str) -> None:
 def render_graficos_pudim(output: dict[str, Any]) -> None:
     """Renderiza os gráficos oficiais da etapa de análise Pudim."""
     status = output.get("status_qualidade", {})
-    version = output.get("modelo", {}).get("versao", "—")
-    st.markdown(f"<h3 style='text-align:left;'>📈 Gráficos — Pudim {version}</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:left;'>📈 Gráficos</h3>", unsafe_allow_html=True)
     st.caption("Visualizações de dados e resultados fornecidos pelo contrato do motor.")
     if not status.get("apto_calculo", False):
         st.error(

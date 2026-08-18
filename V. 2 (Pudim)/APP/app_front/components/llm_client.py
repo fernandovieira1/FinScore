@@ -9,8 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
 from pydantic import ValidationError
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # Streamlit Cloud usa Secrets/variáveis de ambiente.
+    def load_dotenv(*args: Any, **kwargs: Any) -> bool:
+        return False
 
 load_dotenv()
 

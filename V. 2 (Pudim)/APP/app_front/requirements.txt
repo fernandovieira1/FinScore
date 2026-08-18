@@ -1,0 +1,3 @@
+# Arquivo de descoberta para o Streamlit Community Cloud.
+# A lista canônica permanece na raiz de APP.
+-r ../requirements.txt

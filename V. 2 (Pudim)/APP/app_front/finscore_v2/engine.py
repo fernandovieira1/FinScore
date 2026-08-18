@@ -1,4 +1,4 @@
-"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.19."""
+"""Orquestração sem efeitos colaterais do FinScore Pudim 2.0.20."""
 
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ def executar_finscore(
     numero_simulacoes: int = 1000,
     semente: int = 20260723,
 ) -> FinScoreOutput:
-    """Executa a metodologia Pudim 2.0.19 em DataFrames mantidos em memória."""
+    """Executa o FinScore 2.0.19 e os diagnósticos complementares da 2.0.20."""
     if executar_simulacoes and numero_simulacoes < 100:
         raise ValueError("Use ao menos 100 simulações.")
 
@@ -235,6 +235,9 @@ def executar_finscore(
     pca_diagnostics = pd.DataFrame()
     pca_weights = pd.DataFrame()
     pca_loadings = pd.DataFrame()
+    springate = pd.DataFrame()
+    fleuriet = pd.DataFrame()
+    complementary_status = "NÃO CALCULÁVEL — BASE NÃO APTA"
 
     if model_ready:
         derived = core.derive(analysis)
@@ -274,6 +277,15 @@ def executar_finscore(
             observed["faixa_incerteza_inferior"] = observed["finscore_prudencial"]
             observed["faixa_incerteza_superior"] = observed["finscore_prudencial"]
         pca_diagnostics, pca_weights, pca_loadings = _diagnosticos_pca(profiles)
+        springate = core.calcular_springate(derived)
+        fleuriet = core.calcular_fleuriet_simplificado(derived)
+        if not np.allclose(
+            fleuriet["CDG"].to_numpy(dtype=float),
+            derived["d_Capital_Circulante_Liquido"].to_numpy(dtype=float),
+            equal_nan=True,
+        ):
+            raise AssertionError("Controle Fleuriet: CDG diverge do CCL contábil.")
+        complementary_status = "CALCULADOS COMO CONTRASTES DIAGNÓSTICOS"
 
     result.update(
         {
@@ -292,6 +304,9 @@ def executar_finscore(
             "df_diagnostico_pca": pca_diagnostics,
             "df_pesos_pca": pca_weights,
             "df_cargas_pca": pca_loadings,
+            "df_springate_complementar": springate,
+            "df_fleuriet_complementar": fleuriet,
+            "status_indices_complementares": complementary_status,
         }
     )
 

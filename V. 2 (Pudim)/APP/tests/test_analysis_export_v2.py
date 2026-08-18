@@ -39,7 +39,7 @@ class AnalysisExportV2Test(unittest.TestCase):
         workbook = pd.ExcelFile(BytesIO(content), engine="openpyxl")
 
         self.assertEqual(workbook.sheet_names, SHEET_ORDER)
-        self.assertEqual(len(workbook.sheet_names), 33)
+        self.assertEqual(len(workbook.sheet_names), 35)
 
     def test_exported_tables_match_engine_contract(self) -> None:
         content = gerar_planilha_analise(self.simulated_output, self.meta)
@@ -62,7 +62,7 @@ class AnalysisExportV2Test(unittest.TestCase):
         self.assertIn("Classificação de uso", fields)
         self.assertIn("Hash da base reportada", fields)
         version = summary.loc[summary["campo"].eq("Versão"), "valor"].iloc[0]
-        self.assertEqual(version, "2.0.19")
+        self.assertEqual(version, "2.0.20")
 
     def test_export_does_not_mutate_contract_tables(self) -> None:
         source = self.output["df_contas_reportadas"]
@@ -91,10 +91,10 @@ class AnalysisExportV2Test(unittest.TestCase):
 
         self.assertRegex(
             filename,
-            r"^resultados_finscore_2\.0\.19_callamarys_comercio_\d{8}_\d{4}\.xlsx$",
+            r"^resultados_finscore_2\.0\.20_callamarys_comercio_\d{8}_\d{4}\.xlsx$",
         )
 
-    def test_schema_contains_the_2_0_19_extensions(self) -> None:
+    def test_schema_contains_the_2_0_20_extensions(self) -> None:
         content = gerar_planilha_analise(self.simulated_output, self.meta)
         generated = pd.ExcelFile(BytesIO(content), engine="openpyxl")
 
@@ -105,6 +105,10 @@ class AnalysisExportV2Test(unittest.TestCase):
         self.assertIn("ciclo_conversao_caixa", indices.columns)
         self.assertIn("ncg_operacional_ativo", indices.columns)
         self.assertIn("vinculo_juros_divida_ultimo_ano", scenarios.columns)
+        springate = pd.read_excel(generated, sheet_name="springate", nrows=0)
+        fleuriet = pd.read_excel(generated, sheet_name="fleuriet_simplificado", nrows=0)
+        self.assertIn("springate_S", springate.columns)
+        self.assertIn("CDG", fleuriet.columns)
 
     def test_export_canonicalizes_pca_sign(self) -> None:
         content = gerar_planilha_analise(self.simulated_output, self.meta)

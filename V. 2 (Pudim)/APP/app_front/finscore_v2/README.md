@@ -1,8 +1,9 @@
-# Motor FinScore Pudim 2.0.19
+# Motor FinScore Pudim 2.0.20
 
 O motor é extraído das células metodológicas do notebook de referência
-`MODELO/algoritmos/Versao 19/FinScore_V2_19.ipynb` e mantém a exportação
-auditável integral de 33 abas.
+`MODELO/algoritmos/Versao 20/FinScore_V2_0_20.ipynb`. O cálculo do FinScore
+permanece idêntico ao da 2.0.19; Springate e Fleuriet simplificado são apenas
+contrastes diagnósticos independentes. A exportação auditável contém 35 abas.
 
 ## Organização
 
@@ -113,8 +114,8 @@ a revisão das ocorrências em Dados Contábeis.
 ## Exportação da análise
 
 Ao final de `Processo → Análise`, o expansor `Exportar análise completa`
-disponibiliza um arquivo XLSX gerado em memória. Ele reproduz as 33 abas, ordem,
-colunas e formatação operacional da exportação do notebook 2.0.19.
+disponibiliza um arquivo XLSX gerado em memória. Ele reproduz as 35 abas, ordem,
+colunas e formatação operacional da exportação do notebook 2.0.20.
 O download é opcional e não altera os resultados mantidos na sessão.
 
 ## Contrato de saída
