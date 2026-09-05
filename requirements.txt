@@ -1,9 +1,10 @@
-# Dependências do deploy Streamlit Cloud (arquivo na raiz para evitar
-# problemas do instalador com espaços no caminho do módulo principal).
-streamlit==1.61.1
-streamlit-option-menu==0.3.12
+# Ambiente de execução: Python 3.12
+# Dependências do deploy Streamlit (entrada em V. 2 (Pudim)/APP/app_front/app.py)
 
-# Processamento e Excel
+# Interface
+streamlit==1.61.1
+
+# Processamento de dados e Excel
 pandas==2.2.2
 numpy==1.26.4
 openpyxl==3.1.5
@@ -15,23 +16,31 @@ plotly==6.9.0
 seaborn==0.13.2
 Pillow==10.3.0
 
-# Machine Learning / PCA
+# Modelagem estatística
 scikit-learn==1.4.2
 scipy==1.11.4
 
-# Exportação Word/PDF
-python-docx==1.1.2
-reportlab==4.2.2
-xhtml2pdf==0.2.16
-playwright==1.48.0
-markdown-it-py==3.0.0
+# Persistência e validação de dados
+SQLAlchemy==2.0.51
+pydantic==2.13.4
 
-# IA / LLM
-openai==1.37.0
-langchain==0.2.10
-langchain-openai==0.1.17
-pydantic>=2
-langchain-community==0.2.9
+# Exportação de pareceres em PDF
+markdown-it-py==3.0.0
+reportlab==4.4.10
+xhtml2pdf==0.2.16
+pypdf==6.15.0
+playwright==1.48.0
+
+# Configuração e integração com o serviço de pareceres
+# A aplicação usa a API por HTTP; os SDKs OpenAI/LangChain não são necessários.
 python-dotenv==1.0.1
 requests==2.32.3
-tiktoken>=0.4.0
+# Evita incompatibilidade entre a detecção opcional do requests e o chardet 7.x.
+chardet==5.2.0
+tiktoken==0.13.0
+
+# Autenticação e sessão
+itsdangerous==2.2.0
+passlib==1.7.4
+bcrypt==4.0.1
+streamlit-cookies-manager==0.2.0
