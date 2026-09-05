@@ -1,0 +1,91 @@
+# Python: bytecode e extensões compiladas
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Ambientes virtuais e runtimes locais
+.venv*/
+venv/
+venv-*/
+.finscoreV2.13/
+
+# Empacotamento
+build/
+dist/
+.eggs/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+MANIFEST
+
+# Testes, cobertura e caches de ferramentas
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Configuração local e segredos
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.streamlit/secrets.toml
+
+# Dados locais de execução
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.temp
+*.out
+~$*
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Backups locais e resíduos de merge
+_BACKUPS/
+*.bak
+*.old
+*.orig
+*.rej
+
+# Artefatos binários de compilação local
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.dylib
+*.exe
+*.bin
+*.class

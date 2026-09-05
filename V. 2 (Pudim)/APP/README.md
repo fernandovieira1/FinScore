@@ -304,8 +304,7 @@ Para HTTPS, use `certbot` ou instale certificado manualmente.
 
    ```bash
    python3.12 -m venv .venv
-   source .venv/bin/activate  # Linux/macOS
-   # .venv\Scripts\activate   # Windows
+   source .venv/bin/activate
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
