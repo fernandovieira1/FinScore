@@ -148,16 +148,16 @@ def render_sidebar(current_slug: str) -> None:
             .fs-menu a { text-decoration: none; color: #245561; display: block; }
             .fs-menu .item, .fs-menu summary {
                 padding: 10px 12px; border-radius: 0; margin: 0; list-style: none;
-                background: #cdcdcd; color: #245561; cursor: pointer; font-weight: 700;
+                background: #87CEFA; color: #245561; cursor: pointer; font-weight: 700;
             }
-            .fs-menu .item:hover, .fs-menu summary:hover { background: #cdcdcd; }
-            .fs-menu details { background: #cdcdcd; }
-            .fs-menu details[open] > summary { background: #cdcdcd; }
-            .fs-menu .active { background: #cdcdcd; border-left: 3px solid #9aa0a6; }
+            .fs-menu .item:hover, .fs-menu summary:hover { background: #87CEFA; }
+            .fs-menu details { background: #87CEFA; }
+            .fs-menu details[open] > summary { background: #87CEFA; }
+            .fs-menu .active { background: #87CEFA; border-left: 3px solid #9aa0a6; }
             .fs-menu .submenu a { padding: 8px 16px 8px 28px; }
             .fs-menu .item.disabled,
             .fs-menu .submenu a.disabled {
-                background: #cdcdcd !important;
+                background: #87CEFA !important;
                 color: #7a7a7a !important;
                 cursor: not-allowed !important;
                 pointer-events: none !important;
@@ -165,7 +165,7 @@ def render_sidebar(current_slug: str) -> None:
             }
             .fs-menu .item.disabled:hover,
             .fs-menu .submenu a.disabled:hover {
-                background: #cdcdcd !important;
+                background: #87CEFA !important;
             }
             .fs-menu summary { position: relative; }
             .fs-menu summary::marker { display: none; }

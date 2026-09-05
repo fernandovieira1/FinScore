@@ -64,7 +64,7 @@ def inject_global_css():
 
         /* ====== Sidebar ====== */
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, {c["blue_dark"]} 0%, {c["blue_darker"]} 100%);
+            background: #87CEFA;
             color: {c["white"]} !important;
             border-right: 1px solid {c["blue_darker"]};
         }}

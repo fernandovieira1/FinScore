@@ -1,0 +1,72 @@
+[
+  {
+    "caso": 1,
+    "descricao": "Aprovar sem garantia",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_eligible_score_approves_without_commercial_inputs"
+  },
+  {
+    "caso": 2,
+    "descricao": "Aprovar com garantia",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_restricted_approval_recommends_guarantee"
+  },
+  {
+    "caso": 3,
+    "descricao": "Não aprovar",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_eligible_score_below_250_is_not_approved"
+  },
+  {
+    "caso": 4,
+    "descricao": "Dados inconsistentes por baixa confiabilidade",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_reliability_below_native_threshold_is_inconsistent"
+  },
+  {
+    "caso": 5,
+    "descricao": "Dados inconsistentes por alerta bloqueador",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_native_quality_gate_prevents_automatic_approval"
+  },
+  {
+    "caso": 6,
+    "descricao": "Alerta não bloqueador",
+    "teste": "APP.tests.test_evidence_book_v2.EvidenceBookV2Test.test_non_blocking_alerts_remain_non_blocking"
+  },
+  {
+    "caso": 7,
+    "descricao": "Indicador não calculável",
+    "teste": "APP.tests.test_parecer_data_v2.ParecerDataV2Test.test_missing_values_remain_null_in_json"
+  },
+  {
+    "caso": 8,
+    "descricao": "Divergência entre período cadastral e analisado",
+    "teste": "APP.tests.test_parecer_data_v2.ParecerDataV2Test.test_cadastral_period_is_separate_and_divergence_is_explicit"
+  },
+  {
+    "caso": 9,
+    "descricao": "Cenário não monotônico",
+    "teste": "APP.tests.test_evidence_book_v2.EvidenceBookV2Test.test_non_monotonic_scenario_creates_explicit_finding"
+  },
+  {
+    "caso": 10,
+    "descricao": "Serasa mais desfavorável sem mudança isolada de categoria",
+    "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_severe_serasa_restriction_is_supplementary_not_an_automatic_veto"
+  },
+  {
+    "caso": 11,
+    "descricao": "Springate ou Fleuriet não calculável",
+    "teste": "APP.tests.test_evidence_book_v2.EvidenceBookV2Test.test_non_calculable_supplementary_diagnostic_remains_a_limitation"
+  },
+  {
+    "caso": 12,
+    "descricao": "Ausência de campos contextuais da operação",
+    "teste": "APP.tests.test_parecer_data_v2.ParecerDataV2Test.test_optional_operation_fields_are_contextual_only"
+  },
+  {
+    "caso": 13,
+    "descricao": "Divergência entre recomendação, analista e alçada",
+    "teste": "APP.tests.test_credit_governance_v2.CreditGovernanceV2Test.test_authority_divergence_uses_analyst_as_immediate_origin"
+  },
+  {
+    "caso": 14,
+    "descricao": "Falha de redação com preservação do dossiê",
+    "teste": "APP.tests.test_analysis_dossier_v2.AnalysisDossierStoreTest.test_failed_report_attempt_preserves_contract_and_records_telemetry"
+  }
+]

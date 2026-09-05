@@ -1,7 +1,7 @@
 # app_front/components/header.py
 from __future__ import annotations
 import streamlit as st
-from components.theme import inject_global_css, render_logo_overlay
+from .theme import inject_global_css, render_logo_overlay
 
 LOGO_PATH = "assets/logo.png"
 

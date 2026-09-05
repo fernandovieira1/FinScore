@@ -4,8 +4,8 @@ from __future__ import annotations
 import streamlit as st
 import base64
 from pathlib import Path
-from components.config import TOPBAR_PAGES
-from components.theme import get_palette
+from .config import TOPBAR_PAGES
+from .theme import get_palette
 
 def show_topbar_calculo_popup(target_page: str):
     """

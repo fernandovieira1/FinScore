@@ -22,6 +22,15 @@ _TRANSIENT_KEYS = (
     "_insight_polling_active",
     "_insight_last_poll_ts",
     "_insight_styles_loaded",
+    "parecer_narrativa_estruturada",
+    "parecer_contexto_auditavel",
+    "parecer_dados_estruturados",
+    "parecer_pdf",
+    "parecer_pdf_pages",
+    "credit_governance",
+    "_governance_notice",
+    "policy_inputs",
+    "token_usage",
 )
 
 

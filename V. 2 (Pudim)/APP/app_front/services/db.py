@@ -1,4 +1,4 @@
-"""Database utilities for FinScore authentication layer.
+"""Database utilities for FinScore authentication and analysis records.
 
 This module exposes the SQLAlchemy engine, session factory and helper
 utilities used by the authentication subsystem. The goal is to keep the
@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 # SQLite database stored alongside the Streamlit frontend codebase so it can
@@ -32,6 +32,15 @@ engine = create_engine(
     future=True,
     pool_pre_ping=True,
 )
+
+
+@event.listens_for(engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+    """Ativa integridade referencial em cada conexão SQLite."""
+
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 # Sessions are configured with autocommit disabled to guarantee explicit
 # transaction handling. Expire-on-commit is disabled so callers can still

@@ -6,7 +6,7 @@ ATUALIZAÇÕES VERSÃO 2
 -----------------------------
 [x] Bibliotecas e python 3.12
 [x] Modelo versão 2.14 como baseline
-[ ] Chave GPT
+[x] Chave GPT (configuração técnica em app_front/.env)
 
 ## 1. MODELO
 -----------------------------
@@ -30,16 +30,20 @@ ATUALIZAÇÕES VERSÃO 2
 
 ## 2. PARECER
 -----------------------------
-[ ] Criar nova estrutura do Parecer
+[x] Criar nova estrutura do Parecer
+[x] Contrato estruturado, governança, livro de evidências e schema narrativo
+[x] Validação factual/editorial, documento, anexos e paginação
+[x] Persistência de ID, dossiê, histórico e registros de governança
+[x] Matriz automatizada dos 14 casos mínimos de regressão
 [ ] Validar com Assertif
 [ ] Testes (todos os 17 enviados pelo Elpídio)
 
 ## 3. DOCUMENTAÇÃO
 -----------------------------
-[ ] Sobre
-    ( ) Metodologia
-    ( ) Glossário
-    ( ) FAQ
+[x] Sobre
+    (x) Metodologia
+    (x) Glossário
+    (x) FAQ
 [ ] Inserir Versão no App (definir onde: ao lado de 'Guia Rápido', no menu superior?)
 
 ## 4. AJUSTES
@@ -57,11 +61,11 @@ ATUALIZAÇÕES VERSÃO 2
 
  ## 5. ESTRUTURA
 -----------------------------
-[ ] Congelar pacotes V2.0.20
+[x] Congelar pacotes V2.0.20
 
 ** Versões Futuras (ver também: Checklist V3 em Feedback para Elpidio.docx)
-[ ] As operações não são salvas em bancos de dados e não são recuperáveis
-    ( ) A auditoria por hash -- em teste na versão 2 -- deve ser fixada aqui
+[x] Dossiês de análise e pareceres salvos em banco de dados e recuperáveis
+    (x) Auditoria por hash, sequência persistente e trilha de governança
 [ ] Variações de pesos por setor pendentes de implementação
 [ ] Histórico de default a ser inserido na próxima versão
 [ ] FinScore deverá prover limites de crédito (valores)? 
@@ -69,5 +73,4 @@ ATUALIZAÇÕES VERSÃO 2
     (x) Camada canônica (crítica 8)
     (o) Agentes de IA como validadores?
     (x) Usar Altman, Kanitz e Fleuriet como testes de plausibilidade --> utilizado Fleuriet e Springate
-
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
-import streamlit as st
+
+from .sobre import render_glossary_section
 
 def render():
-    st.title("Glossário")
-    st.write("Esta é a página de glossário.")
+    render_glossary_section()

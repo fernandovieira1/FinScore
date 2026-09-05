@@ -13,12 +13,19 @@ import sys
 import platform
 import asyncio
 import base64
+import html as html_lib
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional, Literal
 from string import Template
-import markdown_it
 from io import BytesIO
+
+try:
+    import markdown_it
+    MARKDOWN_IT_AVAILABLE = True
+except ImportError:
+    markdown_it = None  # type: ignore[assignment]
+    MARKDOWN_IT_AVAILABLE = False
 
 # Detectar plataforma
 IS_WINDOWS = platform.system() == 'Windows'
@@ -96,6 +103,11 @@ def _convert_markdown_to_html(markdown_text: str) -> str:
     Returns:
         HTML renderizado
     """
+    if not MARKDOWN_IT_AVAILABLE or markdown_it is None:
+        raise RuntimeError(
+            "A exportação em Markdown requer 'markdown-it-py'. "
+            "Instale no mesmo ambiente do Streamlit com: pip install markdown-it-py"
+        )
     md = (
         markdown_it
         .MarkdownIt("commonmark")
@@ -114,9 +126,11 @@ def _get_css_for_engine(engine: str) -> str:
     Returns:
         String com CSS
     """
-    margin_top = "1.2cm"
-    margin_sides = "2cm"
-    margin_bottom = "2.5cm"
+    # O parecer inclui a metodologia integral e tabelas de rastreabilidade. A
+    # área útil mantém esses elementos dentro da faixa contratada de páginas.
+    margin_top = "0.8cm"
+    margin_sides = "1.35cm"
+    margin_bottom = "1.3cm"
 
     if engine == 'playwright':
         # CSS moderno para Playwright (Chromium)
@@ -268,37 +282,47 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         conteudo_html = conteudo
     
     # Extrair dados do meta
-    empresa = meta.get("empresa", "N/A")
-    cnpj = meta.get("cnpj", "N/A")
+    empresa = html_lib.escape(str(meta.get("empresa", "N/A")))
+    cnpj = html_lib.escape(str(meta.get("cnpj", "N/A")))
     data_analise = meta.get("data_analise", datetime.now().strftime("%d/%m/%Y"))
     finscore = meta.get("finscore_ajustado", "N/A")
-    classificacao_fs = meta.get("classificacao_finscore", meta.get("classificacao_fs", "N/A"))
+    classificacao_fs = html_lib.escape(
+        str(meta.get("classificacao_finscore", meta.get("classificacao_fs", "N/A")))
+    )
     serasa = meta.get("serasa_score", "N/A")
-    classificacao_ser = meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A"))
+    classificacao_ser = html_lib.escape(
+        str(meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A")))
+    )
     decisao = meta.get("decisao", "N/A")
     
     # Formatar decisão (com ícones conforme solicitado)
     decisao_map = {
         "aprovar": "APROVAR",
-        "aprovar_com_ressalvas": "APROVAR COM RESSALVAS",
-        "nao_aprovar": "NÃO APROVAR"
+        "nao_aprovar": "NÃO APROVAR",
+        "dados_inconsistentes": "DADOS INCONSISTENTES",
     }
     # Mapa com ícones para exibição no cabeçalho/PDF
     decisao_icon_map = {
         "aprovar": "✅ APROVAR",
-        "aprovar_com_ressalvas": "⚠️ APROVAR COM RESSALVAS",
         "nao_aprovar": "❌ NÃO APROVAR",
+        "dados_inconsistentes": "⚠️ DADOS INCONSISTENTES",
     }
-    decisao_texto = decisao_icon_map.get(decisao, decisao_map.get(decisao, decisao.upper()))
+    decisao_texto = html_lib.escape(
+        str(decisao_icon_map.get(decisao, decisao_map.get(decisao, str(decisao).upper())))
+    )
     
     # Data por extenso
     meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
              "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
     hoje = datetime.now()
     data_extenso = f"{hoje.day} de {meses[hoje.month-1]} de {hoje.year}"
-    data_relatorio = meta.get("data_analise") or data_extenso
-    serasa_data_texto = str(meta.get("serasa_data") or "Consulta não informada")
-    cidade_relatorio = meta.get("cidade_relatorio", "São Paulo (SP)")
+    data_relatorio = html_lib.escape(str(meta.get("data_analise") or data_extenso))
+    serasa_data_texto = html_lib.escape(
+        str(meta.get("serasa_data") or "Consulta não informada")
+    )
+    cidade_relatorio = html_lib.escape(
+        str(meta.get("cidade_relatorio", "São Paulo (SP)"))
+    )
     periodo_texto, ano_inicial_texto, ano_final_texto = _format_periodo(meta)
     finscore_display = _format_score(meta.get("finscore_ajustado") or meta.get("finscore"))
     serasa_display = _format_score(meta.get("serasa_score") or meta.get("serasa"))
@@ -347,19 +371,19 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         html {
-            font-size: 12pt;
+            font-size: 8pt;
         }
         
         body {
             font-family: $BODY_FONT;
             color: $NEUTRAL_DARK;
-            line-height: 1.65;
+            line-height: 1.22;
             background: #ffffff;
-            padding: 20pt 0 30pt;
+            padding: 0;
         }
         
         main {
-            margin-top: 24pt;
+            margin-top: 8pt;
         }
         
         /* ========================================
@@ -373,34 +397,34 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         h2 {
-            font-size: 18pt;
-            margin-top: 32pt;
-            margin-bottom: 14pt;
+            font-size: 11.5pt;
+            margin-top: 10pt;
+            margin-bottom: 4pt;
             color: $ACCENT_PRIMARY;
             letter-spacing: 0.4pt;
         }
         
         h3 {
-            font-size: 14pt;
-            margin-top: 20pt;
-            margin-bottom: 8pt;
+            font-size: 9.5pt;
+            margin-top: 7pt;
+            margin-bottom: 3pt;
             color: $ACCENT_PRIMARY;
         }
         
         h4 {
-            font-size: 12.5pt;
-            margin-top: 12pt;
-            margin-bottom: 6pt;
+            font-size: 8.5pt;
+            margin-top: 5pt;
+            margin-bottom: 3pt;
             color: $NEUTRAL_DARK;
         }
         
         p {
             text-align: justify;
-            margin: 9pt 0;
-            page-break-inside: avoid;
+            margin: 2pt 0;
+            page-break-inside: auto;
             orphans: 3;
             widows: 3;
-            font-size: 11pt;
+            font-size: 7.4pt;
         }
         
         strong {
@@ -529,9 +553,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             gap: 2pt;
             margin-top: 16pt;
             /* Usar largura total do container e deslocamento interno para alinhar à esquerda */
-            width: calc(100% - 48pt);
-            margin-left: -24pt; /* alinha com padding interno do hero-shell */
-            margin-right: -0pt;
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
             box-sizing: border-box;
             align-items: stretch;
         }
@@ -621,42 +645,42 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             padding: 0;
             box-shadow: none;
             border: none;
-            margin-top: 26pt;
+            margin-top: 8pt;
         }
         
         .markdown-body h2 {
-            font-size: 18pt;
-            margin-top: 30pt;
+            font-size: 11.5pt;
+            margin-top: 10pt;
         }
         
         .markdown-body h3 {
-            font-size: 14pt;
+            font-size: 9.5pt;
         }
         
         .markdown-body h4 {
-            font-size: 12.5pt;
+            font-size: 8.5pt;
         }
         
         .markdown-body blockquote {
             border-left: 4px solid $ACCENT_SECONDARY;
             background: #eef5fb;
-            padding: 10pt 14pt;
-            margin: 12pt 0;
+            padding: 5pt 8pt;
+            margin: 5pt 0;
             font-style: italic;
         }
         
         .markdown-body hr {
             border: none;
             border-top: 1px solid #d9dfe8;
-            margin: 20pt 0;
+            margin: 8pt 0;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 16pt 0;
-            page-break-inside: avoid;
-            font-size: 10.5pt;
+            margin: 4pt 0;
+            page-break-inside: auto;
+            font-size: 6.7pt;
         }
         
         thead {
@@ -670,16 +694,78 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             max-width: 90%;
             height: auto;
         }
+
+        .finscore-chart {
+            margin: 5pt 0;
+            padding: 5pt 7pt;
+            border: 1px solid #d9e2ec;
+            border-radius: 5pt;
+            background: #f8fbfd;
+            page-break-inside: avoid;
+        }
+
+        .finscore-chart figcaption {
+            margin-bottom: 4pt;
+            color: $ACCENT_PRIMARY;
+            font-size: 9pt;
+            font-weight: 700;
+        }
+
+        .finscore-chart figcaption small {
+            font-size: 7.5pt;
+            font-weight: 400;
+        }
+
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 6pt;
+            margin: 4pt 0;
+        }
+
+        .chart-label {
+            flex: 0 0 86pt;
+            font-size: 7.5pt;
+        }
+
+        .chart-track {
+            display: inline-block;
+            flex: 1 1 auto;
+            height: 7pt;
+            overflow: hidden;
+            border-radius: 4pt;
+            background: #e3eaf1;
+        }
+
+        .chart-bar {
+            display: block;
+            height: 100%;
+            border-radius: 4pt;
+            background: $ACCENT_SECONDARY;
+        }
+
+        .chart-value {
+            flex: 0 0 32pt;
+            text-align: right;
+            font-size: 7.5pt;
+            font-weight: 600;
+        }
+
+        .chart-source {
+            margin: 6pt 0 0;
+            color: #667085;
+            font-size: 6.8pt;
+        }
         
         th {
             font-weight: 600;
-            padding: 8pt 10pt;
+            padding: 2pt 3pt;
             border: none;
         }
         
         td {
             border-bottom: 1px solid #e5e9f0;
-            padding: 8pt 10pt;
+            padding: 2pt 3pt;
         }
         
         tr:last-child td {
@@ -687,11 +773,11 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         ul, ol {
-            margin: 10pt 0 10pt 22pt;
+            margin: 3pt 0 3pt 14pt;
         }
         
         li {
-            margin: 4pt 0;
+            margin: 1pt 0;
             page-break-inside: avoid;
         }
         
@@ -746,7 +832,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         .assinatura-info {
-            font-size: 10pt;
+            font-size: 7pt;
             line-height: 1.3;
         }
         
@@ -805,7 +891,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     
     <section class="summary-grid">
         <div class="summary-card highlight">
-            <p class="summary-label">Decisão</p>
+            <p class="summary-label">Recomendação FinScore</p>
             <p class="summary-value">$decisao_texto</p>
         </div>
         <div class="summary-card">
@@ -1056,7 +1142,9 @@ def gerar_pdf_parecer(
     conteudo: str, 
     meta: Dict, 
     is_markdown: bool = True, 
-    engine: Optional[str] = None
+    engine: Optional[str] = None,
+    min_pages: Optional[int] = None,
+    max_pages: Optional[int] = None,
 ) -> bytes:
     """
     Função de alto nível que gera o PDF completo do parecer.
@@ -1066,6 +1154,8 @@ def gerar_pdf_parecer(
         meta: Dicionário com metadados
         is_markdown: Se True, converte de Markdown para HTML
         engine: 'playwright', 'xhtml2pdf' ou None (auto-detecta)
+        min_pages: Mínimo de páginas aceito; None desabilita o limite inferior
+        max_pages: Máximo de páginas aceito; None desabilita o limite superior
         
     Returns:
         Bytes do PDF gerado
@@ -1074,14 +1164,42 @@ def gerar_pdf_parecer(
         ValueError: Se o engine não estiver disponível
         Exception: Se houver erro na geração
     """
-    # Usar engine padrão se não especificado
-    if engine is None:
-        engine = DEFAULT_ENGINE
+    auto_engine = engine is None
+    selected_engine = engine or DEFAULT_ENGINE
     
     # Renderizar HTML com engine apropriado
-    html = render_parecer_html(conteudo, meta, is_markdown, engine=engine)
+    html = render_parecer_html(conteudo, meta, is_markdown, engine=selected_engine)
     
     # Converter para PDF
-    pdf_bytes = html_to_pdf_bytes(html, engine=engine)
+    try:
+        pdf_bytes = html_to_pdf_bytes(html, engine=selected_engine)
+    except Exception:
+        if not auto_engine or selected_engine == "xhtml2pdf" or not XHTML2PDF_AVAILABLE:
+            raise
+        selected_engine = "xhtml2pdf"
+        html = render_parecer_html(conteudo, meta, is_markdown, engine=selected_engine)
+        pdf_bytes = html_to_pdf_bytes(html, engine=selected_engine)
+
+    if min_pages is not None or max_pages is not None:
+        page_count = contar_paginas_pdf(pdf_bytes)
+        if min_pages is not None and page_count < min_pages:
+            raise ValueError(
+                f"O parecer gerou {page_count} página(s), abaixo do mínimo de {min_pages}. "
+                "Amplie a análise variável antes de exportar."
+            )
+        if max_pages is not None and page_count > max_pages:
+            raise ValueError(
+                f"O parecer gerou {page_count} página(s), acima do máximo de {max_pages}. "
+                "Sintetize a análise variável antes de exportar."
+            )
     
     return pdf_bytes
+
+
+def contar_paginas_pdf(pdf_bytes: bytes) -> int:
+    """Conta páginas do PDF já renderizado para validar a faixa contratada."""
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:  # pragma: no cover - dependência de execução
+        raise RuntimeError("Instale pypdf para validar o total de páginas do parecer.") from exc
+    return len(PdfReader(BytesIO(pdf_bytes)).pages)

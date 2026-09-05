@@ -47,6 +47,34 @@ FinScore/
 - Python 3.8+ (recomendado: 3.12)
 - pip (gerenciador de pacotes Python)
 
+## Parecer com IA
+
+Copie `app_front/config/openai.env.example` para `app_front/.env` e substitua somente o
+valor de `OPENAI_API_KEY`. O arquivo `.env` está ignorado pelo Git e deve permanecer fora
+do repositório. O parecer usa `gpt-5.6-sol`, raciocínio `high`, Structured Outputs e
+`store: false` na Responses API. O cliente omite `temperature` para essa família porque o
+endpoint com raciocínio não aceita o parâmetro; a consistência é controlada pelo schema,
+pelas instruções e pelas regras de crédito.
+
+A decisão utiliza somente `aprovar`, `nao_aprovar` e `dados_inconsistentes`. A recomendação
+de garantia é separada da decisão. A categoria utiliza o FinScore prudencial e os controles
+de aptidão e confiabilidade produzidos pelo cálculo. Serasa, Springate e Fleuriet permanecem
+como evidências suplementares, sem soma à pontuação ou veto automático isolado. O sistema não
+solicita nem infere parâmetros de precificação que não estejam disponíveis no modelo.
+
+As dependências de exportação estão listadas em `requirements-pdf.txt`. Instale-as no mesmo
+ambiente que executa o Streamlit: `python -m pip install -r requirements-pdf.txt`.
+
+O parecer e o dossiê funcional são persistidos no banco local da aplicação. Cada execução
+recebe um identificador `FS-AAAA-NNNNNN`; manifestações e deliberações mantêm histórico e
+comprovante eletrônico associado ao usuário identificado pela camada de acesso. Usuários
+identificados possuem o perfil de analista. Configure os e-mails autorizados a deliberar em
+`FINSCORE_AUTHORITY_EMAILS` (separados por vírgula) e, quando necessário,
+`FINSCORE_ADMIN_EMAILS`. Telemetria de execução é armazenada em tabela separada e não integra
+o PDF nem o JSON funcional.
+Não há descarte automático de dossiês ou telemetria: prazo de retenção e rotina de expurgo
+devem ser aprovados pela instituição antes de qualquer exclusão em produção.
+
 ## 🚢 Deploy em servidor Linux (produção)
 
 ### 1) Preparar o servidor

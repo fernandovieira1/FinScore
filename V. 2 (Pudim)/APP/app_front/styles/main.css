@@ -63,7 +63,7 @@ table {
     --muted: #6b7280;
     --accent: #0d47a1;
     --accent2: #1976d2;
-    --sidebar: #cdcdcd;
+    --sidebar: #87CEFA;
     --menu-text: #001733;
     --primary-btn: #5ea68d;
     --side-logo-top-fix: -38px;
@@ -186,7 +186,7 @@ section[data-testid="stSidebar"][aria-expanded="false"] .fs-sidebar-resizer {
 }
 
 section[data-testid="stSidebar"]>div:first-child {
-    background: #cdcdcd !important;
+    background: var(--sidebar) !important;
     padding-top: 0 !important;
     width: 100% !important;
     max-width: var(--fs-sidebar-width) !important;
@@ -240,14 +240,14 @@ section[data-testid="stSidebar"] .nav-link-selected i {
 }
 
 section[data-testid="stSidebar"] .nav-link {
-    background-color: #cdcdcd !important;
+    background-color: var(--sidebar) !important;
     border-radius: 0 !important;
     margin: 0 !important;
     padding: 10px 12px !important;
 }
 
 section[data-testid="stSidebar"] .nav-link-selected {
-    background-color: #bdbdbd !important;
+    background-color: var(--sidebar) !important;
     border-left: 4px solid #8a8a8a !important;
 }
 

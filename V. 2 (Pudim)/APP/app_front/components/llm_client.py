@@ -17,28 +17,56 @@ except ModuleNotFoundError:  # Streamlit Cloud usa Secrets/variáveis de ambient
     def load_dotenv(*args: Any, **kwargs: Any) -> bool:
         return False
 
-load_dotenv()
-
 _env_candidates = [
     Path(__file__).resolve().parent.parent / '.env',
     Path(__file__).resolve().parent / '.env',
 ]
-for _env_path in _env_candidates:
-    try:
-        if _env_path.is_file():
-            load_dotenv(_env_path, override=False)
-    except Exception:
-        pass
 
-from .schemas import ReviewSchema
+
+def _load_local_environment() -> None:
+    """Carrega a configuração local mesmo sem a dependência python-dotenv."""
+    for env_path in _env_candidates:
+        if not env_path.is_file():
+            continue
+        try:
+            load_dotenv(env_path, override=False)
+        except Exception:
+            logger.exception("Não foi possível carregar a configuração com python-dotenv")
+        if os.getenv("OPENAI_API_KEY"):
+            return
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8-sig").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                if key.startswith("export "):
+                    key = key[7:].strip()
+                if not key or not key.replace("_", "").isalnum():
+                    continue
+                os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+        except OSError:
+            logger.exception("Não foi possível ler o arquivo local de configuração")
+
 
 logger = logging.getLogger(__name__)
+_load_local_environment()
 
+from .schemas import ReviewSchema
 
 @dataclass
 class _SimpleMessage:
     content: str
     usage: dict | None = None
+
+
+class ReportGenerationServiceError(RuntimeError):
+    """Falha técnica com orientação segura para a área usuária."""
+
+    def __init__(self, user_message: str):
+        super().__init__(user_message)
+        self.user_message = user_message
 
 
 # Último 'usage' retornado pela última chamada bem-sucedida (módulo-local)
@@ -52,7 +80,7 @@ def _maybe_get_langchain_client(model: str, temperature: float):
 
 def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessage:
     api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+    if not api_key or api_key.strip().lower().startswith("insira_sua_chave"):
         raise RuntimeError("OPENAI_API_KEY not configured")
 
     base_url = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
@@ -78,6 +106,142 @@ def _call_openai_rest(messages, model: str, temperature: float) -> _SimpleMessag
 
     usage = data.get("usage") if isinstance(data, dict) else None
     return _SimpleMessage(content=content, usage=usage)
+
+
+def _extract_responses_text(data: dict) -> str:
+    """Extrai o texto tanto do REST bruto quanto de respostas compatíveis com SDK."""
+    direct = data.get("output_text")
+    if isinstance(direct, str) and direct.strip():
+        return direct
+
+    chunks: List[str] = []
+    for item in data.get("output", []) if isinstance(data.get("output"), list) else []:
+        if not isinstance(item, dict):
+            continue
+        for content in item.get("content", []) if isinstance(item.get("content"), list) else []:
+            if not isinstance(content, dict):
+                continue
+            text_value = content.get("text")
+            if isinstance(text_value, str):
+                chunks.append(text_value)
+            elif isinstance(text_value, dict) and isinstance(text_value.get("value"), str):
+                chunks.append(text_value["value"])
+    if chunks:
+        return "\n".join(chunks)
+    raise RuntimeError("A Responses API não retornou conteúdo textual estruturado.")
+
+
+def _call_openai_responses_structured(
+    messages: List[Dict[str, str]],
+    *,
+    model: str,
+    temperature: float,
+    reasoning_effort: str,
+    schema_name: str,
+    json_schema: Dict[str, Any],
+) -> _SimpleMessage:
+    """Chama a Responses API com Structured Outputs e sem retenção do conteúdo."""
+    _load_local_environment()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key or api_key.strip().lower().startswith("insira_sua_chave"):
+        raise RuntimeError(
+            "OPENAI_API_KEY não configurada. Preencha APP/app_front/.env antes de gerar o parecer."
+        )
+
+    base_url = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
+    endpoint = f"{base_url}/responses"
+    payload = {
+        "model": model,
+        "input": messages,
+        "reasoning": {"effort": reasoning_effort},
+        "max_output_tokens": int(os.getenv("FINSCORE_LLM_MAX_OUTPUT_TOKENS", "12000")),
+        "store": False,
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": schema_name,
+                "strict": True,
+                "schema": json_schema,
+            }
+        },
+    }
+    # A família 5.6 com raciocínio rejeita o parâmetro temperature. Para outros
+    # modelos, ele continua sendo enviado conforme a configuração existente.
+    if not model.startswith("gpt-5.6"):
+        payload["temperature"] = temperature
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    response = requests.post(endpoint, json=payload, headers=headers, timeout=600)
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        try:
+            error = response.json().get("error", {})
+        except (ValueError, AttributeError):
+            error = {}
+        error_code = str(error.get("code") or "")
+        error_type = str(error.get("type") or "")
+        logger.error(
+            "Falha no serviço de geração: status=%s type=%s code=%s message=%s",
+            response.status_code,
+            error_type,
+            error_code,
+            error.get("message"),
+        )
+        if response.status_code == 429 and error_code == "credit_balance_exhausted":
+            message = (
+                "A geração de pareceres está indisponível por limite operacional. "
+                "Solicite ao administrador a regularização do serviço e tente novamente."
+            )
+        elif response.status_code == 429:
+            message = (
+                "O serviço de geração está temporariamente sobrecarregado. Aguarde alguns "
+                "minutos e tente novamente."
+            )
+        elif response.status_code in (401, 403):
+            message = (
+                "A geração de pareceres não está autorizada. Solicite ao administrador a "
+                "verificação da configuração do serviço."
+            )
+        else:
+            message = (
+                "O serviço de geração não concluiu a solicitação. Tente novamente e, se a "
+                "falha persistir, encaminhe o horário da tentativa ao suporte."
+            )
+        raise ReportGenerationServiceError(message) from exc
+    data = response.json()
+    return _SimpleMessage(
+        content=_extract_responses_text(data),
+        usage=data.get("usage") if isinstance(data, dict) else None,
+    )
+
+
+def invoke_structured_model(
+    messages: List[Dict[str, str]],
+    *,
+    json_schema: Dict[str, Any],
+    schema_name: str = "parecer_finscore_pudim",
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    reasoning_effort: Optional[str] = None,
+) -> str:
+    """Invoca exatamente o modelo configurado; pareceres não usam fallback silencioso."""
+    selected_model = model or MODEL_NAME
+    selected_temperature = MODEL_TEMPERATURE if temperature is None else temperature
+    selected_reasoning = reasoning_effort or MODEL_REASONING_EFFORT
+    response = _call_openai_responses_structured(
+        messages,
+        model=selected_model,
+        temperature=selected_temperature,
+        reasoning_effort=selected_reasoning,
+        schema_name=schema_name,
+        json_schema=json_schema,
+    )
+    global LLM_LAST_USAGE
+    LLM_LAST_USAGE = response.usage
+    return response.content
 
 
 def _invoke_model(messages, model: str, temperature: float) -> str:
@@ -126,8 +290,10 @@ def get_last_usage() -> dict | None:
     return LLM_LAST_USAGE
 
 
-MODEL_NAME = os.getenv("FINSCORE_LLM_MODEL", "gpt-4o-mini")
-MODEL_TEMPERATURE = float(os.getenv("FINSCORE_LLM_TEMPERATURE", "0.1"))
+MODEL_NAME = os.getenv("FINSCORE_LLM_MODEL", "gpt-5.6-sol")
+# 0,2 reduz variação redacional. A política de crédito continua determinística.
+MODEL_TEMPERATURE = float(os.getenv("FINSCORE_LLM_TEMPERATURE", "0.2"))
+MODEL_REASONING_EFFORT = os.getenv("FINSCORE_LLM_REASONING_EFFORT", "high")
 MODEL_FALLBACKS = [
     model for model in (
         os.getenv("FINSCORE_LLM_FALLBACK1", "gpt-4o-mini"),

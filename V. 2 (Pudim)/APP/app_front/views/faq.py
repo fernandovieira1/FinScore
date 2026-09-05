@@ -1,6 +1,6 @@
 from __future__ import annotations
-import streamlit as st
+
+from .sobre import render_faq_section
 
 def render():
-    st.title("FAQ")
-    st.write("Esta é a página de FAQ.")
+    render_faq_section()

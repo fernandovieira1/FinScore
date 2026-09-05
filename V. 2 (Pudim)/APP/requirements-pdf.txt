@@ -1,0 +1,4 @@
+markdown-it-py==3.0.0
+playwright==1.48.0
+pypdf==6.15.0
+xhtml2pdf==0.2.16

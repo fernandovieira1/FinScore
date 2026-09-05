@@ -6,7 +6,6 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from components import nav
 from services.io_validation import (
@@ -22,39 +21,9 @@ from services.finscore_service import run_finscore, ajustar_coluna_ano
 TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
 TAB_ORDER = ["Cliente", "Dados"]  # Ordem visual fixa
 
-def _js_select_tab(label_with_icon: str):
-    """Força a seleção visual de uma aba do st.tabs sem reordenar a lista."""
-    components.html(
-        f"""
-        <script>
-        (function() {{
-          const target = `{label_with_icon}`;
-          function clickTab() {{
-            const btns = window.parent.document.querySelectorAll('button[role="tab"]');
-            for (const b of btns) {{
-              // Matching mais robusto: usa includes() para ignorar espaços extras
-              const txt = (b.innerText || b.textContent || "").trim();
-              if (txt.includes(target.replace(/\\s/g, ' ').trim())) {{  // Remove quebras de linha e compara
-                b.click();
-                return true;
-              }}
-            }}
-            return false;
-          }}
-          let attempts = 0;
-          const iv = setInterval(() => {{
-            if (clickTab() || attempts > 30) {{  // Aumentado para 3s de tentativas
-              clearInterval(iv);
-            }}
-            attempts += 1;
-          }}, 100);
-          // Fallback: tenta uma vez após delay inicial
-          setTimeout(clickTab, 200);
-        }})();
-        </script>
-        """,
-        height=0,
-    )
+def _sync_lancamentos_tab() -> None:
+    selected = st.session_state.get("_lancamentos_tab_control", "Cliente")
+    st.session_state["novo_tab"] = selected if selected in TAB_ORDER else "Cliente"
 
 def _auto_save_cliente():
     ss = st.session_state
@@ -173,8 +142,20 @@ def _auto_save_cliente():
         "serasa_data": serasa_data,
         "serasa_restricao_grave": serasa_restricao_grave,
     }
-    # Não remove campos vazios, para garantir que a validação capture todos
     ss.meta.update(new_meta)
+    for obsolete_key in (
+        "operacao_informada",
+        "valor_solicitado",
+        "prazo_meses",
+        "taxa_juros_anual",
+        "custo_captacao_anual",
+        "custo_operacional_anual",
+        "pd_institucional_anual",
+        "taxa_recuperacao",
+        "retorno_liquido_minimo_anual",
+        "cobertura_garantia",
+    ):
+        ss.meta.pop(obsolete_key, None)
 
     if ss.get("df") is not None:
         df_atualizado, anos_rotulos = ajustar_coluna_ano(ss.df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
@@ -459,13 +440,8 @@ def render():
     st.markdown(
         """
         <style>
-        /* Centraliza barra de abas desta view */
-        div[data-testid="stTabs"] > div[role="tablist"],
-        div[data-baseweb="tab-list"] {
-            display: flex; justify-content: center;
-        }
-        div[data-testid="stTabs"] button[role="tab"],
-        div[data-baseweb="tab"] { flex: 0 0 auto; }
+        /* Controle de abas dirigido pelo estado da aplicação. */
+        div[data-testid="stRadio"] > div { justify-content: center; }
 
         /* Garante títulos alinhados à esquerda */
         h1, h2, h3 { text-align: left !important; }
@@ -495,16 +471,21 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Cria abas com ordem fixa e ícones
-    labels_with_icons = [TAB_LABELS[name] for name in TAB_ORDER]
-    tabs = st.tabs(labels_with_icons)
-    tab_dict = {name: tab for name, tab in zip(TAB_ORDER, tabs)}
+    desired_tab = ss["novo_tab"] if ss["novo_tab"] in TAB_ORDER else "Cliente"
+    if ss.get("_lancamentos_tab_control") != desired_tab:
+        ss["_lancamentos_tab_control"] = desired_tab
 
-    # Seleção visual (sem reordenar)
-    _js_select_tab(TAB_LABELS.get(ss["novo_tab"], TAB_LABELS["Cliente"]))
+    selected_tab = st.radio(
+        "Etapa dos lançamentos",
+        TAB_ORDER,
+        key="_lancamentos_tab_control",
+        horizontal=True,
+        format_func=lambda name: TAB_LABELS[name],
+        label_visibility="collapsed",
+        on_change=_sync_lancamentos_tab,
+    )
 
-    # Render do conteúdo
-    with tab_dict["Cliente"]:
+    if selected_tab == "Cliente":
         _sec_cliente()
-    with tab_dict["Dados"]:
+    else:
         _sec_dados()
