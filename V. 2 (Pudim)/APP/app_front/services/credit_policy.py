@@ -293,18 +293,22 @@ def decide_pudim(
             "O resultado não está apto para decisão até sanar os alertas bloqueadores."
         )
     if reliability is None:
-        blocking.append("Índice de confiabilidade indisponível.")
+        blocking.append("Índice de qualidade dos dados indisponível.")
     elif reliability < cfg.confiabilidade_minima_modelo:
         blocking.append(
-            "Confiabilidade inferior ao limiar metodológico de "
-            f"{cfg.confiabilidade_minima_modelo:.0%}."
+            "Qualidade dos dados inferior ao limiar metodológico de "
+            + f"{cfg.confiabilidade_minima_modelo:.0%}".replace(".", ",")
+            + "."
         )
     else:
-        reasons.append(f"Confiabilidade da informação de {reliability:.2%}.")
+        reasons.append(
+            "Qualidade dos dados de " + f"{reliability:.2%}".replace(".", ",") + "."
+        )
 
     blockers = int(_number(status.get("alertas_bloqueadores_decisao")) or 0)
     if blockers:
-        reasons.append(f"Há {blockers} alerta(s) que bloqueiam a decisão.")
+        noun = "alerta" if blockers == 1 else "alertas"
+        reasons.append(f"Há {blockers} {noun} que bloqueiam a decisão.")
     if blocking_details:
         conditions.extend(item["providencia"] for item in blocking_details)
 

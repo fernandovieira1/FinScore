@@ -45,7 +45,7 @@ DECISION_ICONS = {
     "dados_inconsistentes": "⚠️ Dados inconsistentes",
 }
 logger = logging.getLogger(__name__)
-PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v4"
+PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v5-layout"
 DOSSIER_STORE = AnalysisDossierStore()
 
 
@@ -163,7 +163,7 @@ def _load_governance(
     )
     if not reset and not st.session_state.get("parecer_gerado"):
         persisted_document = DOSSIER_STORE.load_document(analysis_id)
-        if persisted_document:
+        if persisted_document and "## 8. Considerações finais" in persisted_document:
             st.session_state["parecer_gerado"] = persisted_document
     return state
 
@@ -386,6 +386,7 @@ def _pdf_metadata(
     observed = output.get("finscore_observado") or {}
     serasa = _serasa_record(output)
     return {
+        "analise_id": meta.get("analise_id"),
         "empresa": meta.get("empresa", "Empresa"),
         "cnpj": meta.get("cnpj", "N/A"),
         "data_analise": datetime.now().strftime("%d/%m/%Y"),

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 import hashlib
+import re
 from html import escape as html_escape
 from pathlib import Path
 from typing import Any, Iterable
@@ -133,6 +134,104 @@ def _fmt_value(value: Any, unit: str | None) -> str:
 def _period_label(contract: ParecerData) -> str:
     period = contract.identificacao.periodos.analisado
     return f"{period.inicio} a {period.fim}"
+
+
+def _split_paragraph(text: str) -> tuple[str, str]:
+    """Divide uma análise longa em dois parágrafos sem fracionar frases."""
+    sentences = [item.strip() for item in re.split(r"(?<=[.!?])\s+", text) if item.strip()]
+    if len(sentences) < 2:
+        return text, text
+    midpoint = max(1, len(sentences) // 2)
+    return " ".join(sentences[:midpoint]), " ".join(sentences[midpoint:])
+
+
+def _series_commentary(
+    points: Iterable[DataPoint],
+    fields: Iterable[str],
+    years: list[int],
+    labels: dict[str, str],
+    *,
+    favorable_up: set[str],
+    favorable_down: set[str],
+) -> tuple[str, str]:
+    """Resume variações e ausências diretamente das séries exibidas na tabela."""
+    selected = {(item.campo, item.exercicio): item for item in points}
+    variations: list[tuple[float, str, int, int, float, float, str | None]] = []
+    missing: list[str] = []
+    ordered_fields = list(fields)
+    for field in ordered_fields:
+        absent_years = [
+            str(year)
+            for year in years
+            if selected.get((field, year)) is None
+            or _number(selected[(field, year)].valor) is None
+        ]
+        if absent_years:
+            missing.append(f"{labels.get(field, field)} ({', '.join(absent_years)})")
+        available = [
+            (year, _number(selected[(field, year)].valor), selected[(field, year)].unidade)
+            for year in years
+            if (field, year) in selected and _number(selected[(field, year)].valor) is not None
+        ]
+        for (left_year, left, unit), (right_year, right, _right_unit) in zip(
+            available, available[1:]
+        ):
+            if left is None or right is None:
+                continue
+            relative = ((right - left) / abs(left) * 100) if left else None
+            magnitude = abs(relative) if relative is not None else abs(right - left)
+            variations.append((magnitude, field, left_year, right_year, left, right, unit))
+
+    variations.sort(reverse=True, key=lambda item: item[0])
+    highlights = []
+    supportive = []
+    pressure = []
+    for _magnitude, field, left_year, right_year, left, right, unit in variations[:3]:
+        direction = "elevação" if right > left else "redução" if right < left else "estabilidade"
+        change = ((right - left) / abs(left) * 100) if left else None
+        change_text = (
+            f", variação de {_fmt_number(change)}%" if change is not None else ""
+        )
+        label = labels.get(field, field.replace("_", " "))
+        highlights.append(
+            f"{label}, de {_fmt_value(left, unit)} em {left_year} para "
+            f"{_fmt_value(right, unit)} em {right_year}{change_text}"
+        )
+        favorable = (right > left and field in favorable_up) or (
+            right < left and field in favorable_down
+        )
+        unfavorable = (right < left and field in favorable_up) or (
+            right > left and field in favorable_down
+        )
+        if favorable:
+            supportive.append(f"{direction} de {label}")
+        elif unfavorable:
+            pressure.append(f"{direction} de {label}")
+
+    if highlights:
+        before = "As variações mais pronunciadas da série foram: " + "; ".join(highlights) + "."
+    else:
+        before = "A série disponível não apresenta base temporal suficiente para mensurar variações entre exercícios."
+    if missing:
+        before += " Há ausência ou impossibilidade de cálculo em " + "; ".join(missing[:6]) + "."
+    else:
+        before += " Não foram identificadas lacunas nas linhas apresentadas nesta tabela."
+
+    strengths = ", ".join(supportive) if supportive else "nenhum vetor favorável isolado suficientemente caracterizado"
+    weaknesses = ", ".join(pressure) if pressure else "nenhum fator adverso isolado suficientemente caracterizado"
+    after = (
+        f"Sob a perspectiva econômico-financeira, constituem vetores de sustentação {strengths}; "
+        f"como fatores de pressão, observam-se {weaknesses}. Esses movimentos devem ser avaliados "
+        "em conjunto com liquidez, estrutura de capital, geração de resultado e qualidade dos dados."
+    )
+    return before, after
+
+
+def _prose_items(prefix: str, values: Iterable[str]) -> str:
+    texts = [_md(item).strip().rstrip(".") for item in values if str(item).strip()]
+    if not texts:
+        return f"{prefix} não registra elemento material adicional."
+    return f"{prefix} " + "; ".join(texts) + "."
 
 
 def _items(values: Iterable[NarrativeItem]) -> str:
@@ -393,6 +492,80 @@ def render_structured_parecer(
         if operation.prazo
         else "Não informado"
     )
+    account_before, account_after = _series_commentary(
+        [*contract.dados.utilizados, *contract.dados.derivados],
+        ACCOUNT_LABELS,
+        years,
+        ACCOUNT_LABELS,
+        favorable_up={
+            "r_Receita_Liquida",
+            "r_Receita_Total",
+            "r_Lucro_Liquido",
+            "p_Patrimonio_Liquido",
+            "d_EBIT",
+        },
+        favorable_down={"d_Divida_Bruta", "d_Divida_Liquida"},
+    )
+    indicator_before, indicator_after = _series_commentary(
+        contract.dados.indices,
+        ECONOMIC_INDICATORS,
+        years,
+        INDICATOR_LABELS,
+        favorable_up={
+            "crescimento_receita",
+            "margem_bruta",
+            "margem_ebit",
+            "margem_liquida",
+            "giro_ativo",
+        },
+        favorable_down={"ciclo_conversao_caixa"},
+    )
+    financial_before, financial_after = _split_paragraph(
+        narrative.analise_financeira_patrimonial.texto
+    )
+    guarantees_text = (
+        "A empresa analisada, conforme os resultados apresentados, possui capacidade "
+        "econômico-financeira para prosseguimento da operação. Caberá às alçadas superiores "
+        "avaliar a vantajosidade e a proporcionalidade de garantias adicionais, incluindo aval, "
+        "fiança, penhor, hipoteca, alienação fiduciária, seguro de crédito e carta de crédito."
+        if recommendation.codigo.value == "aprovar"
+        else "A eventual constituição de garantias não substitui o saneamento das inconsistências "
+        "nem altera, isoladamente, o impedimento econômico-financeiro registrado. Aval, fiança, "
+        "penhor, hipoteca, alienação fiduciária, seguro de crédito e carta de crédito somente "
+        "devem ser examinados em nova análise, conforme a natureza da operação e a decisão das "
+        "alçadas competentes."
+    )
+    final_paragraphs = "\n\n".join(
+        [
+            _md(narrative.tese_credito_governanca.texto),
+            _prose_items("A fundamentação da recomendação compreende:", recommendation.fundamentos),
+            _md(guarantee.justificativa) + " " + _prose_items(
+                "As providências e medidas de acompanhamento indicadas são:",
+                recommendation.providencias,
+            ),
+            _md(narrative.riscos_diligencias_monitoramento.texto),
+            _prose_items(
+                "Entre os pontos fortes comprovados, destacam-se:",
+                (item.texto for item in narrative.pontos_fortes),
+            ),
+            _prose_items(
+                "Os riscos prioritários identificados são:",
+                (item.texto for item in narrative.riscos_prioritarios),
+            ),
+            _prose_items(
+                "As validações e diligências pendentes abrangem:",
+                (item.texto for item in narrative.validacoes_pendentes),
+            ),
+            _prose_items(
+                "O acompanhamento recomendado deve considerar:",
+                (item.texto for item in narrative.recomendacoes_monitoramento),
+            ),
+            _md(narrative.conclusao.texto),
+            f"A recomendação FinScore é **{_md(recommendation.rotulo)}**. As recomendações "
+            "deste parecer sujeitam-se à revisão e à análise posteriores e à decisão de alçada "
+            "superior, para os devidos encaminhamentos da operação.",
+        ]
+    )
     return f"""<!-- FINSCORE_PARECER -->
 
 # Parecer de Crédito — FinScore
@@ -403,26 +576,20 @@ def render_structured_parecer(
 **Período efetivamente analisado:** {_period_label(contract)}  
 **Recomendação FinScore:** {_md(recommendation.rotulo)}
 
-> As recomendações contidas neste parecer sujeitam-se à revisão e à análise posteriores,
-> bem como à decisão de alçada superior, para os devidos encaminhamentos da operação.
-
 ## 1. Identificação, operação e escopo
 
-| Campo | Informação |
-|---|---|
-| Concedente | {_md(identity.concedente.nome)} |
-| CNPJ do concedente | {_md(identity.concedente.cnpj)} |
-| Natureza da operação | {_md(operation.natureza)} |
-| Finalidade | {_md(operation.finalidade)} |
-| Valor | {_fmt_value(operation.valor, operation.moeda) if operation.valor is not None else 'Não informado'} |
-| Prazo | {prazo} |
-| Moeda | {_md(operation.moeda)} |
-| Período cadastral | {_md(identity.periodos.cadastral.inicio)} a {_md(identity.periodos.cadastral.fim)} |
-| Período analisado | {_period_label(contract)} |
+O presente parecer técnico-jurídico tem por finalidade analisar a operação de crédito celebrada
+entre Assertif Consultores Associados, inscrita no CNPJ sob nº 29.683.218/0001-70, e
+**{_md(identity.tomador.nome)}**, inscrita no CNPJ sob nº **{_md(identity.tomador.cnpj)}**,
+avaliando sua conformidade com a legislação aplicável, bem como os riscos jurídicos e financeiros
+envolvidos. A análise será conduzida à luz das normas de direito civil, empresarial e bancário,
+considerando os princípios da boa-fé objetiva, da transparência contratual e da segurança jurídica,
+de modo a oferecer subsídios técnicos para a tomada de decisão quanto à validade, eficácia e
+eventuais implicações decorrentes da operação.
 
-O parecer organiza identificação e escopo, qualidade da informação, análise econômico-operacional,
-estrutura financeira e patrimonial, formação do FinScore, estresse, evidências suplementares,
-riscos e conclusão. A metodologia e as informações de reprodução constam dos anexos.
+A análise tem como fontes as informações contábeis, financeiras, patrimoniais e jurídicas prestadas
+pela empresa analisada, referentes aos anos de {identity.periodos.analisado.inicio} a
+{identity.periodos.analisado.fim}.
 
 ## 2. Sumário executivo
 
@@ -460,98 +627,85 @@ As tabelas seguintes apresentam as séries materiais para a leitura do parecer.
 
 ### 4.1 Contas utilizadas e derivadas
 
+{account_before}
+
 {_series_table([*contract.dados.utilizados, *contract.dados.derivados], ACCOUNT_LABELS, years, ACCOUNT_LABELS)}
+
+{account_after}
 
 ### 4.2 Indicadores e trajetória
 
+{indicator_before}
+
 {_series_table(contract.dados.indices, ECONOMIC_INDICATORS, years, INDICATOR_LABELS)}
+
+{indicator_after}
 
 ## 5. Análise financeira e patrimonial
 
-{_md(narrative.analise_financeira_patrimonial.texto)}
+{_md(financial_before)}
 
 {_series_table(contract.dados.indices, FINANCIAL_INDICATORS, years, INDICATOR_LABELS)}
 
+{_md(financial_after)}
+
 ## 6. Formação e interpretação do FinScore
 
-{_md(narrative.formacao_finscore.texto)}
+O FinScore sintetiza, em escala de 0 a 1.000 pontos, os núcleos econômico-operacional e
+financeiro-patrimonial. As abordagens estrutural e adaptativa calculam os núcleos com pesos fixos e
+com ajuste controlado, respectivamente; a composição geométrica preserva o equilíbrio entre ambos,
+e o gargalo atribui maior influência ao núcleo mais fraco. O FinScore prudencial corresponde ao
+menor resultado pós-gargalo entre as abordagens, limitado, quando aplicável, por travas prudenciais.
+Na interpretação decisória, resultado inferior a 250 pontos integra a faixa restritiva; de 250 a
+499,99 pontos, a aprovação requer avaliação de mitigadores e garantias; a partir de 500 pontos, a
+pontuação supera a referência automática de garantia por faixa, sem afastar a avaliação institucional
+dos demais riscos. A qualidade dos dados e a aptidão do cálculo são verificadas separadamente.
 
 {_score_table(contract)}
 
-{_score_chart(contract)}
+{_md(narrative.formacao_finscore.texto)}
 
-### 6.1 Caps prudenciais
+### 6.1 Garantias
 
-{_caps_table(contract)}
-
-FinScore não representa probabilidade de inadimplência nem rating regulatório. Núcleos, métodos,
-gargalo, caps e resultado prudencial possuem funções próprias e não devem ser confundidos.
+{guarantees_text}
 
 ## 7. Estresse, sensibilidade e evidências suplementares
 
-{_md(narrative.estresse_e_evidencias.texto)}
-
 ### 7.1 Cenários determinísticos
+
+Os cenários determinísticos mensuram a resposta do FinScore a hipóteses previamente definidas para
+condições favoráveis, adversas e severas. A comparação evidencia sensibilidade e resiliência, sem
+converter os cenários em projeções ou atribuir probabilidade de ocorrência.
 
 {_scenario_table(contract)}
 
-{_scenario_chart(contract)}
-
-Os cenários são hipóteses condicionais, não previsões. Frequências de simulação não equivalem a
-probabilidade de inadimplência.
+{_md(narrative.estresse_e_evidencias.texto)}
 
 ### 7.2 Simulação
 
+A simulação examina a distribuição do FinScore sob variações controladas das entradas e apresenta
+medidas de posição e dispersão. Média, mediana e percentis informam a estabilidade do resultado;
+não correspondem a frequência de inadimplência nem substituem a análise dos dados observados.
+
 {_simulation_table(contract)}
+
+Os resultados simulados devem ser comparados com o FinScore observado, com os intervalos e com as
+sensibilidades registradas, preservando a natureza exploratória do exercício.
 
 ### 7.3 Evidências suplementares
 
+As evidências suplementares ampliam a leitura sem integrar aritmeticamente o FinScore. O Serasa é
+uma fonte externa consultada separadamente; Springate e Fleuriet são diagnósticos derivados das
+informações disponíveis e devem ser confrontados com a análise econômico-financeira precedente.
+
 {_supplementary_table(contract)}
 
-Serasa não é somado ao FinScore. Springate e Fleuriet são diagnósticos derivados e suplementares.
+Os resultados devem ser utilizados como elementos suplementares de confirmação, divergência ou
+alerta, sempre preservando a fonte, a data e as limitações próprias de cada diagnóstico.
 
-## 8. Tese de crédito e recomendação
+## 8. Considerações finais
 
-{_md(narrative.tese_credito_governanca.texto)}
-
-### 8.1 Fundamentação da recomendação
-
-{_plain_items(recommendation.fundamentos)}
-
-### 8.2 Garantia e monitoramento
-
-{_md(guarantee.justificativa)}
-
-{_plain_items(recommendation.providencias)}
-
-Na ausência de parâmetros institucionais completos, as medidas são apresentadas como monitoramento
-ou diligência recomendada, e não como covenant contratual definido.
-
-## 9. Riscos, diligências e monitoramento
-
-{_md(narrative.riscos_diligencias_monitoramento.texto)}
-
-### 9.1 Pontos fortes comprovados
-
-{_items(narrative.pontos_fortes)}
-
-### 9.2 Riscos prioritários
-
-{_items(narrative.riscos_prioritarios)}
-
-### 9.3 Validações pendentes
-
-{_items(narrative.validacoes_pendentes)}
-
-### 9.4 Monitoramento recomendado
-
-{_items(narrative.recomendacoes_monitoramento)}
-
-## 10. Conclusão da análise
-
-{_md(narrative.conclusao.texto)}
-
-**Recomendação FinScore: {_md(recommendation.rotulo)}.**
+{final_paragraphs}
 
 <div class="page-break"></div>
 
@@ -576,10 +730,6 @@ ou diligência recomendada, e não como covenant contratual definido.
 | Hash dos dados utilizados | {_md(contract.metadados_tecnicos_restritos.hash_dados_utilizados)} |
 | Hash da metodologia | {methodology_sha256()} |
 | Status de reprodução | Parâmetros e hashes registrados |
-
-### 2. Livro de evidências materiais
-
-{_material_findings_table(contract)}
 """.strip()
 
 

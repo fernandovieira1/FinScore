@@ -11,7 +11,11 @@ from app_front.services.credit_policy import decide_pudim
 from app_front.services.finscore_service import run_finscore
 from app_front.services.parecer_data_builder import build_parecer_data
 from app_front.services.parecer_generator import build_narrative_context
-from app_front.services.parecer_validation import NUMBER_PATTERN, validate_parecer_narrative
+from app_front.services.parecer_validation import (
+    NUMBER_PATTERN,
+    reconcile_narrative_numbers,
+    validate_parecer_narrative,
+)
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
@@ -131,6 +135,35 @@ class ParecerValidationV2Test(unittest.TestCase):
 
         self.assertIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
 
+    def test_unsubstantiated_numeric_sentence_is_removed_before_release(self) -> None:
+        payload = self._payload()
+        payload["conclusao"]["texto"] += " O resultado alternativo seria 999,99 pontos."
+
+        revised = reconcile_narrative_numbers(
+            ParecerNarrativo.model_validate(payload), self.contract
+        )
+        report = validate_parecer_narrative(
+            revised,
+            self.contract,
+            routes=self.context["roteiro_achados"],
+            raise_on_error=False,
+        )
+
+        self.assertNotIn("999,99", revised.conclusao.texto)
+        self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
+
+    def test_date_is_not_decomposed_into_unsupported_financial_numbers(self) -> None:
+        payload = self._payload()
+        payload["estresse_e_evidencias"]["texto"] += " A consulta ocorreu em 12/09/2026."
+        report = validate_parecer_narrative(
+            ParecerNarrativo.model_validate(payload),
+            self.contract,
+            routes=self.context["roteiro_achados"],
+            raise_on_error=False,
+        )
+
+        self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
+
     def test_number_tokenizer_preserves_complete_years_and_formatted_values(self) -> None:
         text = "Exercícios 2023, 2024 e 2025; saldo de 294.105,39 e margem de -0,02%."
 
@@ -150,6 +183,34 @@ class ParecerValidationV2Test(unittest.TestCase):
         )
 
         self.assertIn("GOVERNANCA_CONFUNDIDA", {item.codigo for item in report.problemas})
+
+    def test_scenario_disclaimer_is_not_mistaken_for_a_prediction(self) -> None:
+        payload = self._payload()
+        payload["estresse_e_evidencias"]["texto"] += (
+            " O cenário não representa uma previsão e permanece como hipótese condicional."
+        )
+        report = validate_parecer_narrative(
+            ParecerNarrativo.model_validate(payload),
+            self.contract,
+            routes=self.context["roteiro_achados"],
+            raise_on_error=False,
+        )
+
+        self.assertNotIn("CENARIO_PREDITIVO", {item.codigo for item in report.problemas})
+
+    def test_score_percentage_near_guarantee_is_not_read_as_coverage(self) -> None:
+        payload = self._payload()
+        payload["tese_credito_governanca"]["texto"] += (
+            " A garantia é avaliada em conjunto com a qualidade de 91,81%, sem definir cobertura."
+        )
+        report = validate_parecer_narrative(
+            ParecerNarrativo.model_validate(payload),
+            self.contract,
+            routes=self.context["roteiro_achados"],
+            raise_on_error=False,
+        )
+
+        self.assertNotIn("COBERTURA_INVENTADA", {item.codigo for item in report.problemas})
 
     def test_material_repetition_is_rejected(self) -> None:
         payload = self._payload()

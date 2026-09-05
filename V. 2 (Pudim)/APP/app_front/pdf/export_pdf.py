@@ -12,10 +12,8 @@ import os
 import sys
 import platform
 import asyncio
-import base64
 import html as html_lib
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, Optional, Literal
 from string import Template
 from io import BytesIO
@@ -237,9 +235,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             number = float(value)
         except (TypeError, ValueError):
             return "N/A"
-        if number.is_integer():
-            return f"{number:,.0f}".replace(",", ".")
-        return f"{number:,.1f}".replace(",", ".")
+        return f"{number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     def _format_periodo(meta_dict: Dict) -> tuple[str, str, str]:
         def _safe_int(value):
@@ -261,7 +257,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             if ano_inicial_meta == ano_final_meta:
                 periodo_resumo = str(ano_inicial_meta)
             elif ano_final_meta > ano_inicial_meta:
-                periodo_resumo = f"{ano_inicial_meta}–{ano_final_meta}"
+                periodo_resumo = f"{ano_inicial_meta} a {ano_final_meta}"
             else:
                 periodo_resumo = f"{ano_inicial_meta}, {ano_final_meta}"
         elif ano_inicial_meta:
@@ -274,6 +270,13 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             periodo_resumo = str(ano_final_meta)
 
         return periodo_resumo, ano_inicial_texto, ano_final_texto
+
+    # O cabeçalho funcional do Markdown é substituído pelo caput diagramado no PDF,
+    # evitando repetição de título, tomador, CNPJ, período e recomendação.
+    if is_markdown and "<!-- FINSCORE_PARECER -->" in conteudo:
+        first_section = conteudo.find("## 1. Identificação, operação e escopo")
+        if first_section >= 0:
+            conteudo = conteudo[first_section:]
 
     # Converter Markdown para HTML se necessário
     if is_markdown:
@@ -294,6 +297,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         str(meta.get("classificacao_serasa", meta.get("classificacao_ser", "N/A")))
     )
     decisao = meta.get("decisao", "N/A")
+    analise_id = html_lib.escape(str(meta.get("analise_id") or "Não informado"))
     
     # Formatar decisão (com ícones conforme solicitado)
     decisao_map = {
@@ -301,14 +305,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         "nao_aprovar": "NÃO APROVAR",
         "dados_inconsistentes": "DADOS INCONSISTENTES",
     }
-    # Mapa com ícones para exibição no cabeçalho/PDF
-    decisao_icon_map = {
-        "aprovar": "✅ APROVAR",
-        "nao_aprovar": "❌ NÃO APROVAR",
-        "dados_inconsistentes": "⚠️ DADOS INCONSISTENTES",
-    }
     decisao_texto = html_lib.escape(
-        str(decisao_icon_map.get(decisao, decisao_map.get(decisao, str(decisao).upper())))
+        str(decisao_map.get(decisao, str(decisao).upper()))
     )
     
     # Data por extenso
@@ -332,19 +330,6 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     fonts_html = _get_fonts_for_engine(engine)
     font_families = _get_font_families_for_engine(engine)
 
-    logo_path = Path(__file__).resolve().parents[1] / "assets" / "logo_assertif_cab.png"
-    if logo_path.exists():
-        try:
-            logo_b64 = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
-            logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" />'
-            header_logo_html = f'<img src="data:image/png;base64,{logo_b64}" alt="Logo Assertif" style="height:18pt;" />'
-        except Exception:
-            logo_html = "<strong>Assertif</strong>"
-            header_logo_html = "<strong>Assertif</strong>"
-    else:
-        logo_html = "<strong>Assertif</strong>"
-        header_logo_html = "<strong>Assertif</strong>"
-    
     font_family_mono = font_families['mono']
 
     # Template HTML completo
@@ -459,7 +444,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
         
         .hero-text {
-            max-width: 70%;
+            max-width: 100%;
         }
         
         .hero-eyebrow {
@@ -483,14 +468,24 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             color: rgba(255,255,255,0.9);
         }
         
-        .hero-logo {
-            text-align: right;
+        .hero-details {
+            margin-top: 12pt;
+            font-size: 10pt;
+            line-height: 1.35;
+            color: #fff;
         }
-        
-        .hero-logo img {
-            max-width: 160px;
-            width: 100%;
-            display: inline-block;
+
+        .hero-details p {
+            display: block;
+            margin: 3pt 0;
+            color: #fff;
+            font-size: 9.5pt;
+            line-height: 1.3;
+            text-align: left;
+        }
+
+        .hero-details strong {
+            color: #fff;
         }
         
         .documento-meta {
@@ -513,10 +508,6 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             gap: 18pt;
             padding: 12px 40px;
             border-bottom: 1px solid #d9e2ef;
-        }
-
-        .print-header-content .print-header-logo img {
-            height: 18pt;
         }
 
         .print-header-content .print-header-info {
@@ -549,7 +540,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             display: grid;
             /* Ajuste: permitir que 4 cards caibam sem extrapolar a margem da página,
                mantendo proporção visual. Min-width reduzido para evitar overflow em A4. */
-            grid-template-columns: repeat(4, minmax(170px, 1fr));
+            grid-template-columns: repeat(2, minmax(170px, 1fr));
             gap: 2pt;
             margin-top: 16pt;
             /* Usar largura total do container e deslocamento interno para alinhar à esquerda */
@@ -867,7 +858,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
 <body>
     <div class="print-header-placeholder">
         <div class="print-header-content">
-            <div class="print-header-logo">$header_logo_html</div>
+            <div><strong>$analise_id</strong></div>
             <div class="print-header-info">
                 <span style="font-weight:700; display:block;">$empresa</span>
                 <span style="font-size:10pt; display:block;">CNPJ: $cnpj</span>
@@ -881,33 +872,26 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         <div class="hero-top">
             <div class="hero-text">
                 <p class="hero-eyebrow">Parecer Técnico · FinScore</p>
-                <h1>$empresa</h1>
-                <p class="hero-subtitle">CNPJ: $cnpj</p>
-                <p class="hero-subtitle">Emitido em $data_relatorio</p>
+                <h1>Parecer de Crédito</h1>
+                <div class="hero-details">
+                    <p><strong>Identificador da análise:</strong> $analise_id</p>
+                    <p><strong>Tomador:</strong> $empresa</p>
+                    <p><strong>CNPJ:</strong> $cnpj</p>
+                    <p><strong>Período efetivamente analisado:</strong> $periodo_texto</p>
+                    <p><strong>Recomendação FinScore:</strong> $decisao_texto</p>
+                </div>
             </div>
-            <div class="hero-logo">$logo_html</div>
         </div>
     </header>
     
     <section class="summary-grid">
-        <div class="summary-card highlight">
-            <p class="summary-label">Recomendação FinScore</p>
-            <p class="summary-value">$decisao_texto</p>
-        </div>
         <div class="summary-card">
-            <p class="summary-label">FinScore Ajustado</p>
+            <p class="summary-label">FinScore</p>
             <p class="summary-value">$finscore_display</p>
-            <span class="summary-chip">$classificacao_fs</span>
         </div>
         <div class="summary-card">
             <p class="summary-label">Score Serasa</p>
             <p class="summary-value">$serasa_display</p>
-            <span class="summary-chip">$classificacao_ser</span>
-            <!-- Consulta date intentionally removed from PDF summary card as requested -->
-        </div>
-        <div class="summary-card period-card">
-            <p class="summary-label">Período Avaliado</p>
-            <p class="summary-value">$periodo_texto</p>
         </div>
     </section>
     </section>
@@ -959,10 +943,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         ACCENT_PRIMARY=ACCENT_PRIMARY,
         ACCENT_SECONDARY=ACCENT_SECONDARY,
         font_family_mono=font_family_mono,
-        header_logo_html=header_logo_html,
+        analise_id=analise_id,
         cnpj=cnpj,
         data_relatorio=data_relatorio,
-        logo_html=logo_html,
         decisao_texto=decisao_texto,
         cidade_relatorio=cidade_relatorio,
         finscore_display=finscore_display,

@@ -22,7 +22,11 @@ try:  # Execução Streamlit (app_front no sys.path)
     from components.parecer_data_schema import FindingCategory, ParecerData
     from services.parecer_data_builder import build_parecer_data
     from services.parecer_document import render_structured_parecer
-    from services.parecer_validation import ParecerValidationError, validate_parecer_narrative
+    from services.parecer_validation import (
+        ParecerValidationError,
+        reconcile_narrative_numbers,
+        validate_parecer_narrative,
+    )
     from services.parecer_evaluation import evaluate_parecer_document
 except ModuleNotFoundError:  # Importação como pacote app_front em testes/ferramentas
     from app_front.components.llm_client import (
@@ -37,6 +41,7 @@ except ModuleNotFoundError:  # Importação como pacote app_front em testes/ferr
     from app_front.services.parecer_document import render_structured_parecer
     from app_front.services.parecer_validation import (
         ParecerValidationError,
+        reconcile_narrative_numbers,
         validate_parecer_narrative,
     )
     from app_front.services.parecer_evaluation import evaluate_parecer_document
@@ -376,6 +381,8 @@ Regras:
 - use apenas IDs de achado_ids_permitidos e priorize o roteiro_achados de cada seção;
 - diferencie observado, derivado, calculado, hipótese de cenário, evidência externa e interpretação;
 - não invente fatos, causas, setor, porte, parâmetros, datas, valores, limites ou documentos;
+- ao citar números, use no máximo duas casas decimais e o padrão brasileiro: ponto para milhares
+  e vírgula para decimais;
 - FinScore não é PD nem rating regulatório; frequência de simulação não é inadimplência;
 - Serasa permanece separado; Springate e Fleuriet são diagnósticos suplementares derivados;
 - cenários são hipóteses de estresse, não previsões;
@@ -481,7 +488,11 @@ def generate_variable_narrative(
                 "role": "developer",
                 "content": (
                     "A redação anterior não passou nos controles abaixo. Gere novamente todo "
-                    "o objeto, corrigindo cada ocorrência sem criar fatos ou referências:\n- "
+                    "o objeto, corrigindo cada ocorrência sem criar fatos ou referências. Para "
+                    "número sem lastro, remova a afirmação numérica se o valor exato não constar "
+                    "nas evidências referenciadas; não calcule variações novas. Cenários devem ser "
+                    "descritos apenas como hipóteses condicionais. Não atribua percentual de "
+                    "cobertura a garantias:\n- "
                     + "\n- ".join(notes)
                 ),
             }
@@ -806,12 +817,13 @@ def generate_parecer_document(
     )
     narrative_context = build_narrative_context(contract)
     revision_notes: list[str] = []
-    for attempt in range(2):
+    for attempt in range(3):
         narrative = generate_variable_narrative(
             narrative_context,
             invoke=invoke,
             revision_notes=revision_notes,
         )
+        narrative = reconcile_narrative_numbers(narrative, contract)
         try:
             validation = validate_parecer_narrative(
                 narrative,
@@ -820,7 +832,7 @@ def generate_parecer_document(
             )
             break
         except ParecerValidationError as exc:
-            if attempt:
+            if attempt == 2:
                 raise
             revision_notes = [
                 f"{issue.local}: {issue.mensagem}" for issue in exc.report.problemas

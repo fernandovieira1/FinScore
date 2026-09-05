@@ -50,6 +50,7 @@ ITEM_COLLECTIONS = (
 NUMBER_PATTERN = re.compile(
     r"(?<![\w-])-?(?:\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?)%?(?!\w)"
 )
+DATE_PATTERN = re.compile(r"\b\d{1,2}/\d{1,2}/\d{4}\b")
 FORBIDDEN_TERMS = {
     "inteligência artificial": "tecnologia de geração",
     "modelo de linguagem": "tecnologia de geração",
@@ -58,6 +59,27 @@ FORBIDDEN_TERMS = {
     "automação": "processo técnico",
     "pudim": "nome interno",
     "brigadeiro": "nome interno",
+}
+ITEM_ALLOWED_CATEGORIES = {
+    "pontos_fortes": {FindingCategory.STRENGTH},
+    "riscos_prioritarios": {
+        FindingCategory.RISK,
+        FindingCategory.ALERT,
+        FindingCategory.BLOCK,
+        FindingCategory.DIVERGENCE,
+    },
+    "validacoes_pendentes": {
+        FindingCategory.BLOCK,
+        FindingCategory.LIMITATION,
+        FindingCategory.ALERT,
+        FindingCategory.DIVERGENCE,
+    },
+    "recomendacoes_monitoramento": {
+        FindingCategory.RISK,
+        FindingCategory.ALERT,
+        FindingCategory.LIMITATION,
+        FindingCategory.DIVERGENCE,
+    },
 }
 
 
@@ -149,6 +171,95 @@ def _matches_authorized(value: float, percent: bool, authorized: list[float]) ->
     return False
 
 
+def _number_tokens(text: str) -> list[str]:
+    """Extrai grandezas numéricas sem decompor datas cadastrais em dia e mês."""
+    return NUMBER_PATTERN.findall(DATE_PATTERN.sub(" ", text))
+
+
+def reconcile_narrative_numbers(
+    narrative: ParecerNarrativo,
+    contract: ParecerData,
+) -> ParecerNarrativo:
+    """Associa a evidência correta e elimina apenas afirmações numéricas sem lastro."""
+    payload = narrative.model_dump(mode="python")
+    findings = _finding_map(contract)
+
+    def reconcile_block(
+        text: str,
+        references: list[str],
+        allowed_categories: set[FindingCategory] | None,
+        max_references: int,
+        preserve_if_short: bool,
+    ) -> tuple[str, list[str]]:
+        refs = list(dict.fromkeys(references))
+
+        def candidates_for(token: str) -> list[str]:
+            value, percent = _parse_number(token)
+            if value is None:
+                return []
+            result = []
+            for identifier, finding in findings.items():
+                if allowed_categories is not None and finding.categoria not in allowed_categories:
+                    continue
+                if _matches_authorized(value, percent, _authorized_numbers([finding])):
+                    result.append(identifier)
+            return result
+
+        kept_sentences: list[str] = []
+        for sentence in re.split(r"(?<=[.!?])\s+", text):
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            unsupported = False
+            for token in _number_tokens(sentence):
+                value, percent = _parse_number(token)
+                if value is None:
+                    continue
+                if _matches_authorized(
+                    value,
+                    percent,
+                    _authorized_numbers(
+                        findings[item] for item in refs if item in findings
+                    ),
+                ):
+                    continue
+                candidates = candidates_for(token)
+                if candidates and len(refs) < max_references:
+                    refs.append(candidates[0])
+                elif not candidates:
+                    unsupported = True
+                    break
+            if not unsupported:
+                kept_sentences.append(sentence)
+        revised = " ".join(kept_sentences)
+        if preserve_if_short and len(revised) < 40:
+            return text, refs
+        return revised, refs
+
+    for name in SECTION_NAMES:
+        block = payload[name]
+        block["texto"], block["achado_ids"] = reconcile_block(
+            block["texto"], block["achado_ids"], None, 12, True
+        )
+    for collection_name in ITEM_COLLECTIONS:
+        revised_items = []
+        for item in payload[collection_name]:
+            text, references = reconcile_block(
+                item["texto"],
+                item["achado_ids"],
+                ITEM_ALLOWED_CATEGORIES[collection_name],
+                6,
+                False,
+            )
+            # Itens são opcionais; um item integralmente numérico e sem lastro é descartado.
+            if len(text) >= 12:
+                item["texto"] = text
+                item["achado_ids"] = references
+                revised_items.append(item)
+        payload[collection_name] = revised_items
+    return ParecerNarrativo.model_validate(payload)
+
+
 def _validate_references(
     narrative: ParecerNarrativo,
     contract: ParecerData,
@@ -204,28 +315,7 @@ def _validate_item_categories(
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     findings = _finding_map(contract)
-    allowed = {
-        "pontos_fortes": {FindingCategory.STRENGTH},
-        "riscos_prioritarios": {
-            FindingCategory.RISK,
-            FindingCategory.ALERT,
-            FindingCategory.BLOCK,
-            FindingCategory.DIVERGENCE,
-        },
-        "validacoes_pendentes": {
-            FindingCategory.BLOCK,
-            FindingCategory.LIMITATION,
-            FindingCategory.ALERT,
-            FindingCategory.DIVERGENCE,
-        },
-        "recomendacoes_monitoramento": {
-            FindingCategory.RISK,
-            FindingCategory.ALERT,
-            FindingCategory.LIMITATION,
-            FindingCategory.DIVERGENCE,
-        },
-    }
-    for collection_name, allowed_categories in allowed.items():
+    for collection_name, allowed_categories in ITEM_ALLOWED_CATEGORIES.items():
         for index, item in enumerate(getattr(narrative, collection_name), 1):
             categories = {
                 findings[identifier].categoria
@@ -256,7 +346,7 @@ def _validate_numbers(
             for identifier in finding_ids
             if identifier in finding_map
         )
-        for token in NUMBER_PATTERN.findall(text):
+        for token in _number_tokens(text):
             value, percent = _parse_number(token)
             if value is None:
                 continue
@@ -326,7 +416,12 @@ def _validate_semantics(
                 "frequência de simulação foi tratada como inadimplência",
             )
         )
-    if re.search(r"cen[aá]rio.{0,35}(?:previs[aã]o|proje[cç][aã]o certa)", combined, re.IGNORECASE):
+    if re.search(
+        r"cen[aá]rio.{0,30}(?<!n[aã]o )(?:[ée]|constitui|representa|equivale a)\s+"
+        r"(?:uma\s+)?(?:previs[aã]o|proje[cç][aã]o certa)",
+        combined,
+        re.IGNORECASE,
+    ):
         issues.append(
             ValidationIssue("CENARIO_PREDITIVO", "parecer", "cenário foi tratado como previsão")
         )
@@ -340,7 +435,11 @@ def _validate_semantics(
         )
     guarantee = contract.governanca.recomendacao_finscore.garantia
     if guarantee.cobertura_minima is None and re.search(
-        r"garantia.{0,60}\d+(?:[.,]\d+)?%", combined, re.IGNORECASE | re.DOTALL
+        r"(?:cobertura(?:\s+(?:mínima|nominal|da garantia))?|"
+        r"garantia\s+(?:mínima|equivalente|correspondente|de))"
+        r".{0,35}\d+(?:[.,]\d+)?%",
+        combined,
+        re.IGNORECASE,
     ):
         issues.append(
             ValidationIssue(
@@ -451,5 +550,6 @@ __all__ = [
     "ParecerValidationError",
     "ParecerValidationReport",
     "ValidationIssue",
+    "reconcile_narrative_numbers",
     "validate_parecer_narrative",
 ]

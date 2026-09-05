@@ -7,7 +7,7 @@ import pandas as pd
 
 from app_front.components.parecer_data_schema import FindingCategory
 from app_front.components.parecer_schema import ParecerNarrativo
-from app_front.pdf.export_pdf import contar_paginas_pdf, gerar_pdf_parecer
+from app_front.pdf.export_pdf import contar_paginas_pdf, gerar_pdf_parecer, render_parecer_html
 from app_front.services.credit_policy import decide_pudim
 from app_front.services.finscore_service import run_finscore
 from app_front.services.parecer_data_builder import build_parecer_data
@@ -93,12 +93,55 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
         self.assertEqual(generated, narrative)
         self.assertTrue(context["validacao_narrativa"]["valido"])
         self.assertTrue(context["avaliacao_documento"]["valido"])
-        self.assertIn("## 10. Conclusão da análise", document)
+        self.assertIn("## 8. Considerações finais", document)
+
+    def test_document_uses_the_consolidated_requested_structure(self) -> None:
+        document = render_structured_parecer(self._narrative(), self.contract)
+
+        self.assertIn("O presente parecer técnico-jurídico", document)
+        self.assertIn("**Callamarys**", document)
+        self.assertIn("referentes aos anos de 2023 a\n2025", document)
+        self.assertNotIn("| Concedente |", document)
+        self.assertIn("### 6.1 Garantias", document)
+        self.assertNotIn("### 6.1 Caps prudenciais", document)
+        self.assertNotIn("Comparação dos núcleos do FinScore", document)
+        self.assertNotIn("### 2. Livro de evidências materiais", document)
+        self.assertNotIn("## 9. Riscos, diligências e monitoramento", document)
+        self.assertNotIn("## 10. Conclusão da análise", document)
+        self.assertEqual(document.count("## 8. Considerações finais"), 1)
+
+    def test_pdf_header_has_no_logo_or_score_classification_chips(self) -> None:
+        document = render_structured_parecer(self._narrative(), self.contract)
+        html = render_parecer_html(
+            document,
+            {
+                "analise_id": "FS-2026-000003",
+                "empresa": "Callamarys",
+                "cnpj": "00.000.000/0000-00",
+                "finscore_ajustado": 914.864,
+                "classificacao_finscore": "500 ou mais",
+                "serasa_score": 700,
+                "classificacao_serasa": "ANALISAR CONJUNTAMENTE",
+                "decisao": "aprovar",
+                "ano_inicial": 2023,
+                "ano_final": 2025,
+            },
+            engine="xhtml2pdf",
+        )
+
+        self.assertIn("Identificador da análise:</strong> FS-2026-000003", html)
+        self.assertIn("Período efetivamente analisado:</strong> 2023 a 2025", html)
+        self.assertIn("914,86", html)
+        self.assertNotIn("Logo Assertif", html)
+        caput = html.split("<!-- Corpo do Parecer -->", 1)[0]
+        self.assertNotIn(">500 ou mais<", caput)
+        self.assertNotIn(">ANALISAR CONJUNTAMENTE<", caput)
+        self.assertEqual(html.count("Parecer de Crédito — FinScore"), 0)
 
     def test_methodology_tampering_is_rejected(self) -> None:
         narrative = self._narrative()
         document = render_structured_parecer(narrative, self.contract).replace(
-            "O FinScore sintetiza", "O índice sintetiza", 1
+            "A pontuação não é uma probabilidade", "A medida não é uma probabilidade", 1
         )
         report = evaluate_parecer_document(
             narrative, self.contract, document, raise_on_error=False
