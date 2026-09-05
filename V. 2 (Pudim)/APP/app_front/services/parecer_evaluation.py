@@ -25,7 +25,7 @@ BODY_HEADINGS = (
     "## 5. Análise financeira e patrimonial",
     "## 6. Formação e interpretação do FinScore",
     "## 7. Estresse, sensibilidade e evidências suplementares",
-    "## 8. Tese de crédito e governança",
+    "## 8. Tese de crédito e recomendação",
     "## 9. Riscos, diligências e monitoramento",
     "## 10. Conclusão da análise",
 )

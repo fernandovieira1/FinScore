@@ -212,7 +212,7 @@ class ParecerPudimV2Test(unittest.TestCase):
         self.assertIn("2023", document)
         self.assertGreater(len(document.split()), 3_000)
 
-    def test_report_separates_recommendation_analyst_and_authority(self) -> None:
+    def test_report_omits_governance_positions_and_keeps_institutional_caveat(self) -> None:
         policy = decide_pudim(self.output, self.meta)
         recommendation = build_finscore_recommendation(self.output, policy)
         state = initialize_governance_state(
@@ -240,9 +240,10 @@ class ParecerPudimV2Test(unittest.TestCase):
         document = render_parecer_document(_narrative(), context)
 
         self.assertIn("**Recomendação FinScore:**", document)
-        self.assertIn("| Manifestação do analista |", document)
-        self.assertIn("| Decisão da alçada | Não aprovar |", document)
-        self.assertNotIn("**Decisão conforme as regras de crédito:**", document)
+        self.assertNotIn("| Manifestação do analista |", document)
+        self.assertNotIn("| Decisão da alçada |", document)
+        self.assertNotIn("governança", document.lower())
+        self.assertEqual(document.count("decisão de alçada superior"), 1)
 
     def test_nested_pandas_diagnostics_are_serialized_without_boolean_evaluation(self) -> None:
         output = copy.deepcopy(self.output)

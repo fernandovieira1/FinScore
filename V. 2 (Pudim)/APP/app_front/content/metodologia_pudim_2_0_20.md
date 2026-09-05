@@ -2,7 +2,7 @@
 
 O FinScore sintetiza a capacidade econômico-financeira de empresas em uma escala de 0 a 1.000 pontos. A leitura combina desempenho econômico-operacional, estrutura financeira e patrimonial, evolução em três exercícios, qualidade da informação e resposta a cenários de estresse. Quanto maior a pontuação, mais favorável é a capacidade relativa observada para suportar obrigações financeiras.
 
-A pontuação não é uma probabilidade de inadimplência, um rating regulatório ou uma estimativa direta de perda esperada. A decisão de crédito considera o FinScore prudencial, a aptidão do resultado e, de forma suplementar, Serasa, Springate e Fleuriet. Garantias, covenants e alçada permanecem separados do cálculo da pontuação.
+A pontuação não é uma probabilidade de inadimplência, um rating regulatório ou uma estimativa direta de perda esperada. A decisão de crédito considera o FinScore prudencial, a aptidão do resultado e, de forma suplementar, Serasa, Springate e Fleuriet. Garantias e covenants permanecem separados do cálculo da pontuação.
 
 ### 1. Escopo e sequência de cálculo
 
@@ -242,7 +242,7 @@ Uma frequência simulada abaixo de determinado corte é condicionada às amplitu
 
 ### 14. Evidências complementares
 
-O Serasa permanece separado do cálculo. A pontuação externa é comparada ao FinScore para identificar convergência ou divergência, mas não há soma, média ou conversão automática. A marcação de restrição grave é feita pelo analista com base na consulta documental, permanece destacada no parecer e requer exame explícito pela alçada; isoladamente, não altera o FinScore nem a categoria de decisão.
+O Serasa permanece separado do cálculo. A pontuação externa é comparada ao FinScore para identificar convergência ou divergência, mas não há soma, média ou conversão automática. A marcação de restrição grave é feita pelo analista com base na consulta documental e permanece destacada para análise complementar; isoladamente, não altera o FinScore nem a categoria de decisão.
 
 O índice Springate é calculado por exercício como contraste de insolvência:
 
@@ -268,13 +268,13 @@ A decisão utiliza o FinScore prudencial e o status de aptidão produzido pelos 
 |---|---|---|
 | **Dados inconsistentes** | FinScore indisponível; base não apta para cálculo; resultado provisório ou não utilizável; confiabilidade inferior a 75%; correção pendente; ou alerta bloqueador. | Não há base suficiente para aprovar ou recusar a operação. O parecer discrimina cada pendência, seu impacto e a correção necessária. A análise deve ser refeita após o saneamento. |
 | **Não aprovar** | Resultado apto para decisão e FinScore prudencial inferior a 250 pontos. | A capacidade econômico-financeira ficou abaixo do piso decisório. Nova análise depende de mudança material nas demonstrações e nos indicadores que formam a pontuação. |
-| **Aprovar** | Resultado apto para decisão e FinScore prudencial igual ou superior a 250 pontos. | Recomendação favorável, com ou sem garantia, sujeita à alçada, formalização e controles cadastrais e jurídicos da instituição. |
+| **Aprovar** | Resultado apto para decisão e FinScore prudencial igual ou superior a 250 pontos. | Recomendação favorável, com ou sem garantia, condicionada à formalização e aos controles cadastrais e jurídicos da instituição. |
 
-A camada decisória converte a pontuação e a aptidão nas três categorias acima. O piso de 250 pontos coincide com um dos cortes empregados na análise de sensibilidade. Os diagnósticos complementares qualificam a recomendação de garantia, os covenants e a análise da alçada, sem substituir o FinScore como eixo principal.
+A camada decisória converte a pontuação e a aptidão nas três categorias acima. O piso de 250 pontos coincide com um dos cortes empregados na análise de sensibilidade. Os diagnósticos complementares qualificam a recomendação de garantia, os covenants e a análise de risco, sem substituir o FinScore como eixo principal.
 
 ### 16. Evidências suplementares, garantias e covenants
 
-O score Serasa é comparado ao FinScore sem integração aritmética. Divergências de até 100 pontos são classificadas como baixas; de mais de 100 a 200, moderadas; de mais de 200 a 300, relevantes; e acima de 300, elevadas. A direção informa se a evidência externa é mais favorável ou mais desfavorável. Restrição grave registrada na consulta permanece destacada para exame da alçada.
+O score Serasa é comparado ao FinScore sem integração aritmética. Divergências de até 100 pontos são classificadas como baixas; de mais de 100 a 200, moderadas; de mais de 200 a 300, relevantes; e acima de 300, elevadas. A direção informa se a evidência externa é mais favorável ou mais desfavorável. Restrição grave registrada na consulta permanece destacada para análise complementar.
 
 Springate e Fleuriet utilizam as mesmas demonstrações que alimentam o FinScore. Springate inferior a 0,862 registra sinal de distress. Na leitura Fleuriet, dependência de financiamento de curto prazo, insuficiência de fontes permanentes ou estrutura atípica são sinais de atenção sobre o capital de giro. Resultado não calculável permanece como ausência de evidência complementar, sem bloquear por si só o FinScore.
 
@@ -285,9 +285,9 @@ A recomendação de garantia é acionada quando uma aprovação apresenta pelo m
 - FinScore inferior a 250 no cenário severo;
 - Serasa materialmente mais desfavorável, restrição grave registrada, Springate com sinal de distress ou fragilidade indicada pelo Fleuriet.
 
-O sistema não presume percentual de cobertura nem valor de garantia. Modalidade, valor realizável, cobertura e exequibilidade jurídica devem ser definidos pela alçada após avaliação do colateral. Na ausência dos sinais acima, a aprovação é apresentada sem recomendação de garantia decorrente desta análise.
+O sistema não presume percentual de cobertura nem valor de garantia. Modalidade, valor realizável, cobertura e exequibilidade jurídica devem ser definidos após avaliação do colateral. Na ausência dos sinais acima, a aprovação é apresentada sem recomendação de garantia decorrente desta análise.
 
-Os covenants decorrem dos indicadores que originaram a ressalva. Sinal de distress direciona o acompanhamento do Springate, EBIT e capital circulante líquido; fragilidade Fleuriet direciona NCG, CDG e saldo de tesouraria; caps direcionam capitalização, endividamento exigível ou cobertura de juros; divergência no Serasa direciona atualização da consulta e revisão pela alçada. O parecer não cria limites numéricos ou periodicidades sem base na política da instituição.
+Os covenants decorrem dos indicadores que originaram a ressalva. Sinal de distress direciona o acompanhamento do Springate, EBIT e capital circulante líquido; fragilidade Fleuriet direciona NCG, CDG e saldo de tesouraria; caps direcionam capitalização, endividamento exigível ou cobertura de juros; divergência no Serasa direciona atualização da consulta e análise complementar. O parecer não cria limites numéricos ou periodicidades sem base na política da instituição.
 
 ### 17. Conteúdo e leitura do parecer
 
@@ -295,4 +295,4 @@ O parecer apresenta identificação, fontes, qualidade dos dados, indicadores, f
 
 Fatos observados, valores calculados, premissas e conclusões permanecem distinguíveis. Todo motivo impeditivo deve ser associado ao efeito analítico e à ação de saneamento. Alertas informativos permanecem visíveis sem serem apresentados como impedimentos. A redação não altera valores, regras, bloqueios ou decisão.
 
-Antes da contratação, a alçada confirma demonstrações, perímetro contábil, eventos extraordinários, exposição consolidada, grupo econômico, restrições externas, documentação, garantias e concentração. Alterações em contas, curvas, pesos, caps, limiares de confiabilidade ou critérios de decisão requerem registro de versão, validação independente e aprovação de governança.
+Alterações em contas, curvas, pesos, caps, limiares de qualidade dos dados ou critérios de decisão requerem registro de versão e validação independente.

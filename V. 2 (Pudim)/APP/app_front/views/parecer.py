@@ -19,19 +19,15 @@ from components.llm_client import (
     get_last_usage,
 )
 from components.navigation_flow import NavigationFlow
-from components.parecer_data_schema import ParecerData, RecommendationCode
+from components.parecer_data_schema import ParecerData
 from components.session_state import clear_flow_state
 from components.token_utils import now_ts
 from pdf.export_pdf import contar_paginas_pdf, gerar_pdf_parecer
 from services.credit_governance import (
     GOVERNANCE_SESSION_KEY,
-    GovernanceAction,
     GovernanceSessionState,
-    GovernanceStage,
     governance_fingerprint,
     load_or_initialize_governance_state,
-    register_analyst_manifestation,
-    register_authority_decision,
 )
 from services.credit_policy import decide_pudim
 from services.analysis_dossier import AnalysisDossierStore
@@ -47,24 +43,8 @@ DECISION_ICONS = {
     "nao_aprovar": "❌ Não aprovar",
     "dados_inconsistentes": "⚠️ Dados inconsistentes",
 }
-GOVERNANCE_LABELS = {
-    RecommendationCode.APPROVE: "Aprovar",
-    RecommendationCode.DO_NOT_APPROVE: "Não aprovar",
-    RecommendationCode.INCONSISTENT_DATA: "Dados inconsistentes",
-}
-GOVERNANCE_STAGE_LABELS = {
-    GovernanceStage.RECOMMENDATION: "Recomendação FinScore",
-    GovernanceStage.ANALYST: "Manifestação do analista",
-    GovernanceStage.AUTHORITY: "Decisão da alçada",
-}
-GOVERNANCE_ACTION_LABELS = {
-    GovernanceAction.REGISTERED: "registrada",
-    GovernanceAction.REPLACED: "substituída",
-    GovernanceAction.INVALIDATED: "invalidada",
-}
-
 logger = logging.getLogger(__name__)
-PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v3"
+PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v4"
 DOSSIER_STORE = AnalysisDossierStore()
 
 
@@ -91,11 +71,6 @@ def _fmt_score(value: Any) -> str:
 def _fmt_percent(value: Any) -> str:
     number = _number(value)
     return "N/A" if number is None else f"{number:.2%}".replace(".", ",")
-
-
-def _readable_status(value: Any) -> str:
-    text = str(value or "Não informado").replace("_", " ").strip().lower()
-    return text[:1].upper() + text[1:]
 
 
 def _safe_filename(value: str) -> str:
@@ -192,227 +167,6 @@ def _load_governance(
     return state
 
 
-def _save_governance(
-    state: GovernanceSessionState,
-    output: Dict[str, Any],
-    meta: Dict[str, Any],
-    policy: Dict[str, Any],
-    notice: str,
-) -> None:
-    contract = build_parecer_data(
-        output,
-        meta,
-        policy,
-        governance=state.governanca,
-    )
-    st.session_state["parecer_dossie_funcional"] = DOSSIER_STORE.save_contract(
-        contract.analise_id,
-        contract,
-        state.model_dump(mode="json"),
-        actor_email=st.session_state.get("finscore_user_email"),
-        invalidate_report=True,
-    )
-    st.session_state[GOVERNANCE_SESSION_KEY] = state.model_dump(mode="json")
-    st.session_state["parecer_dados_estruturados"] = contract.model_dump(mode="json")
-    _invalidate_generated_report()
-    st.session_state["_governance_notice"] = notice
-
-
-def _governance_position(label: str, decision: Any | None) -> None:
-    st.markdown(f"**{label}**")
-    if decision is None:
-        st.caption("Não registrada")
-        return
-    st.markdown(GOVERNANCE_LABELS[decision.resultado])
-    st.caption(
-        f"{decision.responsavel} · {decision.registrado_em.strftime('%d/%m/%Y %H:%M')}"
-    )
-
-
-def _render_governance(
-    state: GovernanceSessionState,
-    output: Dict[str, Any],
-    meta: Dict[str, Any],
-    policy: Dict[str, Any],
-) -> None:
-    governance = state.governanca
-    recommendation = governance.recomendacao_finscore
-    notice = st.session_state.pop("_governance_notice", None)
-    if notice:
-        st.success(notice)
-
-    with st.expander("Governança de crédito", expanded=False):
-        st.caption(
-            "A recomendação FinScore é calculada pelas regras de crédito e não pode ser editada. "
-            "A manifestação do analista e a decisão da alçada são posições independentes."
-        )
-        recommendation_col, analyst_col, authority_col = st.columns(3)
-        with recommendation_col:
-            st.markdown("**Recomendação FinScore**")
-            st.markdown(GOVERNANCE_LABELS[recommendation.codigo])
-            st.caption(
-                f"Faixa {recommendation.faixa.title()} · "
-                f"confiabilidade {_fmt_percent(recommendation.confiabilidade)}"
-            )
-        with analyst_col:
-            _governance_position(
-                "Manifestação do analista", governance.manifestacao_analista
-            )
-        with authority_col:
-            _governance_position("Decisão da alçada", governance.decisao_alcada)
-
-        if governance.divergencias:
-            st.warning(
-                f"Há {len(governance.divergencias)} divergência(s) registrada(s) entre as "
-                "posições da governança. As justificativas estão preservadas no histórico."
-            )
-
-        analyst_tab, authority_tab, history_tab = st.tabs(
-            ["Manifestação do analista", "Decisão da alçada", "Histórico"]
-        )
-        actor_email = str(st.session_state.get("finscore_user_email") or "").strip()
-        responsible = actor_email or "Usuário não identificado"
-        analyst_allowed = bool(actor_email)
-        authority_allowed = DOSSIER_STORE.can_register_authority(responsible)
-        options = list(RecommendationCode)
-
-        with analyst_tab:
-            current_analyst = governance.manifestacao_analista
-            default_result = (
-                current_analyst.resultado if current_analyst else recommendation.codigo
-            )
-            with st.form(f"governance_analyst_{state.assinatura_analise[:12]}"):
-                analyst_result = st.selectbox(
-                    "Posição do analista",
-                    options,
-                    index=options.index(default_result),
-                    format_func=lambda item: GOVERNANCE_LABELS[item],
-                    disabled=not analyst_allowed,
-                )
-                analyst_reason = st.text_area(
-                    "Fundamentação",
-                    value=current_analyst.justificativa if current_analyst else "",
-                    placeholder=(
-                        "Registre as evidências avaliadas e, se houver divergência, explique "
-                        "objetivamente por que a recomendação FinScore não foi acompanhada."
-                    ),
-                    height=130,
-                    disabled=not analyst_allowed,
-                )
-                st.caption(f"Responsável pelo registro: {responsible}")
-                if not analyst_allowed:
-                    st.caption(
-                        "A manifestação exige identificação do usuário pela camada de acesso "
-                        "da instituição."
-                    )
-                if governance.decisao_alcada is not None:
-                    st.caption(
-                        "Uma nova manifestação invalidará a decisão de alçada atual e exigirá "
-                        "nova deliberação."
-                    )
-                submit_analyst = st.form_submit_button(
-                    "Registrar manifestação",
-                    use_container_width=True,
-                    disabled=not analyst_allowed,
-                )
-            if submit_analyst:
-                try:
-                    updated = register_analyst_manifestation(
-                        state,
-                        analyst_result,
-                        analyst_reason,
-                        responsible,
-                    )
-                    _save_governance(
-                        updated,
-                        output,
-                        meta,
-                        policy,
-                        "Manifestação do analista registrada.",
-                    )
-                    st.rerun()
-                except (PermissionError, ValueError) as exc:
-                    st.error(str(exc))
-
-        with authority_tab:
-            current_authority = governance.decisao_alcada
-            reference_result = (
-                governance.manifestacao_analista.resultado
-                if governance.manifestacao_analista is not None
-                else recommendation.codigo
-            )
-            default_result = (
-                current_authority.resultado if current_authority else reference_result
-            )
-            with st.form(f"governance_authority_{state.assinatura_analise[:12]}"):
-                authority_result = st.selectbox(
-                    "Deliberação da alçada",
-                    options,
-                    index=options.index(default_result),
-                    format_func=lambda item: GOVERNANCE_LABELS[item],
-                    disabled=not authority_allowed,
-                )
-                authority_reason = st.text_area(
-                    "Fundamentação da decisão",
-                    value=current_authority.justificativa if current_authority else "",
-                    placeholder=(
-                        "Registre o fundamento da deliberação e, se houver divergência, explique "
-                        "objetivamente por que a posição anterior não foi acompanhada."
-                    ),
-                    height=130,
-                    disabled=not authority_allowed,
-                )
-                st.caption(f"Responsável pelo registro: {responsible}")
-                if not authority_allowed:
-                    st.caption(
-                        "O usuário autenticado possui perfil de analista. O registro desta "
-                        "deliberação requer perfil de alçada."
-                    )
-                submit_authority = st.form_submit_button(
-                    "Registrar decisão da alçada",
-                    use_container_width=True,
-                    disabled=not authority_allowed,
-                )
-            if submit_authority:
-                try:
-                    updated = register_authority_decision(
-                        state,
-                        authority_result,
-                        authority_reason,
-                        responsible,
-                    )
-                    _save_governance(
-                        updated,
-                        output,
-                        meta,
-                        policy,
-                        "Decisão da alçada registrada.",
-                    )
-                    st.rerun()
-                except (PermissionError, ValueError) as exc:
-                    st.error(str(exc))
-
-        with history_tab:
-            st.caption(
-                "Os registros anteriores não são sobrescritos durante o ciclo da análise."
-            )
-            for item in reversed(governance.historico):
-                stage = GOVERNANCE_STAGE_LABELS[item.etapa]
-                action = GOVERNANCE_ACTION_LABELS[item.acao]
-                label = GOVERNANCE_LABELS[item.resultado]
-                st.markdown(
-                    f"**{stage} {action}: {label}**  \n"
-                    f"{item.registrado_em.strftime('%d/%m/%Y %H:%M')} · "
-                    f"{item.responsavel}  \n"
-                    f"{item.justificativa}"
-                )
-
-        st.caption(
-            "Os registros são arquivados no dossiê da análise. Manifestações e deliberações "
-            "ficam vinculadas ao usuário autenticado, à data e ao conteúdo registrado."
-        )
-
-
 def _render_policy_summary(
     output: Dict[str, Any],
     meta: Dict[str, Any],
@@ -430,19 +184,15 @@ def _render_policy_summary(
     )
 
     col_score, col_quality, col_serasa, col_decision = st.columns(4)
-    col_score.metric("FinScore prudencial", _fmt_score(observed.get("finscore_prudencial")))
-    col_score.caption(f"Faixa FinScore: {_readable_status(policy['segmento_politica'])}")
-    col_quality.metric("Confiabilidade", _fmt_percent(status.get("indice_confiabilidade")))
-    col_quality.caption(_readable_status(status.get("classificacao_uso")))
+    col_score.metric("FinScore", _fmt_score(observed.get("finscore_prudencial")))
+    col_quality.metric("Qualidade dos dados", _fmt_percent(status.get("indice_confiabilidade")))
     col_serasa.metric("Serasa", _fmt_score(serasa.get("serasa_score")))
-    col_serasa.caption(_readable_status(serasa.get("status") or "Evidência separada"))
     decision_icon = DECISION_ICONS.get(policy["decisao"], "").split(" ", 1)[0]
     col_decision.markdown(
         f"""
         <div class="finscore-decision-card">
           <div class="finscore-decision-label">Recomendação FinScore</div>
           <div class="finscore-decision-value">{decision_icon} {escape(policy['rotulo'])}</div>
-          <div class="finscore-decision-caption">Resultado calculado; não é a decisão da alçada</div>
         </div>
         <style>
           .finscore-decision-label {{ font-size: .875rem; margin-bottom: .35rem; }}
@@ -451,9 +201,6 @@ def _render_policy_summary(
             line-height: 1.2;
             min-height: 4.2rem;
             overflow-wrap: anywhere;
-          }}
-          .finscore-decision-caption {{
-            color: #6b7280; font-size: .85rem; line-height: 1.25; margin-top: .4rem;
           }}
         </style>
         """,
@@ -470,8 +217,7 @@ def _render_policy_summary(
             )
         else:
             st.success(
-                "Recomendação: aprovar sem indicação de garantia pelos critérios desta análise. "
-                "A decisão permanece sujeita à alçada e aos controles usuais da instituição."
+                "Recomendação: aprovar sem indicação de garantia pelos critérios desta análise."
             )
     elif decision == "nao_aprovar":
         st.error(
@@ -733,13 +479,12 @@ def render() -> None:
     try:
         governance_state = _load_governance(output, meta, policy)
     except Exception:
-        logger.exception("Falha ao validar o estado de governança do parecer")
+        logger.exception("Falha ao validar os dados estruturados do parecer")
         st.error(
-            "Os registros de governança deste ciclo estão inconsistentes. Inicie um novo ciclo "
-            "ou encaminhe o evento ao suporte técnico antes de registrar uma decisão."
+            "Os dados estruturados deste ciclo estão inconsistentes. Inicie um novo ciclo ou "
+            "encaminhe o evento ao suporte técnico."
         )
         return
-    _render_governance(governance_state, output, meta, policy)
 
     st.divider()
     with st.columns([1, 1, 1])[1]:

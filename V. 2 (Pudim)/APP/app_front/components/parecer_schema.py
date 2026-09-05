@@ -81,13 +81,13 @@ class ParecerNarrativo(NarrativeContractModel):
         description="Cenários, simulação válida e evidências suplementares separadas."
     )
     tese_credito_governanca: NarrativeSection = Field(
-        description="Tese de crédito, garantia recomendada e posições registradas."
+        description="Tese de crédito, fundamentos da recomendação e garantia indicada."
     )
     riscos_diligencias_monitoramento: NarrativeSection = Field(
         description="Síntese das prioridades, diligências e acompanhamento proporcional."
     )
     conclusao: NarrativeSection = Field(
-        description="Conclusão coerente com a recomendação e a governança registrada."
+        description="Conclusão coerente com a recomendação e as evidências registradas."
     )
     pontos_fortes: list[NarrativeItem] = Field(
         default_factory=list,

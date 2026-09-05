@@ -13,7 +13,6 @@ try:  # Execução Streamlit, com app_front no sys.path.
         DataPoint,
         FindingCategory,
         ParecerData,
-        RecommendationCode,
     )
     from components.parecer_schema import NarrativeItem, ParecerNarrativo
 except ModuleNotFoundError:  # Importação como pacote nos testes.
@@ -21,7 +20,6 @@ except ModuleNotFoundError:  # Importação como pacote nos testes.
         DataPoint,
         FindingCategory,
         ParecerData,
-        RecommendationCode,
     )
     from app_front.components.parecer_schema import NarrativeItem, ParecerNarrativo
 
@@ -137,15 +135,6 @@ def _period_label(contract: ParecerData) -> str:
     return f"{period.inicio} a {period.fim}"
 
 
-def _result_label(value: RecommendationCode | str | None) -> str:
-    raw = value.value if isinstance(value, RecommendationCode) else str(value or "")
-    return {
-        "aprovar": "Aprovar",
-        "nao_aprovar": "Não aprovar",
-        "dados_inconsistentes": "Dados inconsistentes",
-    }.get(raw, "Não registrado")
-
-
 def _items(values: Iterable[NarrativeItem]) -> str:
     texts = [_md(item.texto) for item in values]
     return "\n".join(f"- {text}" for text in texts) if texts else "- Nenhum item material registrado."
@@ -218,8 +207,8 @@ def _quality_table(contract: ParecerData) -> str:
             "|---|---:|",
             f"| Apto para cálculo | {'Sim' if quality.apto_calculo else 'Não'} |",
             f"| Apto para recomendação | {'Sim' if quality.apto_decisao else 'Não'} |",
-            f"| Confiabilidade | {_fmt_value(quality.indice_confiabilidade, 'proporcao')} |",
-            f"| Classificação de confiabilidade | {_md(quality.classificacao_confiabilidade)} |",
+            f"| Qualidade dos dados | {_fmt_value(quality.indice_confiabilidade, 'proporcao')} |",
+            f"| Classificação da qualidade dos dados | {_md(quality.classificacao_confiabilidade)} |",
             f"| Ocorrências críticas | {quality.ocorrencias_criticas} |",
             f"| Avisos | {quality.ocorrencias_aviso} |",
             f"| Alertas bloqueadores | {quality.alertas_bloqueadores_decisao} |",
@@ -346,31 +335,6 @@ def _supplementary_table(contract: ParecerData) -> str:
     )
 
 
-def _governance_table(contract: ParecerData) -> str:
-    governance = contract.governanca
-    analyst = governance.manifestacao_analista
-    authority = governance.decisao_alcada
-    lines = [
-        "| Posição | Resultado | Responsável | Registro |",
-        "|---|---|---|---|",
-        f"| Recomendação FinScore | {_result_label(governance.recomendacao_finscore.codigo)} | Regras de crédito | {_md(contract.metadados_funcionais.processado_em.isoformat())} |",
-        f"| Manifestação do analista | {_result_label(analyst.resultado if analyst else None)} | {_md(analyst.responsavel if analyst else None)} | {_md(analyst.registrado_em.isoformat() if analyst else None)} |",
-        f"| Decisão da alçada | {_result_label(authority.resultado if authority else None)} | {_md(authority.responsavel if authority else None)} | {_md(authority.registrado_em.isoformat() if authority else None)} |",
-    ]
-    if analyst:
-        lines.extend(["", f"**Fundamentação do analista:** {_md(analyst.justificativa)}"])
-    if authority:
-        lines.extend(["", f"**Fundamentação da alçada:** {_md(authority.justificativa)}"])
-    if governance.divergencias:
-        lines.extend(["", "**Divergências registradas:**"])
-        lines.extend(
-            f"- {_md(item.origem.replace('_', ' ').title())} → "
-            f"{_md(item.destino.replace('_', ' ').title())}: {_md(item.justificativa)}"
-            for item in governance.divergencias
-        )
-    return "\n".join(lines)
-
-
 def _caps_table(contract: ParecerData) -> str:
     if not contract.finscore.caps:
         return "Nenhum cap prudencial acionado."
@@ -439,9 +403,8 @@ def render_structured_parecer(
 **Período efetivamente analisado:** {_period_label(contract)}  
 **Recomendação FinScore:** {_md(recommendation.rotulo)}
 
-> O FinScore oferece suporte quantitativo à análise de crédito e não substitui a manifestação
-> profissional nem a decisão da alçada competente. Dados observados, cálculos, hipóteses,
-> diagnósticos suplementares e posições de governança permanecem separados.
+> As recomendações contidas neste parecer sujeitam-se à revisão e à análise posteriores,
+> bem como à decisão de alçada superior, para os devidos encaminhamentos da operação.
 
 ## 1. Identificação, operação e escopo
 
@@ -459,7 +422,7 @@ def render_structured_parecer(
 
 O parecer organiza identificação e escopo, qualidade da informação, análise econômico-operacional,
 estrutura financeira e patrimonial, formação do FinScore, estresse, evidências suplementares,
-governança, riscos e conclusão. A metodologia e as informações de reprodução constam dos anexos.
+riscos e conclusão. A metodologia e as informações de reprodução constam dos anexos.
 
 ## 2. Sumário executivo
 
@@ -467,10 +430,10 @@ governança, riscos e conclusão. A metodologia e as informações de reproduç�
 
 | Controle | Resultado |
 |---|---:|
-| FinScore prudencial | {_fmt_number(contract.finscore.prudencial)} |
+| FinScore | {_fmt_number(contract.finscore.prudencial)} |
 | Faixa | {_md(recommendation.faixa)} |
 | Apto para recomendação | {'Sim' if recommendation.apto_decisao else 'Não'} |
-| Confiabilidade | {_fmt_value(recommendation.confiabilidade, 'proporcao')} |
+| Qualidade dos dados | {_fmt_value(recommendation.confiabilidade, 'proporcao')} |
 | Recomendação FinScore | {_md(recommendation.rotulo)} |
 | Garantia | {guarantee_label} |
 
@@ -547,7 +510,7 @@ probabilidade de inadimplência.
 
 Serasa não é somado ao FinScore. Springate e Fleuriet são diagnósticos derivados e suplementares.
 
-## 8. Tese de crédito e governança
+## 8. Tese de crédito e recomendação
 
 {_md(narrative.tese_credito_governanca.texto)}
 
@@ -563,10 +526,6 @@ Serasa não é somado ao FinScore. Springate e Fleuriet são diagnósticos deriv
 
 Na ausência de parâmetros institucionais completos, as medidas são apresentadas como monitoramento
 ou diligência recomendada, e não como covenant contratual definido.
-
-### 8.3 Posições registradas
-
-{_governance_table(contract)}
 
 ## 9. Riscos, diligências e monitoramento
 
@@ -592,8 +551,7 @@ ou diligência recomendada, e não como covenant contratual definido.
 
 {_md(narrative.conclusao.texto)}
 
-**Recomendação FinScore: {_md(recommendation.rotulo)}.** A decisão institucional compete à alçada
-e somente é reconhecida neste parecer quando houver registro próprio na governança.
+**Recomendação FinScore: {_md(recommendation.rotulo)}.**
 
 <div class="page-break"></div>
 

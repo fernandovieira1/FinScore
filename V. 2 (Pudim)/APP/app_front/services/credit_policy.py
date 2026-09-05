@@ -365,18 +365,15 @@ def decide_pudim(
         guarantee["justificativa"] = (
             "Recomenda-se garantia como mitigador dos sinais identificados: "
             + " ".join(guarantee_reasons)
-            + " A modalidade, o valor realizável e a cobertura devem ser definidos pela alçada "
-            "após avaliação do colateral; o sistema não presume percentual de cobertura."
+            + " A modalidade, o valor realizável e a cobertura devem ser definidos após a "
+            "avaliação do colateral; o sistema não presume percentual de cobertura."
         )
         conditions.append(
-            "Definir, na alçada de crédito, modalidade, valor realizável, cobertura e exequibilidade "
-            "jurídica da garantia."
+            "Avaliar modalidade, valor realizável, cobertura e exequibilidade jurídica da garantia."
         )
     elif decision == "aprovar":
         guarantee["justificativa"] = (
-            "Os resultados disponíveis não acionam recomendação de garantia pelos critérios desta "
-            "análise. A alçada "
-            "pode exigir mitigação adicional conforme sua política de crédito."
+            "Os resultados disponíveis não acionam recomendação de garantia pelos critérios desta análise."
         )
 
     attention_text = " ".join(supplementary["sinais_atencao"]).lower()
@@ -390,7 +387,7 @@ def decide_pudim(
         )
     if decision == "aprovar" and "serasa" in attention_text:
         conditions.append(
-            "Atualizar a consulta ao Serasa e submeter as divergências à alçada antes da contratação."
+            "Atualizar a consulta ao Serasa e documentar as divergências antes da contratação."
         )
     cap_text = " ".join(cap_reasons).lower()
     if decision == "aprovar" and "capitalização" in cap_text:
@@ -411,8 +408,8 @@ def decide_pudim(
         )
     if decision == "aprovar" and severe is not None and severe < cfg.limite_nao_aprovar:
         conditions.append(
-            "Recalcular os cenários de estresse nas revisões da exposição e submeter deteriorações "
-            "materiais à alçada."
+            "Recalcular os cenários de estresse nas revisões da exposição e registrar deteriorações "
+            "materiais para reavaliação."
         )
 
     return {

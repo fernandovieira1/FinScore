@@ -329,7 +329,7 @@ def build_narrative_context(contract: ParecerData) -> Dict[str, Any]:
     financial = [identifier for identifier in ids if any(marker in identifier for marker in financial_markers)]
     score = prefixes("ACH-RES-FINSCORE", "ACH-FIN-", "ACH-CAP-")
     stress = prefixes("ACH-CEN-", "ACH-SIM-", "ACH-SUP-")
-    governance = prefixes("ACH-GOV-", "ACH-RES-FINSCORE")
+    recommendation_findings = prefixes("ACH-RES-FINSCORE")
 
     routes = {
         "sumario_executivo": _limited_unique(
@@ -342,22 +342,19 @@ def build_narrative_context(contract: ParecerData) -> Dict[str, Any]:
         "analise_financeira_patrimonial": _limited_unique(financial),
         "formacao_finscore": _limited_unique(score),
         "estresse_e_evidencias": _limited_unique(stress),
-        "tese_credito_governanca": _limited_unique([*governance, *material]),
+        "tese_credito_governanca": _limited_unique([*recommendation_findings, *material]),
         "riscos_diligencias_monitoramento": _limited_unique([*material, *limitations, *strengths]),
-        "conclusao": _limited_unique(["ACH-RES-FINSCORE", "ACH-RES-QUALIDADE", *governance, *material]),
+        "conclusao": _limited_unique(
+            ["ACH-RES-FINSCORE", "ACH-RES-QUALIDADE", *material]
+        ),
     }
     for section, references in routes.items():
         if not references:
             routes[section] = ["ACH-RES-FINSCORE"]
 
-    governance_payload = contract.governanca.model_dump(
-        mode="json",
-        exclude={"historico"},
-    )
     return {
         "analise_id": contract.analise_id,
         "identificacao": contract.identificacao.model_dump(mode="json"),
-        "governanca": governance_payload,
         "qualidade": contract.qualidade.resumo.model_dump(mode="json"),
         "achados": [item.model_dump(mode="json") for item in findings],
         "roteiro_achados": routes,
@@ -379,7 +376,8 @@ Regras:
 - Serasa permanece separado; Springate e Fleuriet são diagnósticos suplementares derivados;
 - cenários são hipóteses de estresse, não previsões;
 - preserve a recomendação FinScore e não a denomine decisão final da instituição;
-- só mencione manifestação do analista ou decisão da alçada se estiverem registradas;
+- não mencione estruturas, critérios, etapas ou posições de governança, manifestação do analista
+  ou decisão de alçada; a ressalva institucional será inserida de forma fixa no documento;
 - não transforme monitoramento recomendado em covenant sem métrica, limite, fonte,
   periodicidade e consequência expressamente informados;
 - não presuma modalidade, valor realizável, cobertura ou exequibilidade de garantia;
@@ -521,59 +519,6 @@ def load_fixed_methodology() -> str:
     return METHODOLOGY_PATH.read_text(encoding="utf-8").strip()
 
 
-def _governance_result_label(value: Any) -> str:
-    return {
-        "aprovar": "Aprovar",
-        "nao_aprovar": "Não aprovar",
-        "dados_inconsistentes": "Dados inconsistentes",
-    }.get(str(value or ""), "Não registrado")
-
-
-def _governance_summary(context: Dict[str, Any]) -> str:
-    governance = context.get("governanca") or {}
-    recommendation = governance.get("recomendacao_finscore") or {}
-    analyst = governance.get("manifestacao_analista") or {}
-    authority = governance.get("decisao_alcada") or {}
-    lines = [
-        "| Posição | Resultado | Responsável | Registro |",
-        "|---|---|---|---|",
-        "| Recomendação FinScore | "
-        f"{_governance_result_label(recommendation.get('codigo'))} | "
-        "Regras de crédito | "
-        f"{(context.get('modelo') or {}).get('processado_em') or '—'} |",
-        "| Manifestação do analista | "
-        f"{_governance_result_label(analyst.get('resultado'))} | "
-        f"{analyst.get('responsavel') or '—'} | {analyst.get('registrado_em') or '—'} |",
-        "| Decisão da alçada | "
-        f"{_governance_result_label(authority.get('resultado'))} | "
-        f"{authority.get('responsavel') or '—'} | {authority.get('registrado_em') or '—'} |",
-    ]
-    details: list[str] = []
-    if analyst:
-        details.append(
-            "**Fundamentação da manifestação do analista:** "
-            + _text(analyst.get("justificativa"))
-        )
-    if authority:
-        details.append(
-            "**Fundamentação da decisão da alçada:** "
-            + _text(authority.get("justificativa"))
-        )
-    divergences = governance.get("divergencias") or []
-    if divergences:
-        details.append("**Divergências registradas:**")
-        for item in divergences:
-            origin = str(item.get("origem") or "posição anterior").replace("_", " ")
-            destination = str(item.get("destino") or "posição seguinte").replace("_", " ")
-            details.append(
-                f"- {origin.title()} → {destination.title()}: "
-                f"{_text(item.get('justificativa'))}"
-            )
-    else:
-        details.append("Nenhuma divergência entre as posições registradas.")
-    return "\n".join([*lines, "", *details])
-
-
 def render_parecer_document(
     narrative: ParecerNarrativo,
     context: Dict[str, Any],
@@ -600,8 +545,8 @@ def render_parecer_document(
 
     if recommendation_code == "aprovar":
         closing_note = (
-            "A recomendação é favorável, sujeita à alçada competente, às condições indicadas e "
-            "à formalização das garantias quando recomendadas."
+            "A recomendação é favorável nas condições examinadas e contempla a formalização "
+            "das garantias quando recomendadas."
         )
     elif recommendation_code == "nao_aprovar":
         closing_note = (
@@ -626,8 +571,8 @@ def render_parecer_document(
 **Período analisado:** {identity.get('ano_inicial') or '—'} a {identity.get('ano_final') or '—'}  
 **Recomendação FinScore:** {policy.get('rotulo') or '—'}
 
-> Este documento apoia, mas não substitui, a alçada de crédito. Fatos, cálculos, controles,
-> recomendação e posições de governança seguem os registros apresentados neste parecer.
+> As recomendações contidas neste parecer sujeitam-se à revisão e à análise posteriores,
+> bem como à decisão de alçada superior, para os devidos encaminhamentos da operação.
 
 ## 1. Sumário executivo
 
@@ -635,11 +580,11 @@ def render_parecer_document(
 
 | Controle | Resultado |
 |---|---:|
-| FinScore prudencial | {_fmt_number(observed.get('finscore_prudencial'))} |
+| FinScore | {_fmt_number(observed.get('finscore_prudencial'))} |
 | Faixa FinScore | {str(policy.get('segmento_politica') or '—').title()} |
 | Uso do resultado | {status.get('classificacao_uso') or '—'} |
 | Apto para decisão | {'Sim' if status.get('apto_decisao') else 'Não'} |
-| Confiabilidade | {_fmt_percent(status.get('indice_confiabilidade'))} ({status.get('classificacao_confiabilidade') or '—'}) |
+| Qualidade dos dados | {_fmt_percent(status.get('indice_confiabilidade'))} ({status.get('classificacao_confiabilidade') or '—'}) |
 | Recomendação FinScore | {policy.get('rotulo') or '—'} |
 | Garantia | {guarantee_summary} |
 
@@ -703,7 +648,7 @@ def render_parecer_document(
 O Serasa é evidência externa separada. Springate e Fleuriet são contrastes diagnósticos e
 não alteram o FinScore. Ausências ou resultados não calculáveis permanecem explícitos.
 
-## 8. Recomendação FinScore e governança
+## 8. Tese de crédito e recomendação
 
 {_text(narrative.tese_credito_governanca.texto)}
 
@@ -722,10 +667,6 @@ não alteram o FinScore. Ausências ou resultados não calculáveis permanecem e
 ### 8.4 Providências, condições e monitoramento
 
 {_list(policy.get('condicoes') or [])}
-
-### 8.5 Posições de governança
-
-{_governance_summary(context)}
 
 ## 9. Matriz de riscos e diligências
 

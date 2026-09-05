@@ -727,58 +727,6 @@ def _period_findings(contract: ParecerData) -> list[Finding]:
     ]
 
 
-def _governance_findings(contract: ParecerData) -> list[Finding]:
-    governance = contract.governanca
-    recommendation = governance.recomendacao_finscore
-    evidences = [
-        _evidence("governanca.recomendacao_finscore", "resultado", recommendation.codigo.value)
-    ]
-    if governance.manifestacao_analista is not None:
-        evidences.append(
-            _evidence(
-                "governanca.manifestacao_analista",
-                "resultado",
-                governance.manifestacao_analista.resultado.value,
-            )
-        )
-    if governance.decisao_alcada is not None:
-        evidences.append(
-            _evidence(
-                "governanca.decisao_alcada",
-                "resultado",
-                governance.decisao_alcada.resultado.value,
-            )
-        )
-    result = [
-        Finding(
-            achado_id="ACH-GOV-POSICOES",
-            categoria=FindingCategory.RESULT,
-            natureza=FindingNature.INTERPRETATION,
-            titulo="Posições registradas na governança de crédito",
-            evidencias=evidences,
-            efeito_metodologico="A recomendação FinScore não substitui a manifestação do analista nem a decisão da alçada.",
-            impacto_credito="Cada posição conserva autoria, data e fundamentação em registro separado.",
-        )
-    ]
-    for index, divergence in enumerate(governance.divergencias, 1):
-        result.append(
-            Finding(
-                achado_id=f"ACH-GOV-DIV-{index:03d}",
-                categoria=FindingCategory.DIVERGENCE,
-                natureza=FindingNature.INTERPRETATION,
-                titulo="Divergência entre posições da governança",
-                evidencias=[
-                    _evidence(f"governanca.divergencias:{index}", divergence.origem, divergence.resultado_origem.value),
-                    _evidence(f"governanca.divergencias:{index}", divergence.destino, divergence.resultado_destino.value),
-                    _evidence(f"governanca.divergencias:{index}", "justificativa", divergence.justificativa),
-                ],
-                efeito_metodologico="A divergência não altera retroativamente a recomendação calculada.",
-                impacto_credito="A posição posterior deve ser lida com a justificativa e a responsabilidade registradas.",
-            )
-        )
-    return result
-
-
 def build_evidence_book(contract: ParecerData) -> list[Finding]:
     """Gera achados somente a partir do contrato validado, sem alterar decisões."""
 
@@ -791,7 +739,6 @@ def build_evidence_book(contract: ParecerData) -> list[Finding]:
         *_scenario_findings(contract),
         *_supplementary_findings(contract),
         *_period_findings(contract),
-        *_governance_findings(contract),
     ]
     identifiers = [item.achado_id for item in findings]
     if len(identifiers) != len(set(identifiers)):

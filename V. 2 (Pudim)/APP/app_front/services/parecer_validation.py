@@ -294,6 +294,18 @@ def _validate_semantics(
             )
         )
     if re.search(
+        r"\bgovernan[cç]a\b|manifesta[cç][aã]o do analista|decis[aã]o (?:da|de) al[cç]ada",
+        combined,
+        re.IGNORECASE,
+    ):
+        issues.append(
+            ValidationIssue(
+                "GOVERNANCA_INDEVIDA",
+                "parecer",
+                "a narrativa incluiu conteúdo de governança reservado à ressalva institucional fixa",
+            )
+        )
+    if re.search(
         r"finscore.{0,45}(?:pd|probabilidade de (?:default|inadimpl[eê]ncia))|"
         r"(?:pd|probabilidade de (?:default|inadimpl[eê]ncia)).{0,45}finscore",
         combined,
