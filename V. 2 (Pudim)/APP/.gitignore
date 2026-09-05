@@ -6,6 +6,8 @@ __pycache__/
 *.so
 *.egg-info/
 .venv/
+.venv-1/
+.venv-2/
 venv/
 .env
 .env.*
