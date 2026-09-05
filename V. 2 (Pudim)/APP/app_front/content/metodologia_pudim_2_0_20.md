@@ -190,7 +190,7 @@ Os cortes de 125, 250 e 500 pontos integram a análise de sensibilidade. Na cama
 | abaixo de 125 | Abaixo do primeiro corte de sensibilidade |
 | de 125 a 249,99 | Abaixo do piso decisório |
 | de 250 a 499,99 | Aprovação sujeita à avaliação de mitigadores |
-| 500 ou mais | Sem recomendação de garantia apenas pela faixa |
+| 500 ou mais | Avaliação de garantias atribuída ao gestor e à alçada competente |
 
 Essas faixas não são probabilidades de inadimplência nem ratings regulatórios. O resultado **Dados inconsistentes** prevalece sempre que o próprio cálculo estiver marcado como não utilizável para decisão.
 
@@ -268,7 +268,7 @@ A decisão utiliza o FinScore prudencial e o status de aptidão produzido pelos 
 |---|---|---|
 | **Dados inconsistentes** | FinScore indisponível; base não apta para cálculo; resultado provisório ou não utilizável; confiabilidade inferior a 75%; correção pendente; ou alerta bloqueador. | Não há base suficiente para aprovar ou recusar a operação. O parecer discrimina cada pendência, seu impacto e a correção necessária. A análise deve ser refeita após o saneamento. |
 | **Não aprovar** | Resultado apto para decisão e FinScore prudencial inferior a 250 pontos. | A capacidade econômico-financeira ficou abaixo do piso decisório. Nova análise depende de mudança material nas demonstrações e nos indicadores que formam a pontuação. |
-| **Aprovar** | Resultado apto para decisão e FinScore prudencial igual ou superior a 250 pontos. | Recomendação favorável, com ou sem garantia, condicionada à formalização e aos controles cadastrais e jurídicos da instituição. |
+| **Aprovar** | Resultado apto para decisão e FinScore prudencial igual ou superior a 250 pontos. | Recomendação favorável; a conveniência, modalidade e suficiência de eventual garantia serão avaliadas pelo gestor e pela alçada competente, além dos controles cadastrais e jurídicos da instituição. |
 
 A camada decisória converte a pontuação e a aptidão nas três categorias acima. O piso de 250 pontos coincide com um dos cortes empregados na análise de sensibilidade. Os diagnósticos complementares qualificam a recomendação de garantia, os covenants e a análise de risco, sem substituir o FinScore como eixo principal.
 
@@ -285,7 +285,7 @@ A recomendação de garantia é acionada quando uma aprovação apresenta pelo m
 - FinScore inferior a 250 no cenário severo;
 - Serasa materialmente mais desfavorável, restrição grave registrada, Springate com sinal de distress ou fragilidade indicada pelo Fleuriet.
 
-O sistema não presume percentual de cobertura nem valor de garantia. Modalidade, valor realizável, cobertura e exequibilidade jurídica devem ser definidos após avaliação do colateral. Na ausência dos sinais acima, a aprovação é apresentada sem recomendação de garantia decorrente desta análise.
+O sistema não presume percentual de cobertura nem valor de garantia. Modalidade, valor realizável, cobertura e exequibilidade jurídica devem ser definidos após avaliação do colateral. Na ausência dos sinais acima, o resultado quantitativo não determina exigência nem dispensa de garantia; essa apreciação cabe ao gestor e à alçada competente.
 
 Os covenants decorrem dos indicadores que originaram a ressalva. Sinal de distress direciona o acompanhamento do Springate, EBIT e capital circulante líquido; fragilidade Fleuriet direciona NCG, CDG e saldo de tesouraria; caps direcionam capitalização, endividamento exigível ou cobertura de juros; divergência no Serasa direciona atualização da consulta e análise complementar. O parecer não cria limites numéricos ou periodicidades sem base na política da instituição.
 

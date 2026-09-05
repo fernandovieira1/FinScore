@@ -106,11 +106,30 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
         self.assertNotIn("### 6.1 Caps prudenciais", document)
         self.assertNotIn("Comparação dos núcleos do FinScore", document)
         self.assertNotIn("### 2. Livro de evidências materiais", document)
+        self.assertIn("## 7. Evidências suplementares", document)
+        self.assertNotIn("### 7.1 Cenários determinísticos", document)
+        self.assertNotIn("### 7.2 Simulação", document)
+        self.assertNotIn("### 7.3 Evidências suplementares", document)
         self.assertNotIn("## 9. Riscos, diligências e monitoramento", document)
         self.assertNotIn("## 10. Conclusão da análise", document)
         self.assertEqual(document.count("## 8. Considerações finais"), 1)
+        self.assertIn("Receita líquida/Ativo Total", document)
+        self.assertNotIn("aprovar sem garantia", document.lower())
 
-    def test_pdf_header_has_no_logo_or_score_classification_chips(self) -> None:
+    def test_final_considerations_are_quantitatively_grounded(self) -> None:
+        document = render_structured_parecer(self._narrative(), self.contract)
+        final_section = document.split("## 8. Considerações finais", 1)[1].split(
+            '<div class="page-break"></div>', 1
+        )[0]
+
+        self.assertIn("R$ 141.317.648,87", final_section)
+        self.assertIn("margem líquida foi -1,86%", final_section)
+        self.assertIn("o Serasa registrou 700,00 pontos", final_section)
+        self.assertIn("No cenário severo", final_section)
+        self.assertIn("PL / Ativo Total — 2023", final_section)
+        self.assertIn("Para nova submissão", final_section)
+
+    def test_pdf_header_has_requested_fields_and_no_classification_chips(self) -> None:
         document = render_structured_parecer(self._narrative(), self.contract)
         html = render_parecer_html(
             document,
@@ -132,7 +151,21 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
         self.assertIn("Identificador da análise:</strong> FS-2026-000003", html)
         self.assertIn("Período efetivamente analisado:</strong> 2023 a 2025", html)
         self.assertIn("914,86", html)
-        self.assertNotIn("Logo Assertif", html)
+        self.assertNotIn('alt="Assertif"', html)
+        playwright_html = render_parecer_html(
+            document,
+            {
+                "analise_id": "FS-2026-000003",
+                "empresa": "Callamarys",
+                "cnpj": "00.000.000/0000-00",
+                "decisao": "aprovar",
+                "ano_inicial": 2023,
+                "ano_final": 2025,
+            },
+            engine="playwright",
+        )
+        self.assertIn('template id="pdf-header-template"', playwright_html)
+        self.assertEqual(playwright_html.count('alt="Assertif"'), 1)
         caput = html.split("<!-- Corpo do Parecer -->", 1)[0]
         self.assertNotIn(">500 ou mais<", caput)
         self.assertNotIn(">ANALISAR CONJUNTAMENTE<", caput)
@@ -197,6 +230,11 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
 
         self.assertGreaterEqual(pages, 7)
         self.assertLessEqual(pages, 14)
+        from io import BytesIO
+        from pypdf import PdfReader
+
+        rendered_pages = PdfReader(BytesIO(pdf)).pages
+        self.assertTrue(all(len(list(page.images)) >= 1 for page in rendered_pages))
 
 
 if __name__ == "__main__":

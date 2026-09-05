@@ -218,7 +218,8 @@ def _render_policy_summary(
             )
         else:
             st.success(
-                "Recomendação: aprovar sem indicação de garantia pelos critérios desta análise."
+                "Recomendação: aprovar. A conveniência de incluir garantias será avaliada pelo "
+                "gestor e pela alçada competente conforme a estrutura da operação."
             )
     elif decision == "nao_aprovar":
         st.error(

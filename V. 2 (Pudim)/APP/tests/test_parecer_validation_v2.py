@@ -152,6 +152,29 @@ class ParecerValidationV2Test(unittest.TestCase):
         self.assertNotIn("999,99", revised.conclusao.texto)
         self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
 
+    def test_section_receives_neutral_text_if_its_only_number_is_unsupported(self) -> None:
+        payload = self._payload()
+        payload["conclusao"]["texto"] = (
+            "A estimativa alternativa, considerada sem evidência documental, sem reconciliação "
+            "contábil, sem confirmação cadastral e sem suporte nos achados materiais, seria de "
+            "999,99 pontos, embora a análise exija prudência, rastreabilidade, coerência temporal, "
+            "fundamentação econômico-financeira e associação direta entre cada afirmação e sua "
+            "respectiva fonte registrada no dossiê desta operação de crédito empresarial."
+        )
+
+        revised = reconcile_narrative_numbers(
+            ParecerNarrativo.model_validate(payload), self.contract
+        )
+        report = validate_parecer_narrative(
+            revised,
+            self.contract,
+            routes=self.context["roteiro_achados"],
+            raise_on_error=False,
+        )
+
+        self.assertNotIn("999,99", revised.conclusao.texto)
+        self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
+
     def test_date_is_not_decomposed_into_unsupported_financial_numbers(self) -> None:
         payload = self._payload()
         payload["estresse_e_evidencias"]["texto"] += " A consulta ocorreu em 12/09/2026."

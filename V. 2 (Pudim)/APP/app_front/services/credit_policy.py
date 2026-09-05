@@ -377,7 +377,9 @@ def decide_pudim(
         )
     elif decision == "aprovar":
         guarantee["justificativa"] = (
-            "Os resultados disponíveis não acionam recomendação de garantia pelos critérios desta análise."
+            "Os resultados quantitativos não determinam exigência nem dispensa de garantia. "
+            "Caberá ao gestor e à alçada competente avaliar a conveniência, a modalidade e a "
+            "suficiência de eventual garantia conforme a estrutura da operação."
         )
 
     attention_text = " ".join(supplementary["sinais_atencao"]).lower()

@@ -1,7 +1,7 @@
 [
   {
     "caso": 1,
-    "descricao": "Aprovar sem garantia",
+    "descricao": "Aprovar; eventual garantia sujeita à decisão gerencial",
     "teste": "APP.tests.test_parecer_pudim_v2.ParecerPudimV2Test.test_eligible_score_approves_without_commercial_inputs"
   },
   {

@@ -24,7 +24,7 @@ BODY_HEADINGS = (
     "## 4. Análise econômico-operacional",
     "## 5. Análise financeira e patrimonial",
     "## 6. Formação e interpretação do FinScore",
-    "## 7. Estresse, sensibilidade e evidências suplementares",
+    "## 7. Evidências suplementares",
     "## 8. Considerações finais",
 )
 FORBIDDEN_DOCUMENT_TERMS = re.compile(

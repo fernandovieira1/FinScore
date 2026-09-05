@@ -434,19 +434,184 @@ def _supplementary_table(contract: ParecerData) -> str:
     )
 
 
-def _caps_table(contract: ParecerData) -> str:
-    if not contract.finscore.caps:
-        return "Nenhum cap prudencial acionado."
-    lines = [
-        "| Regra | Valor observado | Limiar | Teto | Fundamentação |",
-        "|---|---:|---:|---:|---|",
-    ]
-    for item in contract.finscore.caps:
-        lines.append(
-            f"| {_md(item.regra_id)} | {_fmt_number(item.valor_observado, 4)} | "
-            f"{_fmt_number(item.limiar, 4)} | {_fmt_number(item.teto)} | {_md(item.justificativa)} |"
+def _latest_data_point(
+    points: Iterable[DataPoint], field: str, year: int
+) -> DataPoint | None:
+    return next(
+        (item for item in points if item.campo == field and item.exercicio == year),
+        None,
+    )
+
+
+def _display_point(point: DataPoint | None) -> str:
+    return "não calculado" if point is None else _fmt_value(point.valor, point.unidade)
+
+
+def _supplementary_interpretation(contract: ParecerData) -> str:
+    evidence = contract.evidencias_suplementares
+    serasa = evidence.serasa
+    springate = max(evidence.springate, key=lambda item: item.exercicio) if evidence.springate else None
+    fleuriet = max(evidence.fleuriet, key=lambda item: item.exercicio) if evidence.fleuriet else None
+    parts = [f"O FinScore prudencial apurado foi de {_fmt_number(contract.finscore.prudencial)} pontos"]
+    if serasa.score is not None:
+        divergence = (
+            f", com divergência de {_fmt_number(serasa.divergencia_pontos)} pontos, "
+            f"classificada como {_md(serasa.nivel_divergencia)} e {_md(serasa.direcao)}"
+            if serasa.divergencia_pontos is not None
+            else ""
         )
-    return "\n".join(lines)
+        parts.append(
+            f"o Serasa registrou {_fmt_number(serasa.score)} pontos{divergence}"
+        )
+    else:
+        parts.append("o score Serasa não foi informado")
+    if springate is not None and springate.score is not None:
+        parts.append(
+            f"o Springate de {springate.exercicio} foi {_fmt_number(springate.score)}, "
+            f"classificado como {_md(springate.classificacao)}"
+        )
+    else:
+        parts.append("o Springate não pôde ser calculado")
+    if fleuriet is not None:
+        parts.append(
+            f"a leitura Fleuriet de {fleuriet.exercicio} apresentou NCG de "
+            f"{_fmt_value(fleuriet.necessidade_capital_giro, 'BRL')}, capital de giro de "
+            f"{_fmt_value(fleuriet.capital_giro, 'BRL')} e saldo de tesouraria de "
+            f"{_fmt_value(fleuriet.saldo_tesouraria, 'BRL')}, com diagnóstico "
+            f"{_md(fleuriet.diagnostico)}"
+        )
+    else:
+        parts.append("a leitura Fleuriet não pôde ser calculada")
+    return (
+        "; ".join(parts)
+        + ". A convergência ou divergência entre essas medidas qualifica a análise, mas não altera "
+        "aritmeticamente o FinScore: Serasa representa evidência externa, enquanto Springate e "
+        "Fleuriet reutilizam as demonstrações contábeis sob critérios diagnósticos próprios."
+    )
+
+
+def _final_considerations(contract: ParecerData) -> str:
+    identity = contract.identificacao
+    recommendation = contract.governanca.recomendacao_finscore
+    quality = contract.qualidade.resumo
+    year = identity.periodos.analisado.fim
+    accounts = [*contract.dados.utilizados, *contract.dados.derivados]
+    indices = contract.dados.indices
+
+    revenue = _latest_data_point(accounts, "r_Receita_Liquida", year)
+    profit = _latest_data_point(accounts, "r_Lucro_Liquido", year)
+    ebit = _latest_data_point(accounts, "d_EBIT", year)
+    assets = _latest_data_point(accounts, "p_Ativo_Total", year)
+    equity = _latest_data_point(accounts, "p_Patrimonio_Liquido", year)
+    margin = _latest_data_point(indices, "margem_liquida", year)
+    capitalization = _latest_data_point(indices, "capitalizacao", year)
+    current_liquidity = _latest_data_point(indices, "liquidez_corrente", year)
+    net_debt = _latest_data_point(indices, "divida_liquida_ativo", year)
+    interest_cover = _latest_data_point(indices, "cobertura_juros", year)
+
+    scenario = next(
+        (item for item in contract.cenarios.deterministicos if item.nome.lower() == "severo"),
+        None,
+    )
+    scenario_text = (
+        f"No cenário severo, o FinScore alcançou {_fmt_number(scenario.finscore_prudencial)} pontos, "
+        f"uma diferença de {_fmt_number((scenario.finscore_prudencial or 0) - (contract.finscore.prudencial or 0))} "
+        "pontos em relação ao observado."
+        if scenario is not None and scenario.finscore_prudencial is not None
+        else "O cenário severo não apresentou FinScore calculável."
+    )
+    blockers = recommendation.bloqueios
+    blocker_text = (
+        f"Foram registrados {len(blockers)} bloqueios: "
+        + "; ".join(
+            f"{_md(item.titulo)} — {_md(item.motivo).rstrip('.')}. "
+            f"Impacto: {_md(item.impacto).rstrip('.')}"
+            for item in blockers
+        )
+        + "."
+        if blockers
+        else "Não foram registrados bloqueios de qualidade para o uso do FinScore nesta análise."
+    )
+    provisions = [
+        _md(item).rstrip(".")
+        for item in recommendation.providencias
+        if str(item).strip()
+    ]
+    provision_intro = (
+        "As providências de acompanhamento registradas são"
+        if recommendation.codigo.value == "aprovar"
+        else "Para nova submissão, devem ser executadas as seguintes providências"
+    )
+    provision_text = (
+        f"{provision_intro}: " + "; ".join(provisions) + "."
+        if provisions
+        else "Não foram registradas providências adicionais no resultado calculado."
+    )
+    if recommendation.codigo.value == "aprovar":
+        guarantee_text = (
+            "A eventual inclusão, modalidade e suficiência de garantias poderão ser avaliadas "
+            "pelo gestor e pela alçada competente conforme a estrutura da operação; o FinScore "
+            "não determina dispensa automática de garantia."
+        )
+    elif blockers:
+        guarantee_text = (
+            f"No resultado **{_md(recommendation.rotulo)}**, a constituição de garantia não sana "
+            f"os {len(blockers)} bloqueios registrados nem altera, isoladamente, o FinScore de "
+            f"{_fmt_number(contract.finscore.prudencial)} pontos; eventual garantia somente poderá "
+            "ser apreciada pelo gestor e pela alçada competente em nova análise."
+        )
+    else:
+        guarantee_text = (
+            f"No resultado **{_md(recommendation.rotulo)}**, a constituição de garantia não altera, "
+            f"isoladamente, o FinScore de {_fmt_number(contract.finscore.prudencial)} pontos nem os "
+            "indicadores econômico-financeiros que fundamentaram a recomendação; eventual garantia "
+            "somente poderá ser apreciada pelo gestor e pela alçada competente em nova análise."
+        )
+
+    paragraphs = [
+        (
+            f"Para {_md(identity.tomador.nome)}, no período de {_period_label(contract)}, o FinScore "
+            f"prudencial foi {_fmt_number(contract.finscore.prudencial)} pontos, situado na faixa "
+            f"{_md(recommendation.faixa)}, com qualidade dos dados de "
+            f"{_fmt_value(quality.indice_confiabilidade, 'proporcao')}. O núcleo econômico-operacional "
+            f"foi {_fmt_number(contract.finscore.estrutural.nucleo_eo)} pontos na abordagem estrutural "
+            f"e {_fmt_number(contract.finscore.adaptativo.nucleo_eo)} na adaptativa; o núcleo "
+            f"financeiro-patrimonial foi {_fmt_number(contract.finscore.estrutural.nucleo_fp)} e "
+            f"{_fmt_number(contract.finscore.adaptativo.nucleo_fp)} pontos, respectivamente."
+        ),
+        (
+            f"No exercício de {year}, a receita líquida foi {_display_point(revenue)}, o lucro líquido "
+            f"foi {_display_point(profit)} e o EBIT foi {_display_point(ebit)}. O ativo total encerrou "
+            f"o período em {_display_point(assets)} e o patrimônio líquido em {_display_point(equity)}. "
+            "A relação entre geração operacional, resultado líquido e base patrimonial delimita a "
+            "capacidade interna de absorver serviço da dívida e oscilações do ciclo financeiro."
+        ),
+        (
+            f"Também em {year}, a margem líquida foi {_display_point(margin)}, a capitalização "
+            f"{_display_point(capitalization)}, a liquidez corrente {_display_point(current_liquidity)}, "
+            f"a dívida líquida sobre o ativo {_display_point(net_debt)} e a cobertura de juros "
+            f"{_display_point(interest_cover)}. Em conjunto, esses indicadores mostram a intensidade "
+            "do endividamento, a folga de curto prazo, a sustentação patrimonial e a capacidade de "
+            "cobrir despesas financeiras com resultado operacional."
+        ),
+        _supplementary_interpretation(contract),
+        (
+            f"{scenario_text} {blocker_text} A recomendação FinScore é **{_md(recommendation.rotulo)}**, "
+            f"fundamentada no resultado de {_fmt_number(contract.finscore.prudencial)} pontos e nos "
+            f"controles de qualidade descritos. {provision_text} {guarantee_text}"
+        ),
+        (
+            f"Em síntese, a recomendação **{_md(recommendation.rotulo)}** decorre do FinScore de "
+            f"{_fmt_number(contract.finscore.prudencial)} pontos, da qualidade dos dados de "
+            f"{_fmt_value(quality.indice_confiabilidade, 'proporcao')}, da margem líquida de "
+            f"{_display_point(margin)}, da capitalização de {_display_point(capitalization)}, da "
+            f"liquidez corrente de {_display_point(current_liquidity)}, da dívida líquida sobre o "
+            f"ativo de {_display_point(net_debt)} e da cobertura de juros de "
+            f"{_display_point(interest_cover)}, todos referidos a {year}. O encaminhamento sujeita-se "
+            "à revisão da documentação jurídica e cadastral da operação e à decisão de alçada superior."
+        ),
+    ]
+    return "\n\n".join(paragraphs)
 
 
 def _material_findings_table(contract: ParecerData) -> str:
@@ -481,9 +646,7 @@ def render_structured_parecer(
         "## Metodologia", "## Anexo 1 — Metodologia", 1
     )
     guarantee_label = (
-        "Recomendada, com detalhes sujeitos à avaliação institucional"
-        if guarantee.recomendada
-        else "Sem recomendação automática"
+        "Avaliação atribuída ao gestor e à alçada competente"
         if guarantee.aplicavel
         else "Não aplicável à recomendação atual"
     )
@@ -535,37 +698,7 @@ def render_structured_parecer(
         "devem ser examinados em nova análise, conforme a natureza da operação e a decisão das "
         "alçadas competentes."
     )
-    final_paragraphs = "\n\n".join(
-        [
-            _md(narrative.tese_credito_governanca.texto),
-            _prose_items("A fundamentação da recomendação compreende:", recommendation.fundamentos),
-            _md(guarantee.justificativa) + " " + _prose_items(
-                "As providências e medidas de acompanhamento indicadas são:",
-                recommendation.providencias,
-            ),
-            _md(narrative.riscos_diligencias_monitoramento.texto),
-            _prose_items(
-                "Entre os pontos fortes comprovados, destacam-se:",
-                (item.texto for item in narrative.pontos_fortes),
-            ),
-            _prose_items(
-                "Os riscos prioritários identificados são:",
-                (item.texto for item in narrative.riscos_prioritarios),
-            ),
-            _prose_items(
-                "As validações e diligências pendentes abrangem:",
-                (item.texto for item in narrative.validacoes_pendentes),
-            ),
-            _prose_items(
-                "O acompanhamento recomendado deve considerar:",
-                (item.texto for item in narrative.recomendacoes_monitoramento),
-            ),
-            _md(narrative.conclusao.texto),
-            f"A recomendação FinScore é **{_md(recommendation.rotulo)}**. As recomendações "
-            "deste parecer sujeitam-se à revisão e à análise posteriores e à decisão de alçada "
-            "superior, para os devidos encaminhamentos da operação.",
-        ]
-    )
+    final_paragraphs = _final_considerations(contract)
     return f"""<!-- FINSCORE_PARECER -->
 
 # Parecer de Crédito — FinScore
@@ -658,8 +791,9 @@ e o gargalo atribui maior influência ao núcleo mais fraco. O FinScore prudenci
 menor resultado pós-gargalo entre as abordagens, limitado, quando aplicável, por travas prudenciais.
 Na interpretação decisória, resultado inferior a 250 pontos integra a faixa restritiva; de 250 a
 499,99 pontos, a aprovação requer avaliação de mitigadores e garantias; a partir de 500 pontos, a
-pontuação supera a referência automática de garantia por faixa, sem afastar a avaliação institucional
-dos demais riscos. A qualidade dos dados e a aptidão do cálculo são verificadas separadamente.
+pontuação integra a faixa superior. Em qualquer aprovação, cabe ao gestor e à alçada competente
+avaliar a conveniência, a modalidade e a suficiência de eventual garantia. A qualidade dos dados e
+a aptidão do cálculo são verificadas separadamente.
 
 {_score_table(contract)}
 
@@ -669,39 +803,25 @@ dos demais riscos. A qualidade dos dados e a aptidão do cálculo são verificad
 
 {guarantees_text}
 
-## 7. Estresse, sensibilidade e evidências suplementares
+## 7. Evidências suplementares
 
-### 7.1 Cenários determinísticos
-
-Os cenários determinísticos mensuram a resposta do FinScore a hipóteses previamente definidas para
-condições favoráveis, adversas e severas. A comparação evidencia sensibilidade e resiliência, sem
-converter os cenários em projeções ou atribuir probabilidade de ocorrência.
-
-{_scenario_table(contract)}
-
-{_md(narrative.estresse_e_evidencias.texto)}
-
-### 7.2 Simulação
-
-A simulação examina a distribuição do FinScore sob variações controladas das entradas e apresenta
-medidas de posição e dispersão. Média, mediana e percentis informam a estabilidade do resultado;
-não correspondem a frequência de inadimplência nem substituem a análise dos dados observados.
-
-{_simulation_table(contract)}
-
-Os resultados simulados devem ser comparados com o FinScore observado, com os intervalos e com as
-sensibilidades registradas, preservando a natureza exploratória do exercício.
-
-### 7.3 Evidências suplementares
-
-As evidências suplementares ampliam a leitura sem integrar aritmeticamente o FinScore. O Serasa é
-uma fonte externa consultada separadamente; Springate e Fleuriet são diagnósticos derivados das
-informações disponíveis e devem ser confrontados com a análise econômico-financeira precedente.
+O score Serasa, informado na consulta externa em escala de 0 a 1.000 pontos, não é recalculado a
+partir das demonstrações nem integrado ao FinScore. A comparação utiliza a diferença absoluta entre
+as pontuações: até 100 pontos, a divergência é baixa e classificada como convergente; acima de 100 e
+até 200, é moderada; acima de 200 e até 300, relevante; e, acima de 300, elevada. Nas divergências
+superiores a 100 pontos, o sinal da diferença indica se a evidência externa é mais favorável ou mais
+desfavorável que o FinScore. O índice Springate é calculado por `1,03 × CCL/Ativo Total + 3,07 × EBIT/Ativo
+Total + 0,66 × Resultado antes de IR e CSLL/Passivo Circulante + 0,40 × Receita líquida/Ativo Total`:
+resultado inferior a 0,862 sinaliza situação de distress, enquanto valor igual ou superior afasta
+esse sinal específico. A leitura Fleuriet calcula `NCG = Ativo Circulante Operacional − Passivo
+Circulante Operacional`, `CDG = Passivo Não Circulante + Patrimônio Líquido − Ativo Não Circulante`
+e `Saldo de Tesouraria = CDG − NCG`. CDG positivo e saldo não negativo indicam cobertura da
+necessidade operacional por fontes permanentes; saldo negativo evidencia dependência de recursos
+financeiros de curto prazo; CDG não positivo aponta insuficiência de fontes permanentes.
 
 {_supplementary_table(contract)}
 
-Os resultados devem ser utilizados como elementos suplementares de confirmação, divergência ou
-alerta, sempre preservando a fonte, a data e as limitações próprias de cada diagnóstico.
+{_supplementary_interpretation(contract)}
 
 ## 8. Considerações finais
 

@@ -226,14 +226,24 @@ def reconcile_narrative_numbers(
                 candidates = candidates_for(token)
                 if candidates and len(refs) < max_references:
                     refs.append(candidates[0])
-                elif not candidates:
+                else:
+                    # Se o limite de referências já foi alcançado, a frase numérica
+                    # não pode permanecer sem o vínculo direto exigido pelo contrato.
                     unsupported = True
                     break
             if not unsupported:
                 kept_sentences.append(sentence)
         revised = " ".join(kept_sentences)
         if preserve_if_short and len(revised) < 40:
-            return text, refs
+            revised = (
+                "Os elementos desta seção foram avaliados exclusivamente com base nas "
+                "evidências registradas, sem incorporar estimativas adicionais. A leitura "
+                "considera a qualidade da informação, a consistência entre os dados, o alcance "
+                "dos cálculos e as limitações documentadas. Eventuais conclusões dependem da "
+                "análise conjunta dos aspectos econômico-operacionais e financeiro-patrimoniais, "
+                "mantendo separados os fatos observados, os resultados calculados, as hipóteses "
+                "condicionais e as evidências suplementares disponíveis para a operação."
+            )
         return revised, refs
 
     for name in SECTION_NAMES:

@@ -12,8 +12,11 @@ import os
 import sys
 import platform
 import asyncio
+import base64
 import html as html_lib
+import re
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional, Literal
 from string import Template
 from io import BytesIO
@@ -56,6 +59,7 @@ NEUTRAL_DARK = "#2f2f2f"
 NEUTRAL_LIGHT = "#f5f6fa"
 BODY_FONT = "'Source Sans 3', 'Helvetica Neue', Arial, sans-serif"
 TITLE_FONT = "'Source Serif 4', 'Libre Baskerville', serif"
+ASSERTIF_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "logo_assertif_cab.png"
 
 
 def get_available_engines() -> list:
@@ -154,12 +158,18 @@ def _get_css_for_engine(engine: str) -> str:
             margin_bottom=margin_bottom,
         )
     else:
-        # CSS simples para xhtml2pdf
+        # A margem superior reserva a área do logotipo aplicado ao PDF final.
+        margin_top = "1.05cm"
         template = Template(
             """
         @page {
-            size: A4;
-            margin: $margin_top $margin_sides $margin_bottom $margin_sides;
+            size: A4 portrait;
+            @frame content_frame {
+                top: $margin_top;
+                left: $margin_sides;
+                width: 18.3cm;
+                height: 27.35cm;
+            }
         }
         """
         )
@@ -330,6 +340,23 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     fonts_html = _get_fonts_for_engine(engine)
     font_families = _get_font_families_for_engine(engine)
 
+    if ASSERTIF_LOGO_PATH.exists():
+        logo_b64 = base64.b64encode(ASSERTIF_LOGO_PATH.read_bytes()).decode("utf-8")
+        header_logo_html = (
+            f'<img src="data:image/png;base64,{logo_b64}" alt="Assertif" '
+            'style="height:24px;width:auto;display:block;" />'
+        )
+    else:
+        header_logo_html = '<strong style="color:#2d4c6a;">Assertif</strong>'
+    pdf_header_template = (
+        '<template id="pdf-header-template">'
+        '<div style="width:100%;padding:5px 36px 3px;text-align:left;'
+        'border-bottom:1px solid #d9e2ef;background:#fff;">'
+        f"{header_logo_html}</div></template>"
+        if engine == "playwright"
+        else ""
+    )
+
     font_family_mono = font_families['mono']
 
     # Template HTML completo
@@ -485,6 +512,48 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         }
 
         .hero-details strong {
+            color: #fff;
+        }
+
+        .hero-table {
+            width: 100%;
+            margin: 0;
+            border-collapse: collapse;
+            border-spacing: 0;
+            background: #2d4c6a;
+            color: #fff;
+            page-break-inside: avoid;
+        }
+
+        .hero-table td {
+            padding: 14pt 18pt 16pt;
+            border: 0;
+            background: #2d4c6a;
+            color: #fff;
+        }
+
+        .hero-table .hero-title {
+            margin: 0 0 9pt;
+            text-align: center;
+            font-family: $TITLE_FONT;
+            font-size: 17pt;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+        }
+
+        .hero-table .hero-field {
+            display: block;
+            margin: 2pt 0;
+            text-align: left;
+            font-family: $BODY_FONT;
+            font-size: 9.5pt;
+            line-height: 1.25;
+            color: #fff;
+            background: transparent;
+        }
+
+        .hero-table .hero-field strong {
             color: #fff;
         }
         
@@ -856,33 +925,17 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     </style>
 </head>
 <body>
-    <div class="print-header-placeholder">
-        <div class="print-header-content">
-            <div><strong>$analise_id</strong></div>
-            <div class="print-header-info">
-                <span style="font-weight:700; display:block;">$empresa</span>
-                <span style="font-size:10pt; display:block;">CNPJ: $cnpj</span>
-            </div>
-        </div>
-    </div>
+    $pdf_header_template
     <div class="page-canvas">
     <div class="page-content" style="background:#ffffff;">
-    <section class="hero-shell">
-    <header class="documento-hero">
-        <div class="hero-top">
-            <div class="hero-text">
-                <p class="hero-eyebrow">Parecer Técnico · FinScore</p>
-                <h1>Parecer de Crédito</h1>
-                <div class="hero-details">
-                    <p><strong>Identificador da análise:</strong> $analise_id</p>
-                    <p><strong>Tomador:</strong> $empresa</p>
-                    <p><strong>CNPJ:</strong> $cnpj</p>
-                    <p><strong>Período efetivamente analisado:</strong> $periodo_texto</p>
-                    <p><strong>Recomendação FinScore:</strong> $decisao_texto</p>
-                </div>
-            </div>
-        </div>
-    </header>
+    <table class="hero-table" role="presentation" bgcolor="#2d4c6a" cellspacing="0" cellpadding="0">
+        <tr><td bgcolor="#2d4c6a" align="center" style="background:#2d4c6a;color:#fff;font-size:17pt;font-weight:bold;padding:14pt 18pt 9pt;">Parecer Técnico · FinScore</td></tr>
+        <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt;"><strong style="color:#fff;">Tomador:</strong> $empresa</td></tr>
+        <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt;"><strong style="color:#fff;">CNPJ:</strong> $cnpj</td></tr>
+        <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt;"><strong style="color:#fff;">Período efetivamente analisado:</strong> $periodo_texto</td></tr>
+        <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt;"><strong style="color:#fff;">Recomendação FinScore:</strong> $decisao_texto</td></tr>
+        <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt 14pt;"><strong style="color:#fff;">Identificador da análise:</strong> $analise_id</td></tr>
+    </table>
     
     <section class="summary-grid">
         <div class="summary-card">
@@ -893,7 +946,6 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             <p class="summary-label">Score Serasa</p>
             <p class="summary-value">$serasa_display</p>
         </div>
-    </section>
     </section>
     
     <!-- Corpo do Parecer -->
@@ -944,6 +996,8 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         ACCENT_SECONDARY=ACCENT_SECONDARY,
         font_family_mono=font_family_mono,
         analise_id=analise_id,
+        header_logo_html=header_logo_html,
+        pdf_header_template=pdf_header_template,
         cnpj=cnpj,
         data_relatorio=data_relatorio,
         decisao_texto=decisao_texto,
@@ -1040,6 +1094,53 @@ def _html_to_pdf_playwright(html: str, header_html: str) -> bytes:
         )
 
 
+def _stamp_assertif_logo(pdf_bytes: bytes) -> bytes:
+    """Aplica o logotipo ao cabeçalho de todas as páginas do PDF de compatibilidade."""
+    if not ASSERTIF_LOGO_PATH.exists():
+        return pdf_bytes
+
+    try:
+        from pypdf import PdfReader, PdfWriter
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import cm
+        from reportlab.lib.utils import ImageReader
+        from reportlab.pdfgen.canvas import Canvas
+    except ImportError as exc:  # pragma: no cover - dependências do próprio engine
+        raise RuntimeError(
+            "Não foi possível compor o cabeçalho institucional do PDF."
+        ) from exc
+
+    overlay_buffer = BytesIO()
+    overlay_canvas = Canvas(overlay_buffer, pagesize=A4)
+    image = ImageReader(str(ASSERTIF_LOGO_PATH))
+    source_width, source_height = image.getSize()
+    logo_height = 18.0
+    logo_width = logo_height * source_width / source_height
+    overlay_canvas.drawImage(
+        image,
+        1.35 * cm,
+        A4[1] - (0.18 * cm) - logo_height,
+        width=logo_width,
+        height=logo_height,
+        preserveAspectRatio=True,
+        mask="auto",
+    )
+    overlay_canvas.showPage()
+    overlay_canvas.save()
+    overlay_buffer.seek(0)
+    overlay_page = PdfReader(overlay_buffer).pages[0]
+
+    source = PdfReader(BytesIO(pdf_bytes))
+    writer = PdfWriter()
+    for page in source.pages:
+        writer.add_page(page)
+        writer.pages[-1].merge_page(overlay_page, over=True)
+
+    output = BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
 def _html_to_pdf_xhtml2pdf(html: str) -> bytes:
     """
     Converte HTML para PDF usando xhtml2pdf (pisa).
@@ -1077,7 +1178,7 @@ def _html_to_pdf_xhtml2pdf(html: str) -> bytes:
         
         # Retornar bytes
         pdf_bytes = pdf_bytes_io.getvalue()
-        return pdf_bytes
+        return _stamp_assertif_logo(pdf_bytes)
         
     except Exception as e:
         raise Exception(f"Erro ao gerar PDF com xhtml2pdf: {str(e)}") from e
@@ -1113,7 +1214,17 @@ def html_to_pdf_bytes(html: str, engine: Optional[str] = None, header_html: Opti
     
     # Gerar PDF com o engine escolhido
     if engine == 'playwright':
-        header_html = header_html or "<div style='font-size:0;'></div>"
+        if header_html is None:
+            embedded_header = re.search(
+                r'<template id="pdf-header-template">(.*?)</template>',
+                html,
+                flags=re.DOTALL,
+            )
+            header_html = (
+                embedded_header.group(1)
+                if embedded_header
+                else "<div style='font-size:0;'></div>"
+            )
         return _html_to_pdf_playwright(html, header_html)
     elif engine == 'xhtml2pdf':
         return _html_to_pdf_xhtml2pdf(html)
