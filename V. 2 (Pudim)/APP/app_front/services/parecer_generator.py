@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+from copy import deepcopy
 from datetime import date, datetime
 from html import escape as html_escape
 from pathlib import Path
@@ -21,7 +22,7 @@ try:  # Execução Streamlit (app_front no sys.path)
     from components.parecer_data_schema import FindingCategory, ParecerData
     from services.parecer_data_builder import build_parecer_data
     from services.parecer_document import render_structured_parecer
-    from services.parecer_validation import validate_parecer_narrative
+    from services.parecer_validation import ParecerValidationError, validate_parecer_narrative
     from services.parecer_evaluation import evaluate_parecer_document
 except ModuleNotFoundError:  # Importação como pacote app_front em testes/ferramentas
     from app_front.components.llm_client import (
@@ -34,7 +35,10 @@ except ModuleNotFoundError:  # Importação como pacote app_front em testes/ferr
     from app_front.components.parecer_data_schema import FindingCategory, ParecerData
     from app_front.services.parecer_data_builder import build_parecer_data
     from app_front.services.parecer_document import render_structured_parecer
-    from app_front.services.parecer_validation import validate_parecer_narrative
+    from app_front.services.parecer_validation import (
+        ParecerValidationError,
+        validate_parecer_narrative,
+    )
     from app_front.services.parecer_evaluation import evaluate_parecer_document
 
 
@@ -375,11 +379,11 @@ Regras:
 - FinScore não é PD nem rating regulatório; frequência de simulação não é inadimplência;
 - Serasa permanece separado; Springate e Fleuriet são diagnósticos suplementares derivados;
 - cenários são hipóteses de estresse, não previsões;
-- preserve a recomendação FinScore e não a denomine decisão final da instituição;
+- preserve a recomendação FinScore e nunca use as expressões "decisão final" ou
+  "recomendação final";
 - não mencione estruturas, critérios, etapas ou posições de governança, manifestação do analista
   ou decisão de alçada; a ressalva institucional será inserida de forma fixa no documento;
-- não transforme monitoramento recomendado em covenant sem métrica, limite, fonte,
-  periodicidade e consequência expressamente informados;
+- nunca use o termo covenant; descreva apenas monitoramento ou providência sustentada;
 - não presuma modalidade, valor realizável, cobertura ou exequibilidade de garantia;
 - em Dados inconsistentes, exponha bloqueio, impacto e providência; em Não aprovar,
   exponha o impedimento objetivo; em Aprovar, preserve a indicação de garantia;
@@ -392,10 +396,73 @@ Regras:
 """.strip()
 
 
+def _narrative_json_schema(
+    allowed_finding_ids: Iterable[str],
+    findings: Iterable[Dict[str, Any]] | None = None,
+) -> Dict[str, Any]:
+    """Restringe as referências narrativas aos achados presentes no contrato."""
+    identifiers = list(dict.fromkeys(str(item) for item in allowed_finding_ids if item))
+    if not identifiers:
+        raise ValueError("O livro de evidências não contém achados disponíveis para referência.")
+
+    schema = ParecerNarrativo.model_json_schema()
+    definitions = schema.get("$defs", {})
+    for definition_name in ("NarrativeSection", "NarrativeItem"):
+        try:
+            items = definitions[definition_name]["properties"]["achado_ids"]["items"]
+        except (KeyError, TypeError) as exc:
+            raise RuntimeError(
+                f"Schema narrativo sem o campo esperado em {definition_name}.achado_ids."
+            ) from exc
+        items.clear()
+        items.update({"type": "string", "enum": identifiers})
+
+    category_rules = {
+        "pontos_fortes": {FindingCategory.STRENGTH.value},
+        "riscos_prioritarios": {
+            FindingCategory.RISK.value,
+            FindingCategory.ALERT.value,
+            FindingCategory.BLOCK.value,
+            FindingCategory.DIVERGENCE.value,
+        },
+        "validacoes_pendentes": {
+            FindingCategory.BLOCK.value,
+            FindingCategory.LIMITATION.value,
+            FindingCategory.ALERT.value,
+            FindingCategory.DIVERGENCE.value,
+        },
+        "recomendacoes_monitoramento": {
+            FindingCategory.RISK.value,
+            FindingCategory.ALERT.value,
+            FindingCategory.LIMITATION.value,
+            FindingCategory.DIVERGENCE.value,
+        },
+    }
+    rows = list(findings or [])
+    item_definition = definitions["NarrativeItem"]
+    for collection_name, categories in category_rules.items():
+        compatible = [
+            str(item.get("achado_id"))
+            for item in rows
+            if item.get("achado_id") in identifiers and item.get("categoria") in categories
+        ]
+        collection_items = deepcopy(item_definition)
+        if compatible:
+            collection_items["properties"]["achado_ids"]["items"] = {
+                "type": "string",
+                "enum": compatible,
+            }
+        else:
+            schema["properties"][collection_name]["maxItems"] = 0
+        schema["properties"][collection_name]["items"] = collection_items
+    return schema
+
+
 def generate_variable_narrative(
     context: Dict[str, Any],
     *,
     invoke: Callable[..., str] = invoke_structured_model,
+    revision_notes: Iterable[str] | None = None,
 ) -> ParecerNarrativo:
     messages = [
         {"role": "developer", "content": _developer_prompt()},
@@ -407,9 +474,23 @@ def generate_variable_narrative(
             ),
         },
     ]
+    notes = [str(item).strip() for item in (revision_notes or []) if str(item).strip()]
+    if notes:
+        messages.append(
+            {
+                "role": "developer",
+                "content": (
+                    "A redação anterior não passou nos controles abaixo. Gere novamente todo "
+                    "o objeto, corrigindo cada ocorrência sem criar fatos ou referências:\n- "
+                    + "\n- ".join(notes)
+                ),
+            }
+        )
     raw = invoke(
         messages,
-        json_schema=ParecerNarrativo.model_json_schema(),
+        json_schema=_narrative_json_schema(
+            context.get("achado_ids_permitidos", []), context.get("achados", [])
+        ),
         schema_name="parecer_credito_narrativo",
         model=MODEL_NAME,
         temperature=MODEL_TEMPERATURE,
@@ -724,12 +805,26 @@ def generate_parecer_document(
         else ParecerData.model_validate(parecer_data)
     )
     narrative_context = build_narrative_context(contract)
-    narrative = generate_variable_narrative(narrative_context, invoke=invoke)
-    validation = validate_parecer_narrative(
-        narrative,
-        contract,
-        routes=narrative_context["roteiro_achados"],
-    )
+    revision_notes: list[str] = []
+    for attempt in range(2):
+        narrative = generate_variable_narrative(
+            narrative_context,
+            invoke=invoke,
+            revision_notes=revision_notes,
+        )
+        try:
+            validation = validate_parecer_narrative(
+                narrative,
+                contract,
+                routes=narrative_context["roteiro_achados"],
+            )
+            break
+        except ParecerValidationError as exc:
+            if attempt:
+                raise
+            revision_notes = [
+                f"{issue.local}: {issue.mensagem}" for issue in exc.report.problemas
+            ]
     context = build_parecer_context(output, meta, policy, governance=governance)
     context["parecer_data"] = contract.model_dump(mode="json")
     context["contexto_narrativo"] = narrative_context

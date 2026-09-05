@@ -36,6 +36,7 @@ from services.parecer_data_builder import (
     build_parecer_data,
 )
 from services.parecer_generator import generate_parecer_document
+from services.parecer_validation import ParecerValidationError
 
 
 DECISION_ICONS = {
@@ -359,14 +360,19 @@ def _record_generation_failure(meta: Dict[str, Any], error: Exception) -> None:
     if not analysis_id:
         return
     try:
+        payload = {
+            "error_type": type(error).__name__,
+            "model": MODEL_NAME,
+            "timestamp": now_ts(),
+        }
+        if isinstance(error, ParecerValidationError):
+            payload["validation_issue_codes"] = [
+                issue.codigo for issue in error.report.problemas
+            ]
         DOSSIER_STORE.record_technical_telemetry(
             analysis_id,
             "parecer_nao_concluido",
-            {
-                "error_type": type(error).__name__,
-                "model": MODEL_NAME,
-                "timestamp": now_ts(),
-            },
+            payload,
         )
     except Exception:
         logger.exception("Falha ao registrar a ocorrência técnica do parecer")
@@ -495,12 +501,20 @@ def render() -> None:
                 _record_generation_failure(meta, exc)
                 logger.exception("Falha no serviço de geração do parecer")
                 st.error(exc.user_message)
+            except ParecerValidationError as exc:
+                _record_generation_failure(meta, exc)
+                logger.exception("Parecer recusado pelos controles de consistência")
+                st.error(
+                    "O texto não passou pelos controles de consistência da análise. Os dados "
+                    "foram preservados; tente gerar novamente."
+                )
             except Exception as exc:
                 _record_generation_failure(meta, exc)
                 logger.exception("Falha técnica ao gerar o parecer")
                 st.error(
-                    "Não foi possível gerar o parecer neste momento. Verifique a conexão e tente "
-                    "novamente. Se a falha persistir, encaminhe o horário da tentativa ao suporte."
+                    "Não foi possível concluir o parecer neste momento. Os dados foram preservados; "
+                    "tente novamente e, se a falha persistir, encaminhe o horário da tentativa ao "
+                    "suporte."
                 )
 
     if session.get("parecer_gerado"):

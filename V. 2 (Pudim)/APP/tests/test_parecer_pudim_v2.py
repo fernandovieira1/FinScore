@@ -15,6 +15,7 @@ from app_front.components.llm_client import (
     MODEL_REASONING_EFFORT,
     MODEL_TEMPERATURE,
     _call_openai_responses_structured,
+    _strict_json_schema,
 )
 from app_front.components.parecer_schema import ParecerNarrativo
 from app_front.pdf.export_pdf import contar_paginas_pdf
@@ -28,6 +29,7 @@ from app_front.services.credit_policy import decide_pudim
 from app_front.services.finscore_service import run_finscore
 from app_front.services.parecer_data_builder import build_finscore_recommendation
 from app_front.services.parecer_generator import (
+    _narrative_json_schema,
     build_parecer_context,
     render_parecer_document,
 )
@@ -348,6 +350,51 @@ class ParecerPudimV2Test(unittest.TestCase):
         self.assertEqual(payload["model"], "gpt-5.6-sol")
         self.assertNotIn("temperature", payload)
         self.assertTrue(payload["text"]["format"]["strict"])
+
+    def test_strict_schema_requires_all_declared_fields_recursively(self) -> None:
+        source = {
+            "type": "object",
+            "properties": {
+                "obrigatorio": {"type": "string"},
+                "itens": {
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "texto": {"type": "string"},
+                            "referencias": {"type": "array", "items": {"type": "string"}},
+                        },
+                    },
+                },
+                "secao": {"$ref": "#/$defs/Secao", "description": "Texto narrativo"},
+            },
+            "required": ["obrigatorio"],
+        }
+
+        normalized = _strict_json_schema(source)
+
+        self.assertEqual(normalized["required"], ["obrigatorio", "itens", "secao"])
+        self.assertFalse(normalized["additionalProperties"])
+        self.assertNotIn("default", normalized["properties"]["itens"])
+        self.assertEqual(normalized["properties"]["secao"], {"$ref": "#/$defs/Secao"})
+        item_schema = normalized["properties"]["itens"]["items"]
+        self.assertEqual(item_schema["required"], ["texto", "referencias"])
+        self.assertFalse(item_schema["additionalProperties"])
+        self.assertEqual(source["required"], ["obrigatorio"])
+
+    def test_narrative_schema_accepts_only_findings_from_the_evidence_book(self) -> None:
+        allowed = ["ACH-RES-FINSCORE", "ACH-CEN-SEVERO", "ACH-CEN-SEVERO"]
+
+        schema = _narrative_json_schema(allowed)
+
+        expected = ["ACH-RES-FINSCORE", "ACH-CEN-SEVERO"]
+        for definition in ("NarrativeSection", "NarrativeItem"):
+            items = schema["$defs"][definition]["properties"]["achado_ids"]["items"]
+            self.assertEqual(items, {"type": "string", "enum": expected})
+
+        with self.assertRaisesRegex(ValueError, "não contém achados"):
+            _narrative_json_schema([])
 
     def test_pdf_page_counter(self) -> None:
         writer = PdfWriter()

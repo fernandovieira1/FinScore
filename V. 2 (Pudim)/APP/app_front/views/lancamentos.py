@@ -1,6 +1,8 @@
 # app_front/views/lancamentos.py
 from __future__ import annotations
+from concurrent.futures import ThreadPoolExecutor
 import math
+import time
 import traceback
 from datetime import datetime
 
@@ -20,6 +22,33 @@ from services.finscore_service import run_finscore, ajustar_coluna_ano
 # Rótulos com ícones (ordem fixa na UI)
 TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
 TAB_ORDER = ["Cliente", "Dados"]  # Ordem visual fixa
+
+
+def _elapsed_label(elapsed_seconds: float) -> str:
+    total_seconds = max(0, int(elapsed_seconds))
+    minutes, seconds = divmod(total_seconds, 60)
+    return f"Processando há {minutes} min {seconds:02d} s"
+
+
+def _run_finscore_with_timer(df: pd.DataFrame, meta: dict):
+    """Executa o motor fora da thread da interface e mantém o tempo visível."""
+    started_at = time.monotonic()
+    progress = st.status(_elapsed_label(0), expanded=False)
+    try:
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="finscore") as executor:
+            future = executor.submit(run_finscore, df, meta)
+            while not future.done():
+                progress.update(label=_elapsed_label(time.monotonic() - started_at))
+                time.sleep(1)
+            result = future.result()
+        progress.update(
+            label=f"Processamento concluído em {_elapsed_label(time.monotonic() - started_at).removeprefix('Processando há ')}",
+            state="complete",
+        )
+        return result
+    except Exception:
+        progress.update(label="Não foi possível concluir o processamento.", state="error")
+        raise
 
 def _sync_lancamentos_tab() -> None:
     selected = st.session_state.get("_lancamentos_tab_control", "Cliente")
@@ -396,9 +425,8 @@ def _sec_dados():
             else:
                 processing_stage = "preparação do cálculo"
                 try:
-                    with st.spinner("Calculando FinScore…"):
-                        processing_stage = "execução do motor Pudim"
-                        res = run_finscore(ss.df, ss.meta)
+                    processing_stage = "execução do motor Pudim"
+                    res = _run_finscore_with_timer(ss.df, ss.meta)
                     # Aceita dict ou tupla/lista
                     processing_stage = "validação do retorno"
                     out = res[0] if isinstance(res, (list, tuple)) else res

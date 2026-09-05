@@ -48,7 +48,7 @@ ITEM_COLLECTIONS = (
     "recomendacoes_monitoramento",
 )
 NUMBER_PATTERN = re.compile(
-    r"(?<![\w-])-?\d{1,3}(?:\.\d{3})*(?:,\d+)?%?|(?<![\w-])-?\d+(?:[.,]\d+)?%?"
+    r"(?<![\w-])-?(?:\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?)%?(?!\w)"
 )
 FORBIDDEN_TERMS = {
     "inteligência artificial": "tecnologia de geração",

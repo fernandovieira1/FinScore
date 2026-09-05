@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
+from copy import deepcopy
 import json
 import logging
 import os
@@ -131,6 +132,36 @@ def _extract_responses_text(data: dict) -> str:
     raise RuntimeError("A Responses API não retornou conteúdo textual estruturado.")
 
 
+def _strict_json_schema(json_schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Adequa schemas Pydantic às exigências de Structured Outputs estrito."""
+    schema = deepcopy(json_schema)
+
+    def normalize(node: Any) -> None:
+        if isinstance(node, dict):
+            node.pop("default", None)
+            if "$ref" in node:
+                # A API não aceita descrição, título ou outro atributo ao lado de $ref.
+                reference = node["$ref"]
+                node.clear()
+                node["$ref"] = reference
+                return
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                # Em modo estrito, todo campo declarado deve estar em ``required``.
+                # Campos opcionais de negócio continuam representáveis por lista vazia
+                # ou pelos tipos anuláveis já definidos no schema.
+                node["required"] = list(properties)
+                node["additionalProperties"] = False
+            for value in node.values():
+                normalize(value)
+        elif isinstance(node, list):
+            for value in node:
+                normalize(value)
+
+    normalize(schema)
+    return schema
+
+
 def _call_openai_responses_structured(
     messages: List[Dict[str, str]],
     *,
@@ -161,7 +192,7 @@ def _call_openai_responses_structured(
                 "type": "json_schema",
                 "name": schema_name,
                 "strict": True,
-                "schema": json_schema,
+                "schema": _strict_json_schema(json_schema),
             }
         },
     }
