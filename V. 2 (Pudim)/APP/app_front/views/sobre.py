@@ -191,7 +191,7 @@ def render_faq_section() -> None:
 
 
 def render() -> None:
-    st.markdown("## Sobre o FinScore")
+    st.markdown("## Metodologia FinScore")
     st.markdown(
         "O FinScore organiza informações contábeis e econômico-financeiras em uma leitura integrada "
         "da capacidade de crédito. A documentação apresenta os conceitos de forma direta e detalha "
@@ -199,7 +199,7 @@ def render() -> None:
     )
     st.markdown(
         "A pontuação é um componente da análise, não uma decisão isolada. Qualidade dos dados, "
-        "evidências suplementares, garantias, covenants e alçada permanecem explicitamente separados."
+        "evidências suplementares, garantias e covenants permanecem explicitamente separados."
     )
 
     tabs = st.tabs(TAB_LABELS)

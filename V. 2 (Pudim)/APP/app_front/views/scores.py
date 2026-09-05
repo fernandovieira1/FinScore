@@ -127,13 +127,13 @@ def _render_score_principal(summary: dict[str, Any]) -> None:
         formatar_pontos_consolidado(summary["adaptativo"]),
     )
     columns[3].metric(
-        "Confiabilidade",
+        "Qualidade dos dados",
         formatar_percentual(summary["confiabilidade"]),
         str(summary["classificacao_confiabilidade"]),
     )
     st.caption(
         "Escala de 0 a 1000 pontos. O FinScore prudencial incorpora gargalo e caps "
-        "definidos pela metodologia; confiabilidade é apresentada separadamente."
+        "definidos pela metodologia; a qualidade dos dados é apresentada separadamente."
     )
 
 
@@ -246,7 +246,7 @@ def render_scores_pudim(output: dict[str, Any], meta: dict[str, Any]) -> None:
     if summary["bloqueado"]:
         columns = st.columns(3)
         columns[0].metric("Ocorrências críticas", str(summary["ocorrencias_criticas"]))
-        columns[1].metric("Confiabilidade", formatar_percentual(summary["confiabilidade"]))
+        columns[1].metric("Qualidade dos dados", formatar_percentual(summary["confiabilidade"]))
         columns[2].metric("Classificação de uso", str(summary["classificacao_uso"]))
         st.info("Revise as ocorrências na aba Dados Contábeis antes de recalcular.")
         _render_processamento(summary)

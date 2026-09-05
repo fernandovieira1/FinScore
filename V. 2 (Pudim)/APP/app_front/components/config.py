@@ -21,10 +21,10 @@ SLUG_MAP = {
     "lanc": "Lançamentos",
     "analise": "Análise",
     "parecer": "Parecer",
-    "sobre": "Sobre",
+    "sobre": "Metodologia",
     "contato": "Contato",
     "proc": "Processo",
-    # Extras usados no submenu Sobre
+    # Conteúdos complementares da seção Metodologia
     "faq": "FAQ",
     "glossario": "Glossário",
 }
@@ -43,7 +43,7 @@ SIDEBAR_MENU = [
             {"label": "Parecer", "slug": "parecer"},
         ],
     },
-    {"label": "Sobre", "slug": "sobre", "icon": "info-circle", "children": []},
+    {"label": "Metodologia", "slug": "sobre", "icon": "info-circle", "children": []},
     {"label": "Contato", "slug": "contato", "icon": "envelope", "children": []},
 ]
 

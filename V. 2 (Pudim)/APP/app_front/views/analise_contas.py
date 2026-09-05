@@ -214,7 +214,7 @@ def render_contas_pudim(output: dict[str, Any], meta: dict[str, Any]) -> None:
     columns[2].metric("Valores alterados", summary["valores_alterados"])
     columns[3].metric("Contas derivadas", summary["contas_derivadas"])
     columns[4].metric(
-        "Confiabilidade",
+        "Qualidade dos dados",
         f"{float(reliability.get('indice_confiabilidade', 0)):.1%}",
         str(reliability.get("classificacao_confiabilidade", "-")),
     )

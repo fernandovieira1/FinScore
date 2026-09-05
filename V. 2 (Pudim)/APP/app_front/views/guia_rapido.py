@@ -35,13 +35,13 @@ Tudo isso é acessível através das seguintes opções:
     - **"Lançamentos"**: onde você insere os dados do cliente e as demonstrações contábeis.
     - **"Análise"**: resultados preliminares da análise financeira.
     - **"Parecer"**: geração/edição de um parecer em PDF.
-* **"Sobre"**: informações mais aprofundadas sobre a metodologia, com glossário de termos e perguntas mais frequentes (FAQ).
+* **"Metodologia"**: informações aprofundadas sobre o método, com glossário de termos e perguntas mais frequentes (FAQ).
 * **"Contato"**: formulário para dúvidas/sugestões.
 
 A seção **"Lançamentos"** fica disponível após clicar no botão **[Iniciar]**, na seção **"Novo"**. Igualmente, as 
 seções **"Análise"** e **"Parecer"** ficam disponíveis após o cálculo do FinScore na seção **"Lançamentos"**.
 
-Para maiores detalhes sobre a metodologia e a interpretação dos resultados, consulte o guia completo na seção **"Sobre"**.
+Para maiores detalhes sobre a metodologia e a interpretação dos resultados, consulte o guia completo na seção **"Metodologia"**.
 
 Dúvidas ou sugestões? Utilize o formulário na seção **"Contato"**.
  """,

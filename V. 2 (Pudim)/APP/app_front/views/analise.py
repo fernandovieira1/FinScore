@@ -1295,6 +1295,11 @@ def render():
             flex: 0 0 auto;
             font-weight: 500;
         }
+        div[data-testid="stTabs"] [data-testid="stMetricValue"] {
+            font-size: clamp(1rem, 1.4vw, 1.35rem) !important;
+            line-height: 1.25 !important;
+            overflow-wrap: anywhere;
+        }
         </style>
         """,
         unsafe_allow_html=True,
