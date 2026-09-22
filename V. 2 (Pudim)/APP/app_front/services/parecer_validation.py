@@ -146,12 +146,14 @@ def _parse_number(token: str) -> tuple[float | None, bool]:
     return (value if math.isfinite(value) else None), percent
 
 
-def _authorized_numbers(findings: Iterable[Finding]) -> list[float]:
+def _authorized_numbers(findings: Iterable[Finding], *, percent: bool = False) -> list[float]:
     values: list[float] = []
     for finding in findings:
         for evidence in finding.evidencias:
-            if evidence.exercicio is not None:
+            if evidence.exercicio is not None and not percent:
                 values.append(float(evidence.exercicio))
+            if percent and evidence.unidade != "proporcao":
+                continue
             value = evidence.valor
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 continue
@@ -162,10 +164,12 @@ def _authorized_numbers(findings: Iterable[Finding]) -> list[float]:
 
 
 def _matches_authorized(value: float, percent: bool, authorized: list[float]) -> bool:
-    candidates = [value / 100.0, value] if percent else [value]
+    candidates = [value / 100.0] if percent else [value]
     for candidate in candidates:
         for reference in authorized:
-            tolerance = max(0.011, abs(reference) * 0.0015)
+            # Duas casas na unidade exibida; nunca uma tolerância relativa que
+            # autorize desvios materiais em montantes ou percentuais pequenos.
+            tolerance = 0.000050001 if percent else 0.0050001
             if abs(candidate - reference) <= tolerance:
                 return True
     return False
@@ -201,7 +205,7 @@ def reconcile_narrative_numbers(
             for identifier, finding in findings.items():
                 if allowed_categories is not None and finding.categoria not in allowed_categories:
                     continue
-                if _matches_authorized(value, percent, _authorized_numbers([finding])):
+                if _matches_authorized(value, percent, _authorized_numbers([finding], percent=percent)):
                     result.append(identifier)
             return result
 
@@ -219,7 +223,7 @@ def reconcile_narrative_numbers(
                     value,
                     percent,
                     _authorized_numbers(
-                        findings[item] for item in refs if item in findings
+                        (findings[item] for item in refs if item in findings), percent=percent
                     ),
                 ):
                     continue
@@ -351,15 +355,14 @@ def _validate_numbers(
     finding_map = _finding_map(contract)
     verified = 0
     for local, text, finding_ids in _iter_text_blocks(narrative):
-        authorized = _authorized_numbers(
-            finding_map[identifier]
-            for identifier in finding_ids
-            if identifier in finding_map
-        )
         for token in _number_tokens(text):
             value, percent = _parse_number(token)
             if value is None:
                 continue
+            authorized = _authorized_numbers(
+                (finding_map[identifier] for identifier in finding_ids if identifier in finding_map),
+                percent=percent,
+            )
             verified += 1
             if not _matches_authorized(value, percent, authorized):
                 issues.append(

@@ -381,8 +381,10 @@ Regras:
 - use apenas IDs de achado_ids_permitidos e priorize o roteiro_achados de cada seção;
 - diferencie observado, derivado, calculado, hipótese de cenário, evidência externa e interpretação;
 - não invente fatos, causas, setor, porte, parâmetros, datas, valores, limites ou documentos;
-- ao citar números, use no máximo duas casas decimais e o padrão brasileiro: ponto para milhares
-  e vírgula para decimais;
+- ao citar grandezas calculadas, arredonde para duas casas decimais e use o padrão brasileiro:
+  ponto para milhares e vírgula para decimais; preserve anos e contagens inteiros;
+- percentuais somente podem citar evidências com unidade proporcao, multiplicadas por 100;
+- examine o cenário adverso e o severo quando disponíveis e a trajetória anual dos diagnósticos;
 - FinScore não é PD nem rating regulatório; frequência de simulação não é inadimplência;
 - Serasa permanece separado; Springate e Fleuriet são diagnósticos suplementares derivados;
 - cenários são hipóteses de estresse, não previsões;

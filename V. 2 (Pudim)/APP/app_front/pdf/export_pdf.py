@@ -293,6 +293,10 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         conteudo_html = _convert_markdown_to_html(conteudo)
     else:
         conteudo_html = conteudo
+    if engine == "xhtml2pdf":
+        # As fontes básicas do fallback não cobrem estes símbolos matemáticos.
+        # Normalizar só a apresentação preserva o anexo metodológico de origem.
+        conteudo_html = conteudo_html.replace("−", "-").replace("→", "-&gt;")
     
     # Extrair dados do meta
     empresa = html_lib.escape(str(meta.get("empresa", "N/A")))

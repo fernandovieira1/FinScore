@@ -92,6 +92,13 @@ class EvidenceBookV2Test(unittest.TestCase):
         self.assertEqual(finding.natureza, FindingNature.HYPOTHESIS)
         self.assertIn("sem caráter preditivo", finding.efeito_metodologico or "")
 
+    def test_debt_account_findings_use_engine_fields(self) -> None:
+        for field in ("d_Divida_Financeira_Bruta", "d_Divida_Financeira_Liquida"):
+            expected = [p for p in self.contract.dados.derivados if p.campo == field]
+            self.assertEqual(len(expected), 3)
+            evidences = [e for f in self.contract.achados for e in f.evidencias if e.campo == field]
+            self.assertTrue(evidences, field)
+
     def test_supplementary_diagnostics_do_not_claim_to_change_finscore(self) -> None:
         supplementary = [
             item for item in self.contract.achados if item.achado_id.startswith("ACH-SUP-")

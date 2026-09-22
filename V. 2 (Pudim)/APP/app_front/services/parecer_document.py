@@ -51,13 +51,12 @@ INDICATOR_LABELS = {
 }
 ACCOUNT_LABELS = {
     "r_Receita_Liquida": "Receita líquida",
-    "r_Receita_Total": "Receita total",
     "r_Lucro_Liquido": "Lucro líquido",
     "p_Ativo_Total": "Ativo total",
     "p_Patrimonio_Liquido": "Patrimônio líquido",
     "d_EBIT": "EBIT",
-    "d_Divida_Bruta": "Dívida bruta",
-    "d_Divida_Liquida": "Dívida líquida",
+    "d_Divida_Financeira_Bruta": "Dívida bruta",
+    "d_Divida_Financeira_Liquida": "Dívida líquida",
 }
 ECONOMIC_INDICATORS = (
     "crescimento_receita",
@@ -186,26 +185,29 @@ def _series_commentary(
     highlights = []
     supportive = []
     pressure = []
-    for _magnitude, field, left_year, right_year, left, right, unit in variations[:3]:
+    highlighted_fields: set[str] = set()
+    for _magnitude, field, left_year, right_year, left, right, unit in variations:
         direction = "elevação" if right > left else "redução" if right < left else "estabilidade"
         change = ((right - left) / abs(left) * 100) if left else None
         change_text = (
             f", variação de {_fmt_number(change)}%" if change is not None else ""
         )
         label = labels.get(field, field.replace("_", " "))
-        highlights.append(
-            f"{label}, de {_fmt_value(left, unit)} em {left_year} para "
-            f"{_fmt_value(right, unit)} em {right_year}{change_text}"
-        )
+        if field not in highlighted_fields and len(highlights) < 3:
+            highlights.append(
+                f"{label}, de {_fmt_value(left, unit)} em {left_year} para "
+                f"{_fmt_value(right, unit)} em {right_year}{change_text}"
+            )
+            highlighted_fields.add(field)
         favorable = (right > left and field in favorable_up) or (
             right < left and field in favorable_down
         )
         unfavorable = (right < left and field in favorable_up) or (
             right > left and field in favorable_down
         )
-        if favorable:
+        if favorable and f"{direction} de {label}" not in supportive:
             supportive.append(f"{direction} de {label}")
-        elif unfavorable:
+        elif unfavorable and f"{direction} de {label}" not in pressure:
             pressure.append(f"{direction} de {label}")
 
     if highlights:
@@ -310,9 +312,22 @@ def _quality_table(contract: ParecerData) -> str:
             f"| Classificação da qualidade dos dados | {_md(quality.classificacao_confiabilidade)} |",
             f"| Ocorrências críticas | {quality.ocorrencias_criticas} |",
             f"| Avisos | {quality.ocorrencias_aviso} |",
+            f"| Alertas de viés alto/crítico | {quality.alertas_vies_alto_critico} |",
             f"| Alertas bloqueadores | {quality.alertas_bloqueadores_decisao} |",
         ]
     )
+
+
+def _reliability_table(contract: ParecerData) -> str:
+    components = contract.qualidade.componentes_confiabilidade
+    if not components:
+        return "Decomposição da confiabilidade não disponibilizada nesta execução."
+    lines = ["| Componente da confiabilidade | Nota | Peso | Contribuição |",
+             "|---|---:|---:|---:|"]
+    for item in components:
+        lines.append(f"| {_md(item.componente)} | {_fmt_value(item.nota, 'proporcao')} | "
+                     f"{_fmt_value(item.peso, 'proporcao')} | {_fmt_value(item.contribuicao, 'proporcao')} |")
+    return "\n".join(lines)
 
 
 def _score_table(contract: ParecerData) -> str:
@@ -419,19 +434,20 @@ def _simulation_table(contract: ParecerData) -> str:
 
 def _supplementary_table(contract: ParecerData) -> str:
     evidence = contract.evidencias_suplementares
-    springate = max(evidence.springate, key=lambda item: item.exercicio) if evidence.springate else None
-    fleuriet = max(evidence.fleuriet, key=lambda item: item.exercicio) if evidence.fleuriet else None
-    return "\n".join(
-        [
+    lines = [
             "| Diagnóstico | Exercício/data | Resultado | Natureza |",
             "|---|---|---|---|",
             f"| Serasa | {_md(evidence.serasa.data_consulta)} | {_fmt_number(evidence.serasa.score)} — {_md(evidence.serasa.status)} | Evidência externa separada |",
-            f"| Springate | {springate.exercicio if springate else '—'} | "
-            f"{(_fmt_number(springate.score) + ' — ' + _md(springate.classificacao)) if springate else 'Não calculado'} | Diagnóstico derivado |",
-            f"| Fleuriet simplificado | {fleuriet.exercicio if fleuriet else '—'} | "
-            f"{_md(fleuriet.diagnostico) if fleuriet else 'Não calculado'} | Diagnóstico derivado |",
         ]
-    )
+    for item in sorted(evidence.springate, key=lambda item: item.exercicio):
+        lines.append(f"| Springate | {item.exercicio} | {_fmt_number(item.score)} — {_md(item.classificacao)} | Diagnóstico derivado |")
+    if not evidence.springate:
+        lines.append("| Springate | — | Não calculado | Diagnóstico derivado |")
+    for item in sorted(evidence.fleuriet, key=lambda item: item.exercicio):
+        lines.append(f"| Fleuriet simplificado | {item.exercicio} | {_md(item.diagnostico)} | Diagnóstico derivado |")
+    if not evidence.fleuriet:
+        lines.append("| Fleuriet simplificado | — | Não calculado | Diagnóstico derivado |")
+    return "\n".join(lines)
 
 
 def _latest_data_point(
@@ -509,17 +525,18 @@ def _final_considerations(contract: ParecerData) -> str:
     net_debt = _latest_data_point(indices, "divida_liquida_ativo", year)
     interest_cover = _latest_data_point(indices, "cobertura_juros", year)
 
-    scenario = next(
-        (item for item in contract.cenarios.deterministicos if item.nome.lower() == "severo"),
-        None,
-    )
-    scenario_text = (
-        f"No cenário severo, o FinScore alcançou {_fmt_number(scenario.finscore_prudencial)} pontos, "
-        f"uma diferença de {_fmt_number((scenario.finscore_prudencial or 0) - (contract.finscore.prudencial or 0))} "
-        "pontos em relação ao observado."
-        if scenario is not None and scenario.finscore_prudencial is not None
-        else "O cenário severo não apresentou FinScore calculável."
-    )
+    scenario_parts = []
+    for name in ("adverso", "severo"):
+        scenario = next((item for item in contract.cenarios.deterministicos if item.nome.lower() == name), None)
+        if scenario is None or scenario.finscore_prudencial is None:
+            scenario_parts.append(f"O cenário {name} não apresentou FinScore calculável.")
+            continue
+        part = f"No cenário {name}, o FinScore alcançou {_fmt_number(scenario.finscore_prudencial)} pontos"
+        if contract.finscore.prudencial is not None:
+            delta = scenario.finscore_prudencial - contract.finscore.prudencial
+            part += f", uma diferença de {_fmt_number(delta)} pontos em relação ao observado"
+        scenario_parts.append(part + ".")
+    scenario_text = " ".join(scenario_parts)
     blockers = recommendation.bloqueios
     blocker_text = (
         f"Foram registrados {len(blockers)} bloqueios: "
@@ -662,12 +679,11 @@ def render_structured_parecer(
         ACCOUNT_LABELS,
         favorable_up={
             "r_Receita_Liquida",
-            "r_Receita_Total",
             "r_Lucro_Liquido",
             "p_Patrimonio_Liquido",
             "d_EBIT",
         },
-        favorable_down={"d_Divida_Bruta", "d_Divida_Liquida"},
+        favorable_down={"d_Divida_Financeira_Bruta", "d_Divida_Financeira_Liquida"},
     )
     indicator_before, indicator_after = _series_commentary(
         contract.dados.indices,
@@ -711,18 +727,13 @@ def render_structured_parecer(
 
 ## 1. Identificação, operação e escopo
 
-O presente parecer técnico-jurídico tem por finalidade analisar a operação de crédito celebrada
-entre Assertif Consultores Associados, inscrita no CNPJ sob nº 29.683.218/0001-70, e
+O presente parecer técnico de análise econômico-financeira e patrimonial examina
 **{_md(identity.tomador.nome)}**, inscrita no CNPJ sob nº **{_md(identity.tomador.cnpj)}**,
-avaliando sua conformidade com a legislação aplicável, bem como os riscos jurídicos e financeiros
-envolvidos. A análise será conduzida à luz das normas de direito civil, empresarial e bancário,
-considerando os princípios da boa-fé objetiva, da transparência contratual e da segurança jurídica,
-de modo a oferecer subsídios técnicos para a tomada de decisão quanto à validade, eficácia e
-eventuais implicações decorrentes da operação.
-
-A análise tem como fontes as informações contábeis, financeiras, patrimoniais e jurídicas prestadas
-pela empresa analisada, referentes aos anos de {identity.periodos.analisado.inicio} a
-{identity.periodos.analisado.fim}.
+com base nas informações contábeis e nos resultados FinScore dos exercícios de
+{identity.periodos.analisado.inicio} a {identity.periodos.analisado.fim}.
+As conclusões apoiam a avaliação humana da capacidade financeira e dos riscos observados.
+A recomendação calculada permanece sujeita à política da instituição e à decisão da alçada
+competente; a validade jurídica da operação e das garantias exige avaliação própria.
 
 ## 2. Sumário executivo
 
@@ -746,6 +757,12 @@ pela empresa analisada, referentes aos anos de {identity.periodos.analisado.inic
 {_md(narrative.escopo_e_qualidade.texto)}
 
 {_quality_table(contract)}
+
+{_reliability_table(contract)}
+
+A confiabilidade mede a qualidade informacional, não a capacidade de pagamento. Os avisos
+de validação e os alertas de viés pertencem a controles distintos; ausência de avisos não
+significa ausência de alertas. As contribuições acima explicam a composição do índice.
 
 ### 3.1 Inventário e rastreabilidade
 
@@ -804,6 +821,12 @@ a aptidão do cálculo são verificadas separadamente.
 {guarantees_text}
 
 ## 7. Evidências suplementares
+
+Os cenários abaixo são hipóteses condicionais de estresse, sem caráter preditivo.
+
+{_scenario_table(contract)}
+
+{_simulation_table(contract)}
 
 O score Serasa, informado na consulta externa em escala de 0 a 1.000 pontos, não é recalculado a
 partir das demonstrações nem integrado ao FinScore. A comparação utiliza a diferença absoluta entre

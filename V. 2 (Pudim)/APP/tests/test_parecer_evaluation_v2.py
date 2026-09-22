@@ -98,9 +98,21 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
     def test_document_uses_the_consolidated_requested_structure(self) -> None:
         document = render_structured_parecer(self._narrative(), self.contract)
 
-        self.assertIn("O presente parecer técnico-jurídico", document)
+        self.assertIn("O presente parecer técnico de análise econômico-financeira e patrimonial", document)
+        self.assertNotIn("parecer técnico-jurídico", document)
+        self.assertNotIn("29.683.218/0001-70", document)
+        self.assertNotIn("| Receita total |", document)
+        self.assertIn("| Alertas de viés alto/crítico |", document)
+        self.assertIn("| Componente da confiabilidade |", document)
+        self.assertIn("| Adverso |", document)
+        self.assertIn("| Severo |", document)
+        self.assertIn("No cenário adverso", document)
+        for field, label in (("d_Divida_Financeira_Bruta", "Dívida bruta"), ("d_Divida_Financeira_Liquida", "Dívida líquida")):
+            row = next(line for line in document.splitlines() if line.startswith(f"| {label} |"))
+            self.assertNotIn("—", row)
+            self.assertEqual(row.count("R$"), 3)
         self.assertIn("**Callamarys**", document)
-        self.assertIn("referentes aos anos de 2023 a\n2025", document)
+        self.assertIn("2023 a 2025", document)
         self.assertNotIn("| Concedente |", document)
         self.assertIn("### 6.1 Garantias", document)
         self.assertNotIn("### 6.1 Caps prudenciais", document)
