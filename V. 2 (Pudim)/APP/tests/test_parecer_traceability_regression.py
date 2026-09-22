@@ -79,6 +79,40 @@ class TraceabilityRegressionTest(unittest.TestCase):
         self.assertEqual(findings["ACH-CEN-ADVERSO"].evidencias[-1].valor, 0)
         self.assertEqual(findings["ACH-CEN-SEVERO"].categoria, FindingCategory.ALERT)
 
+    def test_failed_monotonicity_never_supports_resilience(self):
+        for flag, status in ((False, None), (None, "FALHOU"),
+                (None, "NÃO ATENDIDA"), (None, "NAO_ATENDIDA"),
+                (True, "Não atendida")):
+            with self.subTest(flag=flag, status=status):
+                scenarios = [DeterministicScenario(nome=name, status="OK",
+                    finscore_prudencial=value) for name, value in
+                    (("BASE", 500), ("ADVERSO", 550), ("SEVERO", 450))]
+                # Um único registro de reprovação já limita a comparação global.
+                scenarios[1] = scenarios[1].model_copy(update={
+                    "monotonicidade_global": flag, "status_monotonicidade": status})
+                contract = SimpleNamespace(cenarios=SimpleNamespace(
+                    deterministicos=scenarios, diagnosticos=[]))
+                findings = {item.achado_id: item for item in _scenario_findings(contract)}
+                self.assertEqual(findings["ACH-CEN-MONOTONICIDADE"].categoria,
+                    FindingCategory.DIVERGENCE)
+                for name, delta in (("ADVERSO", 50), ("SEVERO", -50)):
+                    finding = findings[f"ACH-CEN-{name}"]
+                    self.assertEqual(finding.categoria, FindingCategory.LIMITATION)
+                    self.assertEqual(finding.evidencias[-1].valor, delta)
+                    self.assertIn("não sustenta inferência de resiliência", finding.impacto_credito)
+
+    def test_valid_flat_stress_keeps_strength(self):
+        scenarios = [DeterministicScenario(nome=name, status="OK",
+            finscore_prudencial=value, monotonicidade_global=True,
+            status_monotonicidade="PASSOU") for name, value in
+            (("BASE", 500), ("ADVERSO", 500), ("SEVERO", 450))]
+        contract = SimpleNamespace(cenarios=SimpleNamespace(
+            deterministicos=scenarios, diagnosticos=[]))
+        findings = {item.achado_id: item for item in _scenario_findings(contract)}
+        self.assertNotIn("ACH-CEN-MONOTONICIDADE", findings)
+        self.assertEqual(findings["ACH-CEN-ADVERSO"].categoria, FindingCategory.STRENGTH)
+        self.assertEqual(findings["ACH-CEN-SEVERO"].categoria, FindingCategory.ALERT)
+
     def test_percentage_rounding_does_not_erase_sign_or_small_values(self):
         for displayed, evidence, expected in ((0.3, 0, False), (-0.02, 0, False),
                 (0.3, .003, True), (7.57, .07571, True), (7.57, .0758, False)):

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 import math
 import re
+import unicodedata
 from statistics import mean
 from typing import Iterable
 
@@ -517,10 +518,24 @@ def _score_findings(contract: ParecerData) -> list[Finding]:
     return result
 
 
+def _monotonicity_failed(scenario: object) -> bool:
+    status = unicodedata.normalize(
+        "NFKD", str(getattr(scenario, "status_monotonicidade", None) or "")
+    )
+    status = "".join(character for character in status if not unicodedata.combining(character))
+    status = re.sub(r"[^A-Z0-9]+", " ", status.upper())
+    return getattr(scenario, "monotonicidade_global", None) is False or bool(
+        re.search(r"\b(?:FALHOU|REPROVAD[OA]|NAO)\b", status)
+    )
+
+
 def _scenario_findings(contract: ParecerData) -> list[Finding]:
     result: list[Finding] = []
     scenarios = {item.nome.upper(): item for item in contract.cenarios.deterministicos}
     base = scenarios.get("BASE")
+    invalid_monotonicity = [
+        item for item in contract.cenarios.deterministicos if _monotonicity_failed(item)
+    ]
     for scenario_name in ("ADVERSO", "SEVERO"):
         stressed = scenarios.get(scenario_name)
         if not (base and stressed and base.finscore_prudencial is not None and stressed.finscore_prudencial is not None):
@@ -529,7 +544,10 @@ def _scenario_findings(contract: ParecerData) -> list[Finding]:
         result.append(
             Finding(
                 achado_id=f"ACH-CEN-{scenario_name}",
-                categoria=FindingCategory.ALERT if delta < 0 else FindingCategory.STRENGTH,
+                categoria=(
+                    FindingCategory.LIMITATION if invalid_monotonicity
+                    else FindingCategory.ALERT if delta < 0 else FindingCategory.STRENGTH
+                ),
                 natureza=FindingNature.HYPOTHESIS,
                 titulo=f"Sensibilidade do FinScore no cenário {scenario_name.lower()}",
                 evidencias=[
@@ -537,21 +555,23 @@ def _scenario_findings(contract: ParecerData) -> list[Finding]:
                     _evidence(f"cenarios.deterministicos:{scenario_name}", "finscore_prudencial", stressed.finscore_prudencial, unit="pontos"),
                     _evidence(f"cenarios.deterministicos:{scenario_name}", "delta_frente_base", delta, unit="pontos"),
                 ],
-                efeito_metodologico="Comparação entre hipóteses determinísticas, sem caráter preditivo.",
+                efeito_metodologico=(
+                    "A monotonicidade dos cenários foi reprovada; os valores permanecem "
+                    "registrados, mas a comparação exige revisão das premissas."
+                    if invalid_monotonicity
+                    else "Comparação entre hipóteses determinísticas, sem caráter preditivo."
+                ),
                 impacto_credito=(
-                    f"O cenário {scenario_name.lower()} reduz o resultado e evidencia sensibilidade às premissas de estresse."
+                    f"O resultado do cenário {scenario_name.lower()} não sustenta inferência "
+                    "de resiliência enquanto a ordenação entre base, adverso e severo não for validada."
+                    if invalid_monotonicity
+                    else f"O cenário {scenario_name.lower()} reduz o resultado e evidencia sensibilidade às premissas de estresse."
                     if delta < 0
                     else f"O resultado não se deteriora sob as premissas do cenário {scenario_name.lower()} registrado."
                 ),
             )
         )
 
-    invalid_monotonicity = [
-        item
-        for item in contract.cenarios.deterministicos
-        if item.monotonicidade_global is False
-        or "NAO" in str(item.status_monotonicidade or "").upper()
-    ]
     if invalid_monotonicity:
         result.append(
             Finding(

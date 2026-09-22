@@ -423,13 +423,27 @@ def _simulation_table(contract: ParecerData) -> str:
         "| Abordagem | Método | Trajetórias | Média | P05 | Mediana | P95 |",
         "|---|---|---:|---:|---:|---:|---:|",
     ]
+    limitations: dict[str, str] = {}
     for item in summaries:
+        diagnostics = [diagnostic for diagnostic in contract.cenarios.diagnosticos
+                       if diagnostic.abordagem.strip().casefold() == item.abordagem.strip().casefold()]
+        if not diagnostics or any(diagnostic.valida_para_interpretacao is not True for diagnostic in diagnostics):
+            details = "; ".join(
+                f"{_md(diagnostic.status_rejeicao)}; taxa de rejeição {_fmt_value(diagnostic.taxa_rejeicao, 'proporcao')}"
+                for diagnostic in diagnostics
+            ) or "diagnóstico de validade não disponibilizado"
+            limitations[item.abordagem] = (
+                f"Simulação {_md(item.abordagem)} indisponível para interpretação: {details}. "
+                "Os resultados numéricos não são apresentados como evidência utilizável."
+            )
+            continue
         lines.append(
             f"| {_md(item.abordagem)} | {_md(item.metodo)} | {item.numero_trajetorias} | "
             f"{_fmt_number(item.media)} | {_fmt_number(item.p05)} | "
             f"{_fmt_number(item.mediana)} | {_fmt_number(item.p95)} |"
         )
-    return "\n".join(lines)
+    table = "\n".join(lines) if len(lines) > 2 else ""
+    return "\n\n".join([part for part in [table, *limitations.values()] if part])
 
 
 def _supplementary_table(contract: ParecerData) -> str:
