@@ -72,6 +72,28 @@ def clear_flow_state() -> None:
     ss["analise_tab"] = "Resumo"
 
 
+def invalidate_imported_data() -> None:
+    """Discard a rejected upload's predecessor without resetting the client form."""
+    ss = st.session_state
+    ss["df"] = None
+    ss["out"] = None
+    ss["parecer_gerado"] = None
+    ss["liberar_analise"] = False
+    ss["liberar_parecer"] = False
+    for key in _TRANSIENT_KEYS + (
+        "parecer_dossie_funcional",
+        "reviews",
+        "artifacts_meta",
+        "_lock_parecer",
+        "_force_parecer",
+        "_DIRECT_TO_PARECER",
+    ):
+        ss.pop(key, None)
+    meta = ss.get("meta")
+    if isinstance(meta, dict):
+        meta.pop("anos_rotulos", None)
+
+
 def reset_for_new_cycle() -> None:
     """Clear calculation artefacts so a fresh cycle can start deterministically."""
     clear_flow_state()
