@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 import math
 import re
+import unicodedata
 from statistics import mean
 from typing import Iterable
 
@@ -48,12 +49,11 @@ INDICATOR_LABELS = {
 
 ACCOUNT_LABELS = {
     "r_Receita_Liquida": "Receita líquida",
-    "r_Receita_Total": "Receita total",
     "r_Lucro_Liquido": "Lucro líquido",
     "p_Ativo_Total": "Ativo total",
     "p_Patrimonio_Liquido": "Patrimônio líquido",
-    "d_Divida_Bruta": "Dívida bruta",
-    "d_Divida_Liquida": "Dívida líquida",
+    "d_Divida_Financeira_Bruta": "Dívida bruta",
+    "d_Divida_Financeira_Liquida": "Dívida líquida",
     "d_EBIT": "EBIT",
 }
 
@@ -518,39 +518,60 @@ def _score_findings(contract: ParecerData) -> list[Finding]:
     return result
 
 
+def _monotonicity_failed(scenario: object) -> bool:
+    status = unicodedata.normalize(
+        "NFKD", str(getattr(scenario, "status_monotonicidade", None) or "")
+    )
+    status = "".join(character for character in status if not unicodedata.combining(character))
+    status = re.sub(r"[^A-Z0-9]+", " ", status.upper())
+    return getattr(scenario, "monotonicidade_global", None) is False or bool(
+        re.search(r"\b(?:FALHOU|REPROVAD[OA]|NAO)\b", status)
+    )
+
+
 def _scenario_findings(contract: ParecerData) -> list[Finding]:
     result: list[Finding] = []
     scenarios = {item.nome.upper(): item for item in contract.cenarios.deterministicos}
     base = scenarios.get("BASE")
-    severe = scenarios.get("SEVERO")
-    if base and severe and base.finscore_prudencial is not None and severe.finscore_prudencial is not None:
-        delta = severe.finscore_prudencial - base.finscore_prudencial
+    invalid_monotonicity = [
+        item for item in contract.cenarios.deterministicos if _monotonicity_failed(item)
+    ]
+    for scenario_name in ("ADVERSO", "SEVERO"):
+        stressed = scenarios.get(scenario_name)
+        if not (base and stressed and base.finscore_prudencial is not None and stressed.finscore_prudencial is not None):
+            continue
+        delta = stressed.finscore_prudencial - base.finscore_prudencial
         result.append(
             Finding(
-                achado_id="ACH-CEN-SEVERO",
-                categoria=FindingCategory.ALERT if delta < 0 else FindingCategory.STRENGTH,
+                achado_id=f"ACH-CEN-{scenario_name}",
+                categoria=(
+                    FindingCategory.LIMITATION if invalid_monotonicity
+                    else FindingCategory.ALERT if delta < 0 else FindingCategory.STRENGTH
+                ),
                 natureza=FindingNature.HYPOTHESIS,
-                titulo="Sensibilidade do FinScore no cenário severo",
+                titulo=f"Sensibilidade do FinScore no cenário {scenario_name.lower()}",
                 evidencias=[
                     _evidence("cenarios.deterministicos:BASE", "finscore_prudencial", base.finscore_prudencial, unit="pontos"),
-                    _evidence("cenarios.deterministicos:SEVERO", "finscore_prudencial", severe.finscore_prudencial, unit="pontos"),
-                    _evidence("cenarios.deterministicos:SEVERO", "delta_frente_base", delta, unit="pontos"),
+                    _evidence(f"cenarios.deterministicos:{scenario_name}", "finscore_prudencial", stressed.finscore_prudencial, unit="pontos"),
+                    _evidence(f"cenarios.deterministicos:{scenario_name}", "delta_frente_base", delta, unit="pontos"),
                 ],
-                efeito_metodologico="Comparação entre hipóteses determinísticas, sem caráter preditivo.",
+                efeito_metodologico=(
+                    "A monotonicidade dos cenários foi reprovada; os valores permanecem "
+                    "registrados, mas a comparação exige revisão das premissas."
+                    if invalid_monotonicity
+                    else "Comparação entre hipóteses determinísticas, sem caráter preditivo."
+                ),
                 impacto_credito=(
-                    "O cenário severo reduz o resultado e evidencia sensibilidade às premissas de estresse."
+                    f"O resultado do cenário {scenario_name.lower()} não sustenta inferência "
+                    "de resiliência enquanto a ordenação entre base, adverso e severo não for validada."
+                    if invalid_monotonicity
+                    else f"O cenário {scenario_name.lower()} reduz o resultado e evidencia sensibilidade às premissas de estresse."
                     if delta < 0
-                    else "O resultado não se deteriora sob as premissas severas registradas."
+                    else f"O resultado não se deteriora sob as premissas do cenário {scenario_name.lower()} registrado."
                 ),
             )
         )
 
-    invalid_monotonicity = [
-        item
-        for item in contract.cenarios.deterministicos
-        if item.monotonicidade_global is False
-        or "NAO" in str(item.status_monotonicidade or "").upper()
-    ]
     if invalid_monotonicity:
         result.append(
             Finding(
@@ -631,7 +652,7 @@ def _supplementary_findings(contract: ParecerData) -> list[Finding]:
                 impacto_credito="A divergência requer interpretação conjunta sem alterar isoladamente a recomendação FinScore.",
             )
         )
-    if serasa.cronologia_valida is False:
+    if serasa.alerta_temporal:
         result.append(
             Finding(
                 achado_id="ACH-SUP-SERASA-DATA",
@@ -647,22 +668,42 @@ def _supplementary_findings(contract: ParecerData) -> list[Finding]:
             )
         )
 
+    if serasa.score is not None:
+        result.append(Finding(
+            achado_id="ACH-SUP-SERASA-ORIGEM",
+            categoria=FindingCategory.RESULT,
+            natureza=FindingNature.EXTERNAL_EVIDENCE,
+            titulo="Serasa informado e data de referência",
+            evidencias=[
+                _evidence("evidencias_suplementares.serasa", "score", serasa.score, unit="pontos"),
+                _evidence("evidencias_suplementares.serasa", "data_consulta", serasa.data_consulta),
+            ],
+            efeito_metodologico="Informação externa declarada, não verificada pelo sistema; não altera o FinScore.",
+            impacto_credito=serasa.alerta_temporal or "Comparação externa, sem inferir eventos de inadimplência.",
+        ))
+
     if contract.evidencias_suplementares.springate:
         latest = max(contract.evidencias_suplementares.springate, key=lambda item: item.exercicio)
         distress = "DISTRESS" in latest.classificacao.upper() and "SEM" not in latest.classificacao.upper()
+        unavailable = latest.score is None
         result.append(
             Finding(
                 achado_id="ACH-SUP-SPRINGATE",
-                categoria=FindingCategory.RISK if distress else FindingCategory.STRENGTH,
+                categoria=FindingCategory.LIMITATION if unavailable else (FindingCategory.RISK if distress else FindingCategory.STRENGTH),
                 natureza=FindingNature.DERIVED,
                 titulo=f"Springate: {latest.classificacao.lower()}",
                 evidencias=[
-                    _evidence("evidencias_suplementares.springate", "score", latest.score, year=latest.exercicio),
-                    _evidence("evidencias_suplementares.springate", "classificacao", latest.classificacao, year=latest.exercicio),
+                    evidence
+                    for item in sorted(contract.evidencias_suplementares.springate, key=lambda item: item.exercicio)
+                    for evidence in (
+                        _evidence("evidencias_suplementares.springate", "score", item.score, year=item.exercicio),
+                        _evidence("evidencias_suplementares.springate", "classificacao", item.classificacao, year=item.exercicio),
+                    )
                 ],
                 efeito_metodologico="Diagnóstico derivado e suplementar; não altera o FinScore.",
                 impacto_credito=(
-                    "O diagnóstico indica sinal suplementar de dificuldade financeira."
+                    "O diagnóstico está indisponível no exercício mais recente e não sustenta conclusão favorável."
+                    if unavailable else "O diagnóstico indica sinal suplementar de dificuldade financeira."
                     if distress
                     else "O diagnóstico não apresenta sinal de distress no exercício mais recente."
                 ),
@@ -679,9 +720,14 @@ def _supplementary_findings(contract: ParecerData) -> list[Finding]:
                 natureza=FindingNature.DERIVED,
                 titulo=f"Fleuriet simplificado: {latest.diagnostico.lower()}",
                 evidencias=[
-                    _evidence("evidencias_suplementares.fleuriet", "capital_giro", latest.capital_giro, year=latest.exercicio, unit="BRL"),
-                    _evidence("evidencias_suplementares.fleuriet", "necessidade_capital_giro", latest.necessidade_capital_giro, year=latest.exercicio, unit="BRL"),
-                    _evidence("evidencias_suplementares.fleuriet", "diagnostico", latest.diagnostico, year=latest.exercicio),
+                    evidence
+                    for item in sorted(contract.evidencias_suplementares.fleuriet, key=lambda item: item.exercicio)
+                    for evidence in (
+                        _evidence("evidencias_suplementares.fleuriet", "capital_giro", item.capital_giro, year=item.exercicio, unit="BRL"),
+                        _evidence("evidencias_suplementares.fleuriet", "necessidade_capital_giro", item.necessidade_capital_giro, year=item.exercicio, unit="BRL"),
+                        _evidence("evidencias_suplementares.fleuriet", "saldo_tesouraria", item.saldo_tesouraria, year=item.exercicio, unit="BRL"),
+                        _evidence("evidencias_suplementares.fleuriet", "diagnostico", item.diagnostico, year=item.exercicio),
+                    )
                 ],
                 efeito_metodologico="Diagnóstico derivado e suplementar; não altera o FinScore.",
                 impacto_credito=(
@@ -739,10 +785,43 @@ def build_evidence_book(contract: ParecerData) -> list[Finding]:
         *_scenario_findings(contract),
         *_supplementary_findings(contract),
         *_period_findings(contract),
+        *_capital_bridge_findings(contract),
     ]
     identifiers = [item.achado_id for item in findings]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("livro de evidências produziu identificadores duplicados")
+    return findings
+
+
+def _capital_bridge_findings(contract: ParecerData) -> list[Finding]:
+    try:
+        from services.financial_context import capital_bridges
+    except ModuleNotFoundError:
+        from app_front.services.financial_context import capital_bridges
+    findings = []
+    for row in capital_bridges(contract):
+        year = row["ano"]
+        if row["pl_menos_anc"] is not None and row["pl_menos_anc"] < 0:
+            findings.append(Finding(
+                achado_id=f"ACH-CAPITAL-PROPRIO-{year}", categoria=FindingCategory.ALERT,
+                natureza=FindingNature.DERIVED,
+                titulo=f"Patrimônio líquido não cobre o ativo não circulante em {year}",
+                evidencias=[_evidence("reconciliacao:PL-ANC", field, row[field], year=year, unit="BRL")
+                            for field in ("patrimonio_liquido", "ativo_nao_circulante", "pl_menos_anc")],
+                efeito_metodologico="Reconciliação explicativa PL menos ANC, sem alteração do FinScore.",
+                impacto_credito="A capitalização isolada não prova cobertura dos ativos não circulantes pelo capital próprio; examinar fontes de longo prazo.",
+            ))
+        if row["residual_tesouraria"] is not None and abs(row["residual_tesouraria"]) > 0.005:
+            findings.append(Finding(
+                achado_id=f"ACH-SUP-FLEURIET-RESIDUAL-{year}", categoria=FindingCategory.LIMITATION,
+                natureza=FindingNature.DERIVED,
+                titulo=f"Saldo simplificado difere de caixa menos empréstimos de curto prazo em {year}",
+                evidencias=[_evidence("reconciliacao:ST-(Caixa-Emprestimos_CP)", field, row[field], year=year, unit="BRL")
+                            for field in ("caixa", "emprestimos_cp", "tesouraria_estrita", "tesouraria_simplificada", "residual_tesouraria")],
+                efeito_metodologico="Ponte aritmética de classificação; não altera o diagnóstico Fleuriet nem o FinScore.",
+                impacto_credito="O resíduo não é caixa disponível nem erro contábil comprovado.",
+                providencia="Confirmar a natureza das demais contas circulantes nas notas explicativas.",
+            ))
     return findings
 
 

@@ -65,6 +65,11 @@ def go(target: str) -> bool:
             )
         return False
 
+    if target == "novo":
+        # Abrir Novo preserva o ciclo; somente o botão Iniciar limpa os dados.
+        _set(target)
+        return True
+
     if ss.get("_lock_parecer") and origin == "parecer" and target == "analise":
         _set(target)
         return True

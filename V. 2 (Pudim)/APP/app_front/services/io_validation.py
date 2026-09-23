@@ -68,7 +68,9 @@ def validar_cliente(meta: Dict[str, Any]) -> Dict[str, str]:
 
     date_text = str(meta.get("serasa_data") or "").strip()
     try:
-        datetime.strptime(date_text, "%d/%m/%Y")
+        consultation = datetime.strptime(date_text, "%d/%m/%Y").date()
+        if consultation > datetime.now().date():
+            errors["serasa_data"] = "A data da consulta não pode ser futura."
     except ValueError:
         errors["serasa_data"] = "Informe uma data de consulta válida em DD/MM/AAAA."
     return errors
@@ -161,7 +163,7 @@ def obter_colunas_extras(df: pd.DataFrame | None) -> list[str]:
 def ler_planilha(
     upload_or_url,
 ) -> Tuple[Optional[pd.DataFrame], Optional[str], Optional[str]]:
-    """Lê exclusivamente a aba ``lancamentos`` e preserva dados reportados."""
+    """Lê lançamentos e conserva notas de origem, sem interpretá-las como instruções."""
     try:
         source = upload_or_url
         if hasattr(upload_or_url, "getvalue"):
@@ -176,6 +178,20 @@ def ler_planilha(
             )
         raw = pd.read_excel(workbook, sheet_name=sheet, engine="openpyxl")
         validated, _ = validar_dataframe_importado(raw)
+        notes_sheet = _sheet_name_case_insensitive(workbook, "notas_preenchimento")
+        notes = []
+        if notes_sheet is not None:
+            frame = pd.read_excel(workbook, sheet_name=notes_sheet, header=None)
+            if frame.size > 20000:
+                raise ValueError("A aba notas_preenchimento excede 20.000 células; reduza seu tamanho.")
+            for row_index, row in frame.iterrows():
+                for column_index, value in enumerate(row):
+                    if pd.notna(value) and str(value).strip():
+                        notes.append({"linha": int(row_index) + 1, "coluna": column_index + 1,
+                                      "texto": str(value).strip()})
+            if sum(len(item["texto"]) for item in notes) > 100000:
+                raise ValueError("A aba notas_preenchimento excede 100.000 caracteres; reduza seu tamanho.")
+        validated.attrs["finscore_source_notes"] = notes
         return validated, sheet, None
     except ImportError:
         return (
