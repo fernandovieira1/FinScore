@@ -116,7 +116,7 @@ except ModuleNotFoundError:  # Importação como pacote nos testes.
     from app_front.services.credit_policy import decide_pudim
 
 
-PARECER_POLICY_VERSION = "three-decisions-finscore-only-v2"
+PARECER_POLICY_VERSION = "three-decisions-finscore-only-v3-traceability"
 
 PERCENT_INDICATORS = {
     "crescimento_receita",
@@ -504,6 +504,7 @@ def _missing_calculations(output: dict[str, Any]) -> list[MissingCalculation]:
 def _accounting_data(output: dict[str, Any], years: list[int]) -> AccountingData:
     corrections = _corrections(output)
     return AccountingData(
+        notas_preenchimento=output.get("notas_preenchimento", []),
         reportados=_wide_points(
             output.get("df_contas_reportadas"),
             point_prefix="REP",
@@ -897,7 +898,7 @@ def _parse_consultation_date(value: Any) -> date | None:
     text = _text(value)
     for pattern in ("%d/%m/%Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(text[:10], pattern).date()
+            return datetime.strptime(text, pattern).date()
         except ValueError:
             continue
     return None
@@ -913,6 +914,8 @@ def _supplementary_evidence(output: dict[str, Any], processed_at: datetime) -> S
         temporal_alert = (
             "A data da consulta ao Serasa é posterior à data de processamento e requer validação."
         )
+    elif consultation_date is None and _number(serasa.get("serasa_score")) is not None:
+        temporal_alert = "A data da consulta ao Serasa está ausente ou inválida e requer confirmação."
     springate = [
         SpringateEvidence(
             exercicio=_integer(record.get("ano")),
@@ -1009,6 +1012,7 @@ def build_finscore_recommendation(
         rotulo=_text(policy.get("rotulo")),
         regra_id="POL-REC-001",
         versao_politica=PARECER_POLICY_VERSION,
+        parametros_politica=policy.get("parametros_politica", {}),
         apto_decisao=_boolean(quality.get("apto_decisao")),
         finscore_prudencial=_number(policy.get("finscore_prudencial")),
         faixa=_text(policy.get("segmento_politica"), "NÃO CALCULÁVEL"),

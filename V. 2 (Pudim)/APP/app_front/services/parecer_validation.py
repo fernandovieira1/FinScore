@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import math
 import re
 import unicodedata
@@ -50,7 +51,7 @@ ITEM_COLLECTIONS = (
 NUMBER_PATTERN = re.compile(
     r"(?<![\w-])-?(?:\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?)%?(?!\w)"
 )
-DATE_PATTERN = re.compile(r"\b\d{1,2}/\d{1,2}/\d{4}\b")
+DATE_PATTERN = re.compile(r"\b(?:\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b")
 FORBIDDEN_TERMS = {
     "inteligência artificial": "tecnologia de geração",
     "modelo de linguagem": "tecnologia de geração",
@@ -146,12 +147,14 @@ def _parse_number(token: str) -> tuple[float | None, bool]:
     return (value if math.isfinite(value) else None), percent
 
 
-def _authorized_numbers(findings: Iterable[Finding]) -> list[float]:
+def _authorized_numbers(findings: Iterable[Finding], *, percent: bool = False) -> list[float]:
     values: list[float] = []
     for finding in findings:
         for evidence in finding.evidencias:
-            if evidence.exercicio is not None:
+            if evidence.exercicio is not None and not percent:
                 values.append(float(evidence.exercicio))
+            if percent and evidence.unidade != "proporcao":
+                continue
             value = evidence.valor
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 continue
@@ -162,10 +165,12 @@ def _authorized_numbers(findings: Iterable[Finding]) -> list[float]:
 
 
 def _matches_authorized(value: float, percent: bool, authorized: list[float]) -> bool:
-    candidates = [value / 100.0, value] if percent else [value]
+    candidates = [value / 100.0] if percent else [value]
     for candidate in candidates:
         for reference in authorized:
-            tolerance = max(0.011, abs(reference) * 0.0015)
+            # Duas casas na unidade exibida; nunca uma tolerância relativa que
+            # autorize desvios materiais em montantes ou percentuais pequenos.
+            tolerance = 0.000050001 if percent else 0.0050001
             if abs(candidate - reference) <= tolerance:
                 return True
     return False
@@ -180,94 +185,16 @@ def reconcile_narrative_numbers(
     narrative: ParecerNarrativo,
     contract: ParecerData,
 ) -> ParecerNarrativo:
-    """Associa a evidência correta e elimina apenas afirmações numéricas sem lastro."""
-    payload = narrative.model_dump(mode="python")
-    findings = _finding_map(contract)
+    """Compatibilidade: valida sem reescrever fatos ou procurar IDs por número.
 
-    def reconcile_block(
-        text: str,
-        references: list[str],
-        allowed_categories: set[FindingCategory] | None,
-        max_references: int,
-        preserve_if_short: bool,
-    ) -> tuple[str, list[str]]:
-        refs = list(dict.fromkeys(references))
+    A correção deve ser produzida pela rotina de redação e revalidada integralmente.
+    """
+    issues, count = _validate_numbers(narrative, contract)
+    issues.extend(_validate_dates(narrative, contract))
+    if issues:
+        raise ParecerValidationError(ParecerValidationReport(False, tuple(issues), count, 0))
+    return narrative
 
-        def candidates_for(token: str) -> list[str]:
-            value, percent = _parse_number(token)
-            if value is None:
-                return []
-            result = []
-            for identifier, finding in findings.items():
-                if allowed_categories is not None and finding.categoria not in allowed_categories:
-                    continue
-                if _matches_authorized(value, percent, _authorized_numbers([finding])):
-                    result.append(identifier)
-            return result
-
-        kept_sentences: list[str] = []
-        for sentence in re.split(r"(?<=[.!?])\s+", text):
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-            unsupported = False
-            for token in _number_tokens(sentence):
-                value, percent = _parse_number(token)
-                if value is None:
-                    continue
-                if _matches_authorized(
-                    value,
-                    percent,
-                    _authorized_numbers(
-                        findings[item] for item in refs if item in findings
-                    ),
-                ):
-                    continue
-                candidates = candidates_for(token)
-                if candidates and len(refs) < max_references:
-                    refs.append(candidates[0])
-                else:
-                    # Se o limite de referências já foi alcançado, a frase numérica
-                    # não pode permanecer sem o vínculo direto exigido pelo contrato.
-                    unsupported = True
-                    break
-            if not unsupported:
-                kept_sentences.append(sentence)
-        revised = " ".join(kept_sentences)
-        if preserve_if_short and len(revised) < 40:
-            revised = (
-                "Os elementos desta seção foram avaliados exclusivamente com base nas "
-                "evidências registradas, sem incorporar estimativas adicionais. A leitura "
-                "considera a qualidade da informação, a consistência entre os dados, o alcance "
-                "dos cálculos e as limitações documentadas. Eventuais conclusões dependem da "
-                "análise conjunta dos aspectos econômico-operacionais e financeiro-patrimoniais, "
-                "mantendo separados os fatos observados, os resultados calculados, as hipóteses "
-                "condicionais e as evidências suplementares disponíveis para a operação."
-            )
-        return revised, refs
-
-    for name in SECTION_NAMES:
-        block = payload[name]
-        block["texto"], block["achado_ids"] = reconcile_block(
-            block["texto"], block["achado_ids"], None, 12, True
-        )
-    for collection_name in ITEM_COLLECTIONS:
-        revised_items = []
-        for item in payload[collection_name]:
-            text, references = reconcile_block(
-                item["texto"],
-                item["achado_ids"],
-                ITEM_ALLOWED_CATEGORIES[collection_name],
-                6,
-                False,
-            )
-            # Itens são opcionais; um item integralmente numérico e sem lastro é descartado.
-            if len(text) >= 12:
-                item["texto"] = text
-                item["achado_ids"] = references
-                revised_items.append(item)
-        payload[collection_name] = revised_items
-    return ParecerNarrativo.model_validate(payload)
 
 
 def _validate_references(
@@ -351,15 +278,14 @@ def _validate_numbers(
     finding_map = _finding_map(contract)
     verified = 0
     for local, text, finding_ids in _iter_text_blocks(narrative):
-        authorized = _authorized_numbers(
-            finding_map[identifier]
-            for identifier in finding_ids
-            if identifier in finding_map
-        )
         for token in _number_tokens(text):
             value, percent = _parse_number(token)
             if value is None:
                 continue
+            authorized = _authorized_numbers(
+                (finding_map[identifier] for identifier in finding_ids if identifier in finding_map),
+                percent=percent,
+            )
             verified += 1
             if not _matches_authorized(value, percent, authorized):
                 issues.append(
@@ -370,6 +296,35 @@ def _validate_numbers(
                     )
                 )
     return issues, verified
+
+
+def _validate_dates(narrative: ParecerNarrativo, contract: ParecerData) -> list[ValidationIssue]:
+    """Datas também exigem vínculo à evidência citada, sem autorização por dia/mês."""
+    findings = _finding_map(contract)
+    issues = []
+
+    def parse(value):
+        for pattern in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(str(value), pattern).date()
+            except ValueError:
+                pass
+        return None
+
+    for local, text, references in _iter_text_blocks(narrative):
+        allowed = {
+            parsed for identifier in references if identifier in findings
+            for evidence in findings[identifier].evidencias
+            if isinstance(evidence.valor, str)
+            for token in DATE_PATTERN.findall(evidence.valor)
+            if (parsed := parse(token)) is not None
+        }
+        for token in DATE_PATTERN.findall(text):
+            parsed = parse(token)
+            if parsed is None or parsed not in allowed:
+                issues.append(ValidationIssue("DATA_SEM_LASTRO", local,
+                                              f"a data {token} não consta nas evidências referenciadas"))
+    return issues
 
 
 def _validate_semantics(
@@ -543,6 +498,7 @@ def validate_parecer_narrative(
     issues.extend(_validate_item_categories(narrative, contract))
     number_issues, number_count = _validate_numbers(narrative, contract)
     issues.extend(number_issues)
+    issues.extend(_validate_dates(narrative, contract))
     issues.extend(_validate_semantics(narrative, contract))
     issues.extend(_validate_editorial(narrative))
     report = ParecerValidationReport(

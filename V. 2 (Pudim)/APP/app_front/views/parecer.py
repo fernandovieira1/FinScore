@@ -45,7 +45,7 @@ DECISION_ICONS = {
     "dados_inconsistentes": "⚠️ Dados inconsistentes",
 }
 logger = logging.getLogger(__name__)
-PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v5-layout"
+PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v6-traceability"
 DOSSIER_STORE = AnalysisDossierStore()
 
 
@@ -384,6 +384,8 @@ def _pdf_metadata(
     meta: Dict[str, Any],
     policy: Dict[str, Any],
 ) -> Dict[str, Any]:
+    contract = build_parecer_data(output, meta, policy)
+    period = contract.identificacao.periodos.analisado
     observed = output.get("finscore_observado") or {}
     serasa = _serasa_record(output)
     return {
@@ -396,9 +398,9 @@ def _pdf_metadata(
         "serasa_score": serasa.get("serasa_score"),
         "classificacao_serasa": serasa.get("status") or "Evidência separada",
         "decisao": policy["decisao"],
-        "serasa_data": meta.get("serasa_data"),
-        "ano_inicial": meta.get("ano_inicial"),
-        "ano_final": meta.get("ano_final"),
+        "serasa_data": contract.evidencias_suplementares.serasa.data_consulta,
+        "ano_inicial": period.inicio,
+        "ano_final": period.fim,
         "cidade_relatorio": meta.get("cidade_relatorio", "São Paulo (SP)"),
     }
 

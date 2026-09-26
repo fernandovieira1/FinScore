@@ -51,13 +51,12 @@ INDICATOR_LABELS = {
 }
 ACCOUNT_LABELS = {
     "r_Receita_Liquida": "Receita líquida",
-    "r_Receita_Total": "Receita total",
     "r_Lucro_Liquido": "Lucro líquido",
     "p_Ativo_Total": "Ativo total",
     "p_Patrimonio_Liquido": "Patrimônio líquido",
     "d_EBIT": "EBIT",
-    "d_Divida_Bruta": "Dívida bruta",
-    "d_Divida_Liquida": "Dívida líquida",
+    "d_Divida_Financeira_Bruta": "Dívida bruta",
+    "d_Divida_Financeira_Liquida": "Dívida líquida",
 }
 ECONOMIC_INDICATORS = (
     "crescimento_receita",
@@ -178,38 +177,44 @@ def _series_commentary(
         ):
             if left is None or right is None:
                 continue
-            relative = ((right - left) / abs(left) * 100) if left else None
-            magnitude = abs(relative) if relative is not None else abs(right - left)
+            # Variação simétrica evita que base quase zero monopolize os destaques.
+            scale = max(abs(left), abs(right))
+            magnitude = abs(right - left) / scale if scale else 0.0
             variations.append((magnitude, field, left_year, right_year, left, right, unit))
 
     variations.sort(reverse=True, key=lambda item: item[0])
     highlights = []
     supportive = []
     pressure = []
-    for _magnitude, field, left_year, right_year, left, right, unit in variations[:3]:
+    highlighted_fields: set[str] = set()
+    for _magnitude, field, left_year, right_year, left, right, unit in variations:
         direction = "elevação" if right > left else "redução" if right < left else "estabilidade"
-        change = ((right - left) / abs(left) * 100) if left else None
-        change_text = (
-            f", variação de {_fmt_number(change)}%" if change is not None else ""
-        )
+        if unit == "proporcao":
+            change_text = f", diferença de {_fmt_number((right - left) * 100)} pontos percentuais"
+        elif left > 0 and right >= 0:
+            change_text = f", variação de {_fmt_number((right - left) / left * 100)}%"
+        else:
+            change_text = ", percentual de variação não interpretado por base nula/negativa ou mudança de sinal"
         label = labels.get(field, field.replace("_", " "))
-        highlights.append(
-            f"{label}, de {_fmt_value(left, unit)} em {left_year} para "
-            f"{_fmt_value(right, unit)} em {right_year}{change_text}"
-        )
+        if field not in highlighted_fields and len(highlights) < 3:
+            highlights.append(
+                f"{label}, de {_fmt_value(left, unit)} em {left_year} para "
+                f"{_fmt_value(right, unit)} em {right_year}{change_text}"
+            )
+            highlighted_fields.add(field)
         favorable = (right > left and field in favorable_up) or (
             right < left and field in favorable_down
         )
         unfavorable = (right < left and field in favorable_up) or (
             right > left and field in favorable_down
         )
-        if favorable:
+        if favorable and f"{direction} de {label}" not in supportive:
             supportive.append(f"{direction} de {label}")
-        elif unfavorable:
+        elif unfavorable and f"{direction} de {label}" not in pressure:
             pressure.append(f"{direction} de {label}")
 
     if highlights:
-        before = "As variações mais pronunciadas da série foram: " + "; ".join(highlights) + "."
+        before = "Movimentos selecionados da série (sem equivaler a ranking de materialidade econômica): " + "; ".join(highlights) + "."
     else:
         before = "A série disponível não apresenta base temporal suficiente para mensurar variações entre exercícios."
     if missing:
@@ -222,7 +227,8 @@ def _series_commentary(
     after = (
         f"Sob a perspectiva econômico-financeira, constituem vetores de sustentação {strengths}; "
         f"como fatores de pressão, observam-se {weaknesses}. Esses movimentos devem ser avaliados "
-        "em conjunto com liquidez, estrutura de capital, geração de resultado e qualidade dos dados."
+        "em conjunto com liquidez, estrutura de capital, geração de resultado e qualidade dos dados. "
+        "Uma rubrica pode apresentar movimentos opostos em intervalos distintos; a tabela preserva a trajetória completa."
     )
     return before, after
 
@@ -310,9 +316,82 @@ def _quality_table(contract: ParecerData) -> str:
             f"| Classificação da qualidade dos dados | {_md(quality.classificacao_confiabilidade)} |",
             f"| Ocorrências críticas | {quality.ocorrencias_criticas} |",
             f"| Avisos | {quality.ocorrencias_aviso} |",
+            f"| Alertas de viés alto/crítico | {quality.alertas_vies_alto_critico} |",
             f"| Alertas bloqueadores | {quality.alertas_bloqueadores_decisao} |",
         ]
     )
+
+
+def _reliability_table(contract: ParecerData) -> str:
+    components = contract.qualidade.componentes_confiabilidade
+    if not components:
+        return "Decomposição da confiabilidade não disponibilizada nesta execução."
+    lines = ["| Componente da confiabilidade | Nota | Peso | Contribuição |",
+             "|---|---:|---:|---:|"]
+    for item in components:
+        lines.append(f"| {_md(item.componente)} | {_fmt_value(item.nota, 'proporcao')} | "
+                     f"{_fmt_value(item.peso, 'proporcao')} | {_fmt_value(item.contribuicao, 'proporcao')} |")
+    return "\n".join(lines)
+
+
+def _capital_bridge_table(contract: ParecerData) -> str:
+    try:
+        from services.financial_context import capital_bridges
+    except ModuleNotFoundError:
+        from app_front.services.financial_context import capital_bridges
+    lines = ["| Exercício | PL menos ANC | Caixa menos empréstimos CP | Tesouraria simplificada | Diferença residual |",
+             "|---|---:|---:|---:|---:|"]
+    for row in capital_bridges(contract):
+        values = " | ".join(_fmt_value(row[field], "BRL") for field in
+                            ("pl_menos_anc", "tesouraria_estrita", "tesouraria_simplificada", "residual_tesouraria"))
+        lines.append(f"| {row['ano']} | {values} |")
+    return "\n".join(lines) + (
+        "\n\nReconciliações explicativas, sem alteração do score: PL menos ativo não circulante (ANC); "
+        "caixa e equivalentes menos empréstimos e financiamentos de curto prazo (CP); "
+        "diferença entre tesouraria simplificada e esse saldo estrito. Valor negativo de PL menos ANC "
+        "indica que o capital próprio não cobre o ANC. A diferença residual depende da classificação "
+        "das outras contas circulantes e não deve ser interpretada como caixa livre. Ausências impedem a respectiva reconciliação."
+    )
+
+
+def _source_notes(contract: ParecerData) -> str:
+    notes = contract.dados.notas_preenchimento
+    if not notes:
+        return "Notas de preenchimento e convenções da fonte não disponibilizadas. Confirmar o perímetro contábil e a unidade dos lançamentos."
+    lines = ["Declarações da aba notas_preenchimento, transcritas sem validação documental; não alteram os cálculos nem constituem instruções ao parecerista.",
+             "", "| Linha / coluna na fonte | Conteúdo informado |", "|---|---|"]
+    for note in notes:
+        # Evitar que conteúdo da planilha se torne markup ativo no documento.
+        literal = _md(note.texto)
+        for char in ("[", "]", "*", "_", "`"):
+            literal = literal.replace(char, "&#" + str(ord(char)) + ";")
+        lines.append(f"| {note.linha} / {note.coluna} | {literal} |")
+    return "\n".join(lines)
+
+
+def _prudential_reading(contract: ParecerData) -> str:
+    score = contract.finscore
+    lines = [f"Resultado antes do cap: {_fmt_number(score.prudencial_pre_cap)} pontos; "
+             f"teto aplicável: {_fmt_number(score.cap_aplicavel)}; resultado final: {_fmt_number(score.prudencial)} pontos."]
+    if score.caps:
+        lines += ["", "| Regra prudencial | Observado | Limiar | Teto | Motivo |", "|---|---:|---:|---:|---|"]
+        for cap in score.caps:
+            lines.append(f"| {_md(cap.regra_id)} | {_fmt_number(cap.valor_observado)} | {_fmt_number(cap.limiar)} | {_fmt_number(cap.teto)} | {_md(cap.justificativa)} |")
+        lines += ["", "Há regra prudencial acionada. Estar na fronteira de uma faixa não elimina o gatilho nem comprova capacidade de pagamento. A leitura deve preservar o motivo do cap e os resultados de estresse."]
+    return "\n".join(lines)
+
+
+def _policy_reading(contract: ParecerData) -> str:
+    recommendation = contract.governanca.recomendacao_finscore
+    params = recommendation.parametros_politica
+    lower, upper = params.get("limite_nao_aprovar"), params.get("limite_referencia_garantia")
+    text = "A recomendação resulta da política de referência registrada, separada da metodologia e da decisão institucional. "
+    if lower is not None and upper is not None:
+        text += (f"Piso decisório: {_fmt_number(lower)} pontos; referência para avaliação de mitigadores: "
+                 f"{_fmt_number(upper)} pontos. ")
+    else:
+        text += "Os limiares da política não foram disponibilizados nesta execução. "
+    return text + "Qualidade dos dados controla aptidão de uso e não é evidência de solvência."
 
 
 def _score_table(contract: ParecerData) -> str:
@@ -408,30 +487,56 @@ def _simulation_table(contract: ParecerData) -> str:
         "| Abordagem | Método | Trajetórias | Média | P05 | Mediana | P95 |",
         "|---|---|---:|---:|---:|---:|---:|",
     ]
+    limitations: dict[str, str] = {}
+    frequencies = []
     for item in summaries:
+        diagnostics = [diagnostic for diagnostic in contract.cenarios.diagnosticos
+                       if diagnostic.abordagem.strip().casefold() == item.abordagem.strip().casefold()]
+        if not diagnostics or any(diagnostic.valida_para_interpretacao is not True for diagnostic in diagnostics):
+            details = "; ".join(
+                f"{_md(diagnostic.status_rejeicao)}; taxa de rejeição {_fmt_value(diagnostic.taxa_rejeicao, 'proporcao')}"
+                for diagnostic in diagnostics
+            ) or "diagnóstico de validade não disponibilizado"
+            limitations[item.abordagem] = (
+                f"Simulação {_md(item.abordagem)} indisponível para interpretação: {details}. "
+                "Os resultados numéricos não são apresentados como evidência utilizável."
+            )
+            continue
         lines.append(
             f"| {_md(item.abordagem)} | {_md(item.metodo)} | {item.numero_trajetorias} | "
             f"{_fmt_number(item.media)} | {_fmt_number(item.p05)} | "
             f"{_fmt_number(item.mediana)} | {_fmt_number(item.p95)} |"
         )
-    return "\n".join(lines)
+        if item.metodo.strip().casefold() == "prudencial" and item.frequencias:
+            values = "; ".join(
+                f"abaixo de {_fmt_number(f.corte, 0)} pontos: {_fmt_value(f.frequencia, 'proporcao')}"
+                for f in sorted(item.frequencias, key=lambda f: f.corte)
+            )
+            frequencies.append(f"FinScore prudencial, {_md(item.abordagem)} — {values}.")
+    table = "\n".join(lines) if len(lines) > 2 else ""
+    frequency_text = (
+        "Frequências empíricas das trajetórias aceitas (não são probabilidades de inadimplência): "
+        + " ".join(frequencies) if frequencies else ""
+    )
+    return "\n\n".join([part for part in [table, frequency_text, *limitations.values()] if part])
 
 
 def _supplementary_table(contract: ParecerData) -> str:
     evidence = contract.evidencias_suplementares
-    springate = max(evidence.springate, key=lambda item: item.exercicio) if evidence.springate else None
-    fleuriet = max(evidence.fleuriet, key=lambda item: item.exercicio) if evidence.fleuriet else None
-    return "\n".join(
-        [
+    lines = [
             "| Diagnóstico | Exercício/data | Resultado | Natureza |",
             "|---|---|---|---|",
             f"| Serasa | {_md(evidence.serasa.data_consulta)} | {_fmt_number(evidence.serasa.score)} — {_md(evidence.serasa.status)} | Evidência externa separada |",
-            f"| Springate | {springate.exercicio if springate else '—'} | "
-            f"{(_fmt_number(springate.score) + ' — ' + _md(springate.classificacao)) if springate else 'Não calculado'} | Diagnóstico derivado |",
-            f"| Fleuriet simplificado | {fleuriet.exercicio if fleuriet else '—'} | "
-            f"{_md(fleuriet.diagnostico) if fleuriet else 'Não calculado'} | Diagnóstico derivado |",
         ]
-    )
+    for item in sorted(evidence.springate, key=lambda item: item.exercicio):
+        lines.append(f"| Springate | {item.exercicio} | {_fmt_number(item.score)} — {_md(item.classificacao)} | Diagnóstico derivado |")
+    if not evidence.springate:
+        lines.append("| Springate | — | Não calculado | Diagnóstico derivado |")
+    for item in sorted(evidence.fleuriet, key=lambda item: item.exercicio):
+        lines.append(f"| Fleuriet simplificado | {item.exercicio} | {_md(item.diagnostico)} | Diagnóstico derivado |")
+    if not evidence.fleuriet:
+        lines.append("| Fleuriet simplificado | — | Não calculado | Diagnóstico derivado |")
+    return "\n".join(lines)
 
 
 def _latest_data_point(
@@ -482,6 +587,8 @@ def _supplementary_interpretation(contract: ParecerData) -> str:
         )
     else:
         parts.append("a leitura Fleuriet não pôde ser calculada")
+    if serasa.alerta_temporal:
+        parts.append(_md(serasa.alerta_temporal) + " A consulta requer confirmação antes do uso")
     return (
         "; ".join(parts)
         + ". A convergência ou divergência entre essas medidas qualifica a análise, mas não altera "
@@ -509,17 +616,18 @@ def _final_considerations(contract: ParecerData) -> str:
     net_debt = _latest_data_point(indices, "divida_liquida_ativo", year)
     interest_cover = _latest_data_point(indices, "cobertura_juros", year)
 
-    scenario = next(
-        (item for item in contract.cenarios.deterministicos if item.nome.lower() == "severo"),
-        None,
-    )
-    scenario_text = (
-        f"No cenário severo, o FinScore alcançou {_fmt_number(scenario.finscore_prudencial)} pontos, "
-        f"uma diferença de {_fmt_number((scenario.finscore_prudencial or 0) - (contract.finscore.prudencial or 0))} "
-        "pontos em relação ao observado."
-        if scenario is not None and scenario.finscore_prudencial is not None
-        else "O cenário severo não apresentou FinScore calculável."
-    )
+    scenario_parts = []
+    for name in ("adverso", "severo"):
+        scenario = next((item for item in contract.cenarios.deterministicos if item.nome.lower() == name), None)
+        if scenario is None or scenario.finscore_prudencial is None:
+            scenario_parts.append(f"O cenário {name} não apresentou FinScore calculável.")
+            continue
+        part = f"No cenário {name}, o FinScore alcançou {_fmt_number(scenario.finscore_prudencial)} pontos"
+        if contract.finscore.prudencial is not None:
+            delta = scenario.finscore_prudencial - contract.finscore.prudencial
+            part += f", uma diferença de {_fmt_number(delta)} pontos em relação ao observado"
+        scenario_parts.append(part + ".")
+    scenario_text = " ".join(scenario_parts)
     blockers = recommendation.bloqueios
     blocker_text = (
         f"Foram registrados {len(blockers)} bloqueios: "
@@ -601,9 +709,9 @@ def _final_considerations(contract: ParecerData) -> str:
             f"controles de qualidade descritos. {provision_text} {guarantee_text}"
         ),
         (
-            f"Em síntese, a recomendação **{_md(recommendation.rotulo)}** decorre do FinScore de "
-            f"{_fmt_number(contract.finscore.prudencial)} pontos, da qualidade dos dados de "
-            f"{_fmt_value(quality.indice_confiabilidade, 'proporcao')}, da margem líquida de "
+            f"A recomendação **{_md(recommendation.rotulo)}** aplica a política registrada ao FinScore de "
+            f"{_fmt_number(contract.finscore.prudencial)} pontos e à aptidão informacional. "
+            f"A leitura econômica considera a margem líquida de "
             f"{_display_point(margin)}, da capitalização de {_display_point(capitalization)}, da "
             f"liquidez corrente de {_display_point(current_liquidity)}, da dívida líquida sobre o "
             f"ativo de {_display_point(net_debt)} e da cobertura de juros de "
@@ -662,12 +770,11 @@ def render_structured_parecer(
         ACCOUNT_LABELS,
         favorable_up={
             "r_Receita_Liquida",
-            "r_Receita_Total",
             "r_Lucro_Liquido",
             "p_Patrimonio_Liquido",
             "d_EBIT",
         },
-        favorable_down={"d_Divida_Bruta", "d_Divida_Liquida"},
+        favorable_down={"d_Divida_Financeira_Bruta", "d_Divida_Financeira_Liquida"},
     )
     indicator_before, indicator_after = _series_commentary(
         contract.dados.indices,
@@ -687,16 +794,12 @@ def render_structured_parecer(
         narrative.analise_financeira_patrimonial.texto
     )
     guarantees_text = (
-        "A empresa analisada, conforme os resultados apresentados, possui capacidade "
-        "econômico-financeira para prosseguimento da operação. Caberá às alçadas superiores "
-        "avaliar a vantajosidade e a proporcionalidade de garantias adicionais, incluindo aval, "
-        "fiança, penhor, hipoteca, alienação fiduciária, seguro de crédito e carta de crédito."
-        if recommendation.codigo.value == "aprovar"
-        else "A eventual constituição de garantias não substitui o saneamento das inconsistências "
-        "nem altera, isoladamente, o impedimento econômico-financeiro registrado. Aval, fiança, "
-        "penhor, hipoteca, alienação fiduciária, seguro de crédito e carta de crédito somente "
-        "devem ser examinados em nova análise, conforme a natureza da operação e a decisão das "
-        "alçadas competentes."
+        "A recomendação de garantia decorre dos seguintes sinais: "
+        + "; ".join(_md(item) for item in guarantee.motivos)
+        + ". Modalidade, cobertura, prazo e suficiência dependem da política institucional e da avaliação da operação."
+        if guarantee.recomendada else
+        "A ausência de indicação automática de garantia não dispensa sua avaliação institucional. "
+        "O parecer não determina modalidade, cobertura ou obrigação contratual."
     )
     final_paragraphs = _final_considerations(contract)
     return f"""<!-- FINSCORE_PARECER -->
@@ -711,18 +814,13 @@ def render_structured_parecer(
 
 ## 1. Identificação, operação e escopo
 
-O presente parecer técnico-jurídico tem por finalidade analisar a operação de crédito celebrada
-entre Assertif Consultores Associados, inscrita no CNPJ sob nº 29.683.218/0001-70, e
+O presente parecer técnico de análise econômico-financeira e patrimonial examina
 **{_md(identity.tomador.nome)}**, inscrita no CNPJ sob nº **{_md(identity.tomador.cnpj)}**,
-avaliando sua conformidade com a legislação aplicável, bem como os riscos jurídicos e financeiros
-envolvidos. A análise será conduzida à luz das normas de direito civil, empresarial e bancário,
-considerando os princípios da boa-fé objetiva, da transparência contratual e da segurança jurídica,
-de modo a oferecer subsídios técnicos para a tomada de decisão quanto à validade, eficácia e
-eventuais implicações decorrentes da operação.
-
-A análise tem como fontes as informações contábeis, financeiras, patrimoniais e jurídicas prestadas
-pela empresa analisada, referentes aos anos de {identity.periodos.analisado.inicio} a
-{identity.periodos.analisado.fim}.
+com base nas informações contábeis e nos resultados FinScore dos exercícios de
+{identity.periodos.analisado.inicio} a {identity.periodos.analisado.fim}.
+As conclusões apoiam a avaliação humana da capacidade financeira e dos riscos observados.
+A recomendação calculada permanece sujeita à política da instituição e à decisão da alçada
+competente; a validade jurídica da operação e das garantias exige avaliação própria.
 
 ## 2. Sumário executivo
 
@@ -747,7 +845,17 @@ pela empresa analisada, referentes aos anos de {identity.periodos.analisado.inic
 
 {_quality_table(contract)}
 
-### 3.1 Inventário e rastreabilidade
+{_reliability_table(contract)}
+
+A confiabilidade mede a qualidade informacional, não a capacidade de pagamento. Os avisos
+de validação e os alertas de viés pertencem a controles distintos; ausência de avisos não
+significa ausência de alertas. As contribuições acima explicam a composição do índice.
+
+### 3.1 Fontes e convenções informadas
+
+{_source_notes(contract)}
+
+### 3.2 Inventário e rastreabilidade
 
 {_data_inventory(contract)}
 
@@ -782,6 +890,10 @@ As tabelas seguintes apresentam as séries materiais para a leitura do parecer.
 
 {_md(financial_after)}
 
+### 5.1 Cobertura patrimonial e composição da tesouraria
+
+{_capital_bridge_table(contract)}
+
 ## 6. Formação e interpretação do FinScore
 
 O FinScore sintetiza, em escala de 0 a 1.000 pontos, os núcleos econômico-operacional e
@@ -789,11 +901,9 @@ financeiro-patrimonial. As abordagens estrutural e adaptativa calculam os núcle
 com ajuste controlado, respectivamente; a composição geométrica preserva o equilíbrio entre ambos,
 e o gargalo atribui maior influência ao núcleo mais fraco. O FinScore prudencial corresponde ao
 menor resultado pós-gargalo entre as abordagens, limitado, quando aplicável, por travas prudenciais.
-Na interpretação decisória, resultado inferior a 250 pontos integra a faixa restritiva; de 250 a
-499,99 pontos, a aprovação requer avaliação de mitigadores e garantias; a partir de 500 pontos, a
-pontuação integra a faixa superior. Em qualquer aprovação, cabe ao gestor e à alçada competente
-avaliar a conveniência, a modalidade e a suficiência de eventual garantia. A qualidade dos dados e
-a aptidão do cálculo são verificadas separadamente.
+{_policy_reading(contract)}
+
+{_prudential_reading(contract)}
 
 {_score_table(contract)}
 
@@ -804,6 +914,12 @@ a aptidão do cálculo são verificadas separadamente.
 {guarantees_text}
 
 ## 7. Evidências suplementares
+
+Os cenários abaixo são hipóteses condicionais de estresse, sem caráter preditivo.
+
+{_scenario_table(contract)}
+
+{_simulation_table(contract)}
 
 O score Serasa, informado na consulta externa em escala de 0 a 1.000 pontos, não é recalculado a
 partir das demonstrações nem integrado ao FinScore. A comparação utiliza a diferença absoluta entre
@@ -821,7 +937,14 @@ financeiros de curto prazo; CDG não positivo aponta insuficiência de fontes pe
 
 {_supplementary_table(contract)}
 
-{_supplementary_interpretation(contract)}
+**Limites de interpretação:** A dívida financeira considera os empréstimos e financiamentos
+informados nas contas de curto e longo prazo; arrendamentos e mútuos não são incorporados
+se não estiverem nesses saldos. Confirmar o perímetro nas notas explicativas antes de concluir
+que o endividamento é baixo. A aplicabilidade setorial do Springate não foi validada nesta análise;
+seus sinais não devem, isoladamente, sustentar conclusões sobre instituições financeiras ou seguradoras.
+O saldo de tesouraria do Fleuriet simplificado inclui resíduos de classificação do circulante;
+não equivale necessariamente a caixa livre. Capitalização positiva também não demonstra,
+isoladamente, cobertura dos ativos não circulantes pelo patrimônio líquido.
 
 ## 8. Considerações finais
 

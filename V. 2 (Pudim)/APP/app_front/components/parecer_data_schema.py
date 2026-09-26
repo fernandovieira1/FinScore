@@ -224,7 +224,14 @@ class MissingCalculation(ContractModel):
     dependencias: list[str] = Field(default_factory=list)
 
 
+class SourceNote(ContractModel):
+    linha: Annotated[int, Field(ge=1)]
+    coluna: Annotated[int, Field(ge=1)]
+    texto: str
+
+
 class AccountingData(ContractModel):
+    notas_preenchimento: list[SourceNote] = Field(default_factory=list)
     reportados: list[DataPoint] = Field(default_factory=list)
     propostos: list[DataPoint] = Field(default_factory=list)
     utilizados: list[DataPoint] = Field(default_factory=list)
@@ -604,6 +611,7 @@ class FinScoreRecommendation(ContractModel):
     rotulo: str
     regra_id: str
     versao_politica: str
+    parametros_politica: dict[str, FiniteFloat] = Field(default_factory=dict)
     apto_decisao: bool
     finscore_prudencial: Score | None = None
     faixa: str

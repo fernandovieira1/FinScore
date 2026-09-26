@@ -13,6 +13,7 @@ from app_front.services.parecer_data_builder import build_parecer_data
 from app_front.services.parecer_generator import build_narrative_context
 from app_front.services.parecer_validation import (
     NUMBER_PATTERN,
+    ParecerValidationError,
     reconcile_narrative_numbers,
     validate_parecer_narrative,
 )
@@ -135,45 +136,22 @@ class ParecerValidationV2Test(unittest.TestCase):
 
         self.assertIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
 
-    def test_unsubstantiated_numeric_sentence_is_removed_before_release(self) -> None:
+    def test_unsupported_sentence_is_rejected_without_silent_rewrite(self):
         payload = self._payload()
         payload["conclusao"]["texto"] += " O resultado alternativo seria 999,99 pontos."
+        narrative = ParecerNarrativo.model_validate(payload)
+        with self.assertRaises(ParecerValidationError):
+            reconcile_narrative_numbers(narrative, self.contract)
+        self.assertIn("999,99", narrative.conclusao.texto)
 
-        revised = reconcile_narrative_numbers(
-            ParecerNarrativo.model_validate(payload), self.contract
-        )
-        report = validate_parecer_narrative(
-            revised,
-            self.contract,
-            routes=self.context["roteiro_achados"],
-            raise_on_error=False,
-        )
-
-        self.assertNotIn("999,99", revised.conclusao.texto)
-        self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
-
-    def test_section_receives_neutral_text_if_its_only_number_is_unsupported(self) -> None:
+    def test_coincidental_value_does_not_authorize_another_reference(self):
         payload = self._payload()
-        payload["conclusao"]["texto"] = (
-            "A estimativa alternativa, considerada sem evidência documental, sem reconciliação "
-            "contábil, sem confirmação cadastral e sem suporte nos achados materiais, seria de "
-            "999,99 pontos, embora a análise exija prudência, rastreabilidade, coerência temporal, "
-            "fundamentação econômico-financeira e associação direta entre cada afirmação e sua "
-            "respectiva fonte registrada no dossiê desta operação de crédito empresarial."
-        )
-
-        revised = reconcile_narrative_numbers(
-            ParecerNarrativo.model_validate(payload), self.contract
-        )
-        report = validate_parecer_narrative(
-            revised,
-            self.contract,
-            routes=self.context["roteiro_achados"],
-            raise_on_error=False,
-        )
-
-        self.assertNotIn("999,99", revised.conclusao.texto)
-        self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
+        payload["conclusao"]["texto"] += " A qualidade seria 91,81%."
+        payload["conclusao"]["achado_ids"] = ["ACH-RES-FINSCORE"]
+        narrative = ParecerNarrativo.model_validate(payload)
+        with self.assertRaises(ParecerValidationError):
+            reconcile_narrative_numbers(narrative, self.contract)
+        self.assertEqual(narrative.conclusao.achado_ids, ["ACH-RES-FINSCORE"])
 
     def test_date_is_not_decomposed_into_unsupported_financial_numbers(self) -> None:
         payload = self._payload()
@@ -186,6 +164,7 @@ class ParecerValidationV2Test(unittest.TestCase):
         )
 
         self.assertNotIn("NUMERO_SEM_LASTRO", {item.codigo for item in report.problemas})
+        self.assertIn("DATA_SEM_LASTRO", {item.codigo for item in report.problemas})
 
     def test_number_tokenizer_preserves_complete_years_and_formatted_values(self) -> None:
         text = "Exercícios 2023, 2024 e 2025; saldo de 294.105,39 e margem de -0,02%."

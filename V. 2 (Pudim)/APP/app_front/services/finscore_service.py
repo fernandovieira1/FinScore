@@ -288,4 +288,6 @@ def run_finscore(
     if anos_para_usar:
         meta["anos_rotulos"] = anos_para_usar
 
+    # Proveniência textual fica fora dos cálculos e acompanha o contrato do parecer.
+    resultado["notas_preenchimento"] = list(df.attrs.get("finscore_source_notes", []))
     return _add_transitional_aliases(resultado, meta)

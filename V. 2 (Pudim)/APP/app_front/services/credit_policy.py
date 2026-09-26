@@ -15,6 +15,12 @@ class PolicyConfig:
     limite_referencia_garantia: float = 500.0
     confiabilidade_minima_modelo: float = 0.75
 
+    def __post_init__(self):
+        if not (0 <= self.limite_nao_aprovar < self.limite_referencia_garantia <= 1000):
+            raise ValueError("Os limites de política devem ser crescentes entre 0 e 1000.")
+        if not 0 <= self.confiabilidade_minima_modelo <= 1:
+            raise ValueError("A confiabilidade mínima deve estar entre 0 e 1.")
+
 
 DECISION_LABELS = {
     "aprovar": "Aprovar",
@@ -58,10 +64,12 @@ def _score_band(score: float | None, config: PolicyConfig) -> str:
     if score is None:
         return "NÃO CALCULÁVEL"
     if score < config.limite_nao_aprovar:
-        return "ABAIXO DE 250"
+        return f"ABAIXO DE {config.limite_nao_aprovar:g}"
     if score < config.limite_referencia_garantia:
-        return "250 A 499,99"
-    return "500 OU MAIS"
+        if config.limite_nao_aprovar == 250 and config.limite_referencia_garantia == 500:
+            return "250 A 499,99"
+        return f"DE {config.limite_nao_aprovar:g} A MENOS DE {config.limite_referencia_garantia:g}"
+    return f"{config.limite_referencia_garantia:g} OU MAIS"
 
 
 def _fmt_alert_value(value: Any, metric: str) -> str:
@@ -346,13 +354,13 @@ def decide_pudim(
     if decision == "aprovar" and score is not None:
         if score < cfg.limite_referencia_garantia:
             guarantee_reasons.append(
-                "FinScore entre 250 e 499,99 pontos."
+                f"FinScore entre {cfg.limite_nao_aprovar:g} e menos de {cfg.limite_referencia_garantia:g} pontos."
             )
         if cap_reasons:
             guarantee_reasons.append("Existência de cap prudencial acionado.")
         if severe is not None and severe < cfg.limite_nao_aprovar:
             guarantee_reasons.append(
-                "FinScore abaixo de 250 pontos no cenário severo."
+                f"FinScore abaixo de {cfg.limite_nao_aprovar:g} pontos no cenário severo."
             )
         guarantee_reasons.extend(supplementary["sinais_atencao"])
 
@@ -385,11 +393,11 @@ def decide_pudim(
     attention_text = " ".join(supplementary["sinais_atencao"]).lower()
     if decision == "aprovar" and "springate" in attention_text:
         conditions.append(
-            "Definir covenant de acompanhamento do Springate, do EBIT e do capital circulante líquido."
+            "Avaliar o acompanhamento do Springate, do EBIT e do capital circulante líquido."
         )
     if decision == "aprovar" and "fleuriet" in attention_text:
         conditions.append(
-            "Definir covenant de acompanhamento da NCG, do CDG e do saldo de tesouraria."
+            "Avaliar o acompanhamento da NCG, do CDG e do saldo de tesouraria."
         )
     if decision == "aprovar" and "serasa" in attention_text:
         conditions.append(
@@ -398,19 +406,19 @@ def decide_pudim(
     cap_text = " ".join(cap_reasons).lower()
     if decision == "aprovar" and "capitalização" in cap_text:
         conditions.append(
-            "Definir covenant de acompanhamento da capitalização e do patrimônio líquido."
+            "Avaliar o acompanhamento da capitalização e do patrimônio líquido."
         )
     if decision == "aprovar" and (
         "passivo exigível" in cap_text or "endividamento" in cap_text
     ):
         conditions.append(
-            "Definir covenant de acompanhamento do endividamento exigível e de sua composição."
+            "Avaliar o acompanhamento do endividamento exigível e de sua composição."
         )
     if decision == "aprovar" and (
         "cobertura de juros" in cap_text or "ebit" in cap_text
     ):
         conditions.append(
-            "Definir covenant de acompanhamento do EBIT e da cobertura de juros."
+            "Avaliar o acompanhamento do EBIT e da cobertura de juros."
         )
     if decision == "aprovar" and severe is not None and severe < cfg.limite_nao_aprovar:
         conditions.append(

@@ -9,15 +9,28 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from components import nav
-from services.io_validation import (
-    ler_planilha,
-    obter_colunas_extras,
-    obter_relatorio_importacao,
-    preparar_relatorio_importacao_para_exibicao,
-    validar_cliente,
-)
-from services.finscore_service import run_finscore, ajustar_coluna_ano
+if __package__ == "app_front.views":
+    from app_front.components import nav
+    from app_front.components.session_state import invalidate_imported_data
+    from app_front.services.io_validation import (
+        ler_planilha,
+        obter_colunas_extras,
+        obter_relatorio_importacao,
+        preparar_relatorio_importacao_para_exibicao,
+        validar_cliente,
+    )
+    from app_front.services.finscore_service import run_finscore, ajustar_coluna_ano
+else:
+    from components import nav
+    from components.session_state import invalidate_imported_data
+    from services.io_validation import (
+        ler_planilha,
+        obter_colunas_extras,
+        obter_relatorio_importacao,
+        preparar_relatorio_importacao_para_exibicao,
+        validar_cliente,
+    )
+    from services.finscore_service import run_finscore, ajustar_coluna_ano
 
 # Rótulos com ícones (ordem fixa na UI)
 TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
@@ -347,6 +360,7 @@ def _sec_dados():
         df, aba, erro = ler_planilha(up)
 
     if erro:
+        invalidate_imported_data()
         st.error(f"Erro ao ler a planilha: {erro}")
 
     if df is not None:
@@ -388,7 +402,7 @@ def _sec_dados():
             ss.meta.pop("anos_rotulos", None)
         st.success("Dados contábeis preservados e salvos na sessão.")
         ss.out = None  # Limpa resultados se dados mudaram
-    else:
+    elif up is None:
         _render_cached_data_preview()
 
     st.write("---")
@@ -415,12 +429,12 @@ def _sec_dados():
     # Centralizar o botão
     col = st.columns([3, 2, 3])[1]
     with col:
-        if st.button("Calcular FinScore"):
+        if st.button("Calcular FinScore", disabled=bool(erro) or ss.get("df") is None):
             ss = st.session_state
             pend = validar_cliente(ss.meta)
             if pend:
                 st.error(pend)
-            elif ss.df is None:
+            elif erro or ss.df is None:
                 st.error("Envie os dados contábeis acima antes de calcular.")
             else:
                 processing_stage = "preparação do cálculo"
