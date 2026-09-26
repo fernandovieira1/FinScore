@@ -462,6 +462,10 @@ def _validate_semantics(
             )
         )
 
+    if re.search(r'(?:revis.{0,35}[âa]ncoras|antes do uso em produ[cç][aã]o|antes de uso em produ[cç][aã]o)', combined, re.IGNORECASE):
+        issues.append(ValidationIssue('DIAGNOSTICO_INTERNO', 'parecer', 'instrução de desenvolvimento não pertence ao parecer'))
+    if re.search(r'(?:aprova[cç][aã]o|aprovar).{0,90}(?:decorre|fundament|sustent).{0,100}(?:qualidade|confiabilidade)|(?:qualidade|confiabilidade).{0,60}(?:justifica|sustenta|fundamenta).{0,30}(?:aprovar|aprova[cç][aã]o)', combined, re.IGNORECASE):
+        issues.append(ValidationIssue('QUALIDADE_COMO_MERITO', 'parecer', 'qualidade informacional não é fundamento econômico de aprovação'))
     recommendation = contract.governanca.recomendacao_finscore.codigo
     labels = {
         RecommendationCode.APPROVE: r"aprovar",

@@ -128,6 +128,30 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
         self.assertIn("Receita líquida/Ativo Total", document)
         self.assertNotIn("aprovar sem garantia", document.lower())
 
+    def test_pipeline_retries_duplicate_references_without_weakening_validation(self):
+        import json
+        from unittest.mock import Mock
+        narrative = self._narrative()
+        invalid = narrative.model_dump(mode="json")
+        ids = invalid["riscos_diligencias_monitoramento"]["achado_ids"]
+        ids.append(ids[0])
+        invoke = Mock(side_effect=[json.dumps(invalid), narrative.model_dump_json()])
+        _document, generated, context = generate_parecer_document(
+            self.output, self.meta, self.policy, parecer_data=self.contract, invoke=invoke)
+        self.assertEqual(invoke.call_count, 2)
+        self.assertEqual(generated, narrative)
+        self.assertTrue(context["validacao_narrativa"]["valido"])
+        self.assertIn("duplicados", str(invoke.call_args.args[0]))
+
+    def test_pipeline_stops_after_three_invalid_structured_responses(self):
+        from unittest.mock import Mock
+        from pydantic import ValidationError
+        invoke = Mock(return_value='{}')
+        with self.assertRaises(ValidationError):
+            generate_parecer_document(self.output, self.meta, self.policy,
+                                     parecer_data=self.contract, invoke=invoke)
+        self.assertEqual(invoke.call_count, 3)
+
     def test_final_considerations_are_quantitatively_grounded(self) -> None:
         document = render_structured_parecer(self._narrative(), self.contract)
         final_section = document.split("## 8. Considerações finais", 1)[1].split(
@@ -136,7 +160,9 @@ class ParecerDocumentEvaluationTest(unittest.TestCase):
 
         self.assertIn("R$ 141.317.648,87", final_section)
         self.assertIn("margem líquida foi -1,86%", final_section)
-        self.assertIn("o Serasa registrou 700,00 pontos", final_section)
+        self.assertNotIn("o Serasa registrou 700,00 pontos", final_section)
+        self.assertIn("o Serasa registrou 700,00 pontos", document)
+        self.assertIn("evidências suplementares estão detalhadas na seção 7", final_section)
         self.assertIn("No cenário severo", final_section)
         self.assertIn("PL / Ativo Total — 2023", final_section)
         self.assertIn("Para nova submissão", final_section)

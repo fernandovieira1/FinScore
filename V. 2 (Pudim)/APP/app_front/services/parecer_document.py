@@ -9,6 +9,11 @@ from html import escape as html_escape
 from pathlib import Path
 from typing import Any, Iterable
 
+try:
+    from finscore_v2.assessment import DEBT_SCOPE, STANDARD_RECOMMENDATION
+except ModuleNotFoundError:
+    from app_front.finscore_v2.assessment import DEBT_SCOPE, STANDARD_RECOMMENDATION
+
 try:  # Execução Streamlit, com app_front no sys.path.
     from components.parecer_data_schema import (
         DataPoint,
@@ -139,7 +144,7 @@ def _split_paragraph(text: str) -> tuple[str, str]:
     """Divide uma análise longa em dois parágrafos sem fracionar frases."""
     sentences = [item.strip() for item in re.split(r"(?<=[.!?])\s+", text) if item.strip()]
     if len(sentences) < 2:
-        return text, text
+        return text, ""
     midpoint = max(1, len(sentences) // 2)
     return " ".join(sentences[:midpoint]), " ".join(sentences[midpoint:])
 
@@ -424,6 +429,7 @@ def _simulation_table(contract: ParecerData) -> str:
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     limitations: dict[str, str] = {}
+    frequencies = ['| Abordagem e método | FinScore < 500 | FinScore < 250 | FinScore < 125 |', '|---|---:|---:|---:|']
     for item in summaries:
         diagnostics = [diagnostic for diagnostic in contract.cenarios.diagnosticos
                        if diagnostic.abordagem.strip().casefold() == item.abordagem.strip().casefold()]
@@ -442,8 +448,12 @@ def _simulation_table(contract: ParecerData) -> str:
             f"{_fmt_number(item.media)} | {_fmt_number(item.p05)} | "
             f"{_fmt_number(item.mediana)} | {_fmt_number(item.p95)} |"
         )
+        by_cut = {frequency.corte: frequency.frequencia for frequency in item.frequencias}
+        if item.metodo == 'prudencial':
+            frequencies.append('| '+_md(item.abordagem)+' prudencial | '+' | '.join(_fmt_value(by_cut.get(cut), 'proporcao') for cut in (500,250,125))+' |')
     table = "\n".join(lines) if len(lines) > 2 else ""
-    return "\n\n".join([part for part in [table, *limitations.values()] if part])
+    frequency_table = '\n'.join(frequencies) + '\n\nFrequências empíricas condicionais dos cenários simulados; não são probabilidades de inadimplência.' if len(frequencies)>2 else ''
+    return "\n\n".join([part for part in [table, frequency_table, *limitations.values()] if part])
 
 
 def _supplementary_table(contract: ParecerData) -> str:
@@ -454,13 +464,22 @@ def _supplementary_table(contract: ParecerData) -> str:
             f"| Serasa | {_md(evidence.serasa.data_consulta)} | {_fmt_number(evidence.serasa.score)} — {_md(evidence.serasa.status)} | Evidência externa separada |",
         ]
     for item in sorted(evidence.springate, key=lambda item: item.exercicio):
-        lines.append(f"| Springate | {item.exercicio} | {_fmt_number(item.score)} — {_md(item.classificacao)} | Diagnóstico derivado |")
+        lines.append(f"| Springate | {item.exercicio} | {_fmt_number(item.score)} — {_md(item.classificacao)} | {_md(item.observacao) if item.score is None else 'Diagnóstico derivado'} |")
     if not evidence.springate:
         lines.append("| Springate | — | Não calculado | Diagnóstico derivado |")
     for item in sorted(evidence.fleuriet, key=lambda item: item.exercicio):
         lines.append(f"| Fleuriet simplificado | {item.exercicio} | {_md(item.diagnostico)} | Diagnóstico derivado |")
     if not evidence.fleuriet:
         lines.append("| Fleuriet simplificado | — | Não calculado | Diagnóstico derivado |")
+    if evidence.fleuriet:
+        lines += ['', '| Ano | NCG | CDG | T simplificado | T estrito | Resíduo | Resíduo / ativo total |', '|---|---:|---:|---:|---:|---:|---:|']
+        for item in evidence.fleuriet:
+            values = [item.necessidade_capital_giro, item.capital_giro, item.saldo_tesouraria, item.tesouraria_estrita, item.residuo_fleuriet]
+            lines.append('| '+str(item.exercicio)+' | '+' | '.join(_fmt_value(value,'BRL') for value in values)+' | '+_fmt_value(item.residuo_pct_ativo,'proporcao')+' |')
+        material = [str(item.exercicio) for item in evidence.fleuriet if item.residuo_material]
+        lines += ['', 'Tesouraria estrita = caixa e equivalentes - empréstimos e financiamentos CP. O resíduo é T simplificado - T estrito. A abertura parcial de ACO e PCO pode absorver outras contas circulantes no T simplificado; ele não equivale a caixa disponível.']
+        if material:
+            lines += ['Diferença material de tesouraria em '+', '.join(material)+': resíduo absoluto de pelo menos 1% do ativo total, base de materialidade já adotada pelo modelo. Alerta complementar, sem penalização do score ou da confiabilidade.']
     return "\n".join(lines)
 
 
@@ -500,6 +519,8 @@ def _supplementary_interpretation(contract: ParecerData) -> str:
             f"o Springate de {springate.exercicio} foi {_fmt_number(springate.score)}, "
             f"classificado como {_md(springate.classificacao)}"
         )
+    elif springate is not None and springate.classificacao == 'NÃO APLICÁVEL':
+        parts.append('o Springate é não aplicável: '+_md(springate.observacao))
     else:
         parts.append("o Springate não pôde ser calculado")
     if fleuriet is not None:
@@ -625,16 +646,15 @@ def _final_considerations(contract: ParecerData) -> str:
             "do endividamento, a folga de curto prazo, a sustentação patrimonial e a capacidade de "
             "cobrir despesas financeiras com resultado operacional."
         ),
-        _supplementary_interpretation(contract),
+        'As evidências suplementares estão detalhadas na seção 7; devem ser lidas em conjunto, sem soma ao FinScore.',
         (
             f"{scenario_text} {blocker_text} A recomendação FinScore é **{_md(recommendation.rotulo)}**, "
-            f"fundamentada no resultado de {_fmt_number(contract.finscore.prudencial)} pontos e nos "
-            f"controles de qualidade descritos. {provision_text} {guarantee_text}"
+            f"fundamentada na leitura econômico-financeira de {_fmt_number(contract.finscore.prudencial)} pontos, "
+            f"cujo uso depende dos controles informacionais descritos. {provision_text} {guarantee_text}"
         ),
         (
             f"Em síntese, a recomendação **{_md(recommendation.rotulo)}** decorre do FinScore de "
-            f"{_fmt_number(contract.finscore.prudencial)} pontos, da qualidade dos dados de "
-            f"{_fmt_value(quality.indice_confiabilidade, 'proporcao')}, da margem líquida de "
+            f"{_fmt_number(contract.finscore.prudencial)} pontos, da margem líquida de "
             f"{_display_point(margin)}, da capitalização de {_display_point(capitalization)}, da "
             f"liquidez corrente de {_display_point(current_liquidity)}, da dívida líquida sobre o "
             f"ativo de {_display_point(net_debt)} e da cobertura de juros de "
@@ -642,7 +662,46 @@ def _final_considerations(contract: ParecerData) -> str:
             "à revisão da documentação jurídica e cadastral da operação e à decisão de alçada superior."
         ),
     ]
+    if recommendation.codigo.value == 'dados_inconsistentes':
+        paragraphs[-2] = (f'{scenario_text} {blocker_text} A recomendação FinScore é '
+                          f'**{_md(recommendation.rotulo)}**, decorrente dos bloqueios informacionais descritos. '
+                          f'{provision_text} {guarantee_text}')
+        paragraphs[-1] = ('A recomendação Dados inconsistentes decorre do bloqueio informacional. '
+                          'Os indicadores apresentados são provisórios e não sustentam uma recomendação de aprovação '
+                          'ou recusa por mérito econômico até a regularização das pendências. '+STANDARD_RECOMMENDATION)
+    else:
+        paragraphs[-1] += ' A qualidade informacional apenas autoriza ou restringe o uso desta leitura econômica. '+STANDARD_RECOMMENDATION
     return "\n\n".join(paragraphs)
+
+
+def _source_notes(contract: ParecerData) -> str:
+    notes = contract.notas_preenchimento
+    if not notes:
+        return 'A planilha não forneceu notas de preenchimento.'
+    selected = []
+    keywords = ('fonte', 'cnpj', 'premissa', 'conven', 'arrendamento', 'mútuo', 'emprestimo', 'empréstimo', 'susep', 'classifica', 'leitura')
+    for note in notes:
+        text = ' — '.join(str(cell) for cell in note.get('celulas', []))
+        if any(word in text.casefold() for word in keywords):
+            selected.append('- '+_md(text[:700])+('…' if len(text)>700 else ''))
+    return ('Informações declaradas na planilha, sem validação documental automática:\n\n'+'\n'.join(selected[:6])+
+            '\n\nAs notas integrais e suas linhas de origem estão preservadas no dossiê JSON.')
+
+
+def select_report_content(full_document: str, mode: str) -> str:
+    """Extrai níveis do mesmo parecer; mantém o documento integral no dossiê."""
+    start = full_document.find('## Anexo 1 — Metodologia')
+    end = full_document.find('## Anexo 2 — Informações da análise')
+    if start<0 or end<start:
+        raise ValueError('Não foi possível localizar os anexos do parecer.')
+    if mode == 'Anexo técnico':
+        return full_document[start:]
+    if mode == 'Parecer principal':
+        main = full_document[:start].rstrip().removesuffix('<div class="page-break"></div>').rstrip()
+        return main+'\n\nA metodologia completa está disponível no anexo técnico desta análise.\n\n'+full_document[end:]
+    if mode == 'Parecer com anexo técnico':
+        return full_document
+    raise ValueError('Formato de parecer desconhecido.')
 
 
 def _material_findings_table(contract: ParecerData) -> str:
@@ -677,6 +736,7 @@ def render_structured_parecer(
         "## Metodologia", "## Anexo 1 — Metodologia", 1
     )
     guarantee_label = (
+        "Mitigadores recomendados; avaliação pela alçada competente" if guarantee.recomendada else
         "Avaliação atribuída ao gestor e à alçada competente"
         if guarantee.aplicavel
         else "Não aplicável à recomendação atual"
@@ -716,7 +776,7 @@ def render_structured_parecer(
     financial_before, financial_after = _split_paragraph(
         narrative.analise_financeira_patrimonial.texto
     )
-    guarantees_text = (
+    guarantees_text = guarantee.justificativa or (
         "A empresa analisada, conforme os resultados apresentados, possui capacidade "
         "econômico-financeira para prosseguimento da operação. Caberá às alçadas superiores "
         "avaliar a vantajosidade e a proporcionalidade de garantias adicionais, incluindo aval, "
@@ -748,6 +808,9 @@ com base nas informações contábeis e nos resultados FinScore dos exercícios 
 As conclusões apoiam a avaliação humana da capacidade financeira e dos riscos observados.
 A recomendação calculada permanece sujeita à política da instituição e à decisão da alçada
 competente; a validade jurídica da operação e das garantias exige avaliação própria.
+
+{STANDARD_RECOMMENDATION}
+{_md(recommendation.texto_politica_contratante) if recommendation.texto_politica_contratante else ''}
 
 ## 2. Sumário executivo
 
@@ -785,6 +848,10 @@ significa ausência de alertas. As contribuições acima explicam a composição
 O dossiê estruturado conserva integralmente valores reportados, propostos, utilizados e derivados.
 As tabelas seguintes apresentam as séries materiais para a leitura do parecer.
 
+### 3.2 Fontes e convenções de preenchimento
+
+{_source_notes(contract)}
+
 ## 4. Análise econômico-operacional
 
 {_md(narrative.analise_economico_operacional.texto)}
@@ -807,6 +874,8 @@ As tabelas seguintes apresentam as séries materiais para a leitura do parecer.
 
 ## 5. Análise financeira e patrimonial
 
+{DEBT_SCOPE}
+
 {_md(financial_before)}
 
 {_series_table(contract.dados.indices, FINANCIAL_INDICATORS, years, INDICATOR_LABELS)}
@@ -821,8 +890,10 @@ com ajuste controlado, respectivamente; a composição geométrica preserva o eq
 e o gargalo atribui maior influência ao núcleo mais fraco. O FinScore prudencial corresponde ao
 menor resultado pós-gargalo entre as abordagens, limitado, quando aplicável, por travas prudenciais.
 Na interpretação decisória, resultado inferior a 250 pontos integra a faixa restritiva; de 250 a
-499,99 pontos, a aprovação requer avaliação de mitigadores e garantias; a partir de 500 pontos, a
-pontuação integra a faixa superior. Em qualquer aprovação, cabe ao gestor e à alçada competente
+499,99 pontos, a aprovação requer avaliação de mitigadores e garantias. A faixa superior, a partir
+de 500 pontos, exige ausência de cap prudencial acionado de 500 ou menos. Quando esse cap é acionado,
+o enquadramento permanece sujeito a mitigadores, inclusive com score final exatamente igual a 500.
+Em qualquer aprovação, cabe ao gestor e à alçada competente
 avaliar a conveniência, a modalidade e a suficiência de eventual garantia. A qualidade dos dados e
 a aptidão do cálculo são verificadas separadamente.
 
@@ -847,7 +918,10 @@ partir das demonstrações nem integrado ao FinScore. A comparação utiliza a d
 as pontuações: até 100 pontos, a divergência é baixa e classificada como convergente; acima de 100 e
 até 200, é moderada; acima de 200 e até 300, relevante; e, acima de 300, elevada. Nas divergências
 superiores a 100 pontos, o sinal da diferença indica se a evidência externa é mais favorável ou mais
-desfavorável que o FinScore. O índice Springate é calculado por `1,03 × CCL/Ativo Total + 3,07 × EBIT/Ativo
+desfavorável que o FinScore. O Springate somente é interpretado quando o tipo de empresa declarado
+confirma sua aplicabilidade a atividade não financeira. Instituições financeiras, seguradoras e
+classificações incompatíveis recebem "NÃO APLICÁVEL"; a ausência de classificação impede o diagnóstico.
+Quando aplicável, o índice Springate é calculado por `1,03 × CCL/Ativo Total + 3,07 × EBIT/Ativo
 Total + 0,66 × Resultado antes de IR e CSLL/Passivo Circulante + 0,40 × Receita líquida/Ativo Total`:
 resultado inferior a 0,862 sinaliza situação de distress, enquanto valor igual ou superior afasta
 esse sinal específico. A leitura Fleuriet calcula `NCG = Ativo Circulante Operacional − Passivo

@@ -85,6 +85,10 @@ def _auto_save_cliente():
         return f"{v[:2]}.{v[2:5]}.{v[5:8]}/{v[8:12]}-{v[12:14]}"
 
     empresa = st.text_input("Nome da Empresa", value=meta.get("empresa", ""), placeholder="Ex.: ACME S.A.")
+    from finscore_v2.assessment import COMPANY_TYPES
+    company_type = st.selectbox('Tipo de empresa', COMPANY_TYPES,
+        index=COMPANY_TYPES.index(meta.get('tipo_empresa')) if meta.get('tipo_empresa') in COMPANY_TYPES else 0,
+        help='Usado apenas para verificar a aplicabilidade do Springate; não altera o FinScore.')
     cnpj_raw = meta.get("cnpj", "")
     # Aplica máscara ANTES de exibir o campo
     cnpj_default = mascara_cnpj(cnpj_raw)
@@ -177,6 +181,7 @@ def _auto_save_cliente():
 
     new_meta = {
         "empresa": empresa,
+        "tipo_empresa": company_type,
         "cnpj": cnpj,
         "ano_inicial": ai,
         "ano_final": af,

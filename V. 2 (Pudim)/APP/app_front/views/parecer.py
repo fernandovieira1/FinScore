@@ -45,7 +45,7 @@ DECISION_ICONS = {
     "dados_inconsistentes": "⚠️ Dados inconsistentes",
 }
 logger = logging.getLogger(__name__)
-PARECER_POLICY_SIGNATURE = "three-decisions-finscore-only-v5-layout"
+PARECER_POLICY_SIGNATURE = "three-decisions-finscore-v6-audit-caps-annexes"
 DOSSIER_STORE = AnalysisDossierStore()
 
 
@@ -410,20 +410,27 @@ def _render_export(
 ) -> None:
     center = st.columns([1, 1, 1])[1]
     with center:
+        from services.parecer_document import select_report_content
+        export_mode = st.selectbox('Conteúdo do PDF',
+            ['Parecer principal', 'Parecer com anexo técnico', 'Anexo técnico'])
+        if st.session_state.get('_parecer_pdf_mode') != export_mode:
+            st.session_state.pop('parecer_pdf', None)
+            st.session_state.pop('parecer_pdf_pages', None)
+            st.session_state['_parecer_pdf_mode'] = export_mode
         if st.button("Preparar PDF", use_container_width=True):
             try:
                 with st.spinner("Gerando e conferindo a paginação..."):
                     pdf = gerar_pdf_parecer(
-                        conteudo=st.session_state["parecer_gerado"],
+                        conteudo=select_report_content(st.session_state["parecer_gerado"], export_mode),
                         meta=_pdf_metadata(output, meta, policy),
                         is_markdown=True,
-                        min_pages=7,
-                        max_pages=14,
+                        min_pages=1,
+                        max_pages=None,
                     )
                     pages = contar_paginas_pdf(pdf)
                     analysis_id = str(meta.get("analise_id") or "")
                     if analysis_id:
-                        DOSSIER_STORE.record_pdf_export(analysis_id, pdf, pages)
+                        DOSSIER_STORE.record_pdf_export(analysis_id, pdf, pages, export_mode)
                     st.session_state["parecer_pdf"] = pdf
                     st.session_state["parecer_pdf_pages"] = pages
             except Exception:
@@ -438,7 +445,7 @@ def _render_export(
             st.download_button(
                 f"Baixar PDF ({pages} páginas)",
                 data=st.session_state["parecer_pdf"],
-                file_name=f"Parecer_{company}_{cnpj}.pdf",
+                file_name=f"{_safe_filename(export_mode)}_{company}_{cnpj}.pdf",
                 mime="application/pdf",
                 use_container_width=True,
             )

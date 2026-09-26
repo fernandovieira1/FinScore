@@ -68,9 +68,13 @@ def validar_cliente(meta: Dict[str, Any]) -> Dict[str, str]:
 
     date_text = str(meta.get("serasa_data") or "").strip()
     try:
-        datetime.strptime(date_text, "%d/%m/%Y")
-    except ValueError:
-        errors["serasa_data"] = "Informe uma data de consulta válida em DD/MM/AAAA."
+        try:
+            from finscore_v2.assessment import validate_serasa_date
+        except ModuleNotFoundError:
+            from app_front.finscore_v2.assessment import validate_serasa_date
+        validate_serasa_date(date_text, meta.get('data_analise'))
+    except ValueError as error:
+        errors["serasa_data"] = str(error)
     return errors
 
 
@@ -158,10 +162,26 @@ def obter_colunas_extras(df: pd.DataFrame | None) -> list[str]:
     return list(value) if isinstance(value, (list, tuple)) else []
 
 
+def parse_notas_preenchimento(workbook: pd.ExcelFile) -> list[dict]:
+    """Preserva linhas e células de notas livres ou pares chave/valor.
+
+    Conteúdo declarado, nunca instruções ou contas a incorporar no motor.
+    Ausência de aba é normal; falha na aba opcional é registrada como aviso.
+    """
+    sheet = _sheet_name_case_insensitive(workbook, 'notas_preenchimento')
+    if sheet is None:
+        return []
+    try:
+        raw = pd.read_excel(workbook, sheet_name=sheet, header=None, dtype=str)
+        return [{'linha': int(index)+1, 'celulas': [str(value).strip() for value in row if pd.notna(value) and str(value).strip()]}
+                for index, row in raw.iterrows() if any(pd.notna(value) and str(value).strip() for value in row)]
+    except Exception as error:
+        return [{'linha': 0, 'celulas': ['Aba de notas não pôde ser lida: '+type(error).__name__]}]
+
 def ler_planilha(
     upload_or_url,
 ) -> Tuple[Optional[pd.DataFrame], Optional[str], Optional[str]]:
-    """Lê exclusivamente a aba ``lancamentos`` e preserva dados reportados."""
+    """Valida ``lancamentos`` e preserva as notas opcionais de preenchimento."""
     try:
         source = upload_or_url
         if hasattr(upload_or_url, "getvalue"):
@@ -176,6 +196,7 @@ def ler_planilha(
             )
         raw = pd.read_excel(workbook, sheet_name=sheet, engine="openpyxl")
         validated, _ = validar_dataframe_importado(raw)
+        validated.attrs['finscore_notas_preenchimento'] = parse_notas_preenchimento(workbook)
         return validated, sheet, None
     except ImportError:
         return (

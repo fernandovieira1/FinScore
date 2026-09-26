@@ -405,6 +405,35 @@ def build_traceability(reported: pd.DataFrame, used: pd.DataFrame, audit_df: pd.
     return trace.sort_values(['ano', 'conta']).reset_index(drop=True)
 BIAS_COLUMNS = ['alerta_id', 'severidade', 'categoria', 'ano', 'conta', 'valor_referencia', 'valor_observado', 'metrica', 'limiar', 'materialidade_pct_ativo', 'risco_vies', 'impacto_provavel', 'tratamento_modelo', 'acao_recomendada', 'bloqueia_decisao']
 
+MONITORED_VARIATION_ACCOUNTS = ('p_Ativo_Total', 'p_Patrimonio_Liquido', 'p_Contas_Receber_Clientes', 'p_Caixa_Equivalentes', 'p_Emprestimos_Financiamentos_CP', 'r_Despesas_Financeiras')
+
+def detect_abrupt_variations(used: pd.DataFrame) -> list[dict]:
+    """Diagnóstico seguro; alerta_legado preserva a contagem da confiabilidade.
+
+    Seis contas, nenhum índice. Base zero não era penalizada. Mudanças de
+    sinal/base frágil são descritas sem percentuais explosivos. Materialidade
+    é informativa (1% do ativo), não um novo filtro da penalização congelada.
+    """
+    result = []
+    for account in MONITORED_VARIATION_ACCOUNTS:
+        for idx in range(1, len(used)):
+            previous, current = used[account].iloc[idx-1:idx+1]
+            if not np.isfinite([previous, current]).all():
+                continue
+            at = used.iloc[idx]['p_Ativo_Total']
+            materiality = abs(current-previous)/abs(at) if pd.notna(at) and abs(at)>1e-12 else np.nan
+            legacy_change = current/previous-1 if abs(previous)>1e-12 else np.nan
+            legacy_alert = bool(pd.notna(legacy_change) and abs(legacy_change)>=0.5)
+            fragile = abs(previous)<=max(1e-12, abs(at)*LIMIAR_MATERIALIDADE if pd.notna(at) else 0)
+            sign_change = previous*current<0
+            if legacy_alert or (previous==0 and current!=0):
+                result.append(dict(ano=int(used.iloc[idx]['ano']), conta=account,
+                    anterior=previous, atual=current, alerta_legado=legacy_alert,
+                    variacao_percentual=None if fragile or sign_change else legacy_change,
+                    tratamento='mudança de sinal' if sign_change else 'base nula ou próxima de zero' if fragile else 'variação percentual',
+                    materialidade_pct_ativo=materiality))
+    return result
+
 def detect_material_bias(reported: pd.DataFrame, used: pd.DataFrame, corrections: pd.DataFrame) -> pd.DataFrame:
     """
     Sinaliza observações capazes de dominar denominadores, curvas ou o PCA.
@@ -461,18 +490,9 @@ def detect_material_bias(reported: pd.DataFrame, used: pd.DataFrame, corrections
         residual = derived_local.at[idx, 'd_Outros_Efeitos_Pos_Tributacao']
         if pd.notna(residual) and pd.notna(ll) and (abs(residual) > 0.1 * max(abs(ll), 1.0)):
             add('ALTA', 'DRE_NAO_RECONCILIADA', year, 'd_Outros_Efeitos_Pos_Tributacao', 0.0, residual, '|Resultado após impostos - Lucro líquido| / |Lucro líquido|', 0.1, abs(residual) / abs(at) if pd.notna(at) and at else np.nan, 'ALTO', 'Pode indicar conta omitida, sinal invertido ou diferença de perímetro.', 'Residual é exposto; não é redistribuído entre EBIT, imposto e lucro.', 'Reconciliar DRE e identificar outros efeitos pós-tributação.', True)
-    monitored = ['p_Ativo_Total', 'p_Patrimonio_Liquido', 'p_Contas_Receber_Clientes', 'p_Caixa_Equivalentes', 'p_Emprestimos_Financiamentos_CP', 'r_Despesas_Financeiras']
-    for account in monitored:
-        series = used[account]
-        for idx in range(1, len(used)):
-            previous = series.iloc[idx - 1]
-            current = series.iloc[idx]
-            if pd.isna(previous) or pd.isna(current) or abs(previous) <= 1e-12:
-                continue
-            change = current / previous - 1
-            if abs(change) >= 0.5:
-                at = used.iloc[idx]['p_Ativo_Total']
-                add('ALTA', 'VARIACAO_ABRUPTA', int(used.iloc[idx]['ano']), account, previous, current, 'variação anual', 0.5, abs(current - previous) / abs(at) if pd.notna(at) and at else np.nan, 'ALTO', 'Pode dominar a tendência temporal e o PCA com apenas três anos.', 'Valor não é alterado; nota é limitada e alerta permanece visível.', 'Confirmar evento econômico, reclassificação e perímetro.', False)
+    for event in detect_abrupt_variations(used):
+        if event['alerta_legado']:
+            add('ALTA', 'VARIACAO_ABRUPTA', event['ano'], event['conta'], event['anterior'], event['atual'], 'variação anual', 0.5, event['materialidade_pct_ativo'], 'ALTO', 'Pode dominar a tendência temporal e o PCA com apenas três anos.', 'Valor não é alterado; nota é limitada e alerta permanece visível.', 'Confirmar evento econômico, reclassificação e perímetro.', False)
     return pd.DataFrame(alerts, columns=BIAS_COLUMNS)
 
 def synchronize_quality_taxonomy(quality: pd.DataFrame, alerts: pd.DataFrame) -> pd.DataFrame:
@@ -1447,7 +1467,7 @@ SPRINGATE_PONTO_CORTE = 0.862
 SPRINGATE_REGRA = 'S < 0,862: sinal de distress; S >= 0,862: sem sinal de distress'
 FLEURIET_ESCOPO = 'SIMPLIFICADO_COM_AS_CONTAS_EXISTENTES'
 
-def calcular_springate(contas: pd.DataFrame) -> pd.DataFrame:
+def calcular_springate(contas: pd.DataFrame, company_context=None) -> pd.DataFrame:
     """Calcula o Springate por exercício sem imputar componentes ausentes."""
     resultado = pd.DataFrame(index=contas.index)
     resultado['ano'] = contas['ano']
@@ -1460,6 +1480,13 @@ def calcular_springate(contas: pd.DataFrame) -> pd.DataFrame:
     resultado['springate_S'] = (1.03 * resultado['A_CCL_AT'] + 3.07 * resultado['B_EBIT_AT'] + 0.66 * resultado['C_EBT_PC'] + 0.4 * resultado['D_RECEITA_AT']).where(componentes_validos)
     resultado['classificacao'] = np.select([~componentes_validos, resultado['springate_S'].lt(SPRINGATE_PONTO_CORTE)], ['NÃO CALCULÁVEL', 'SINAL DE DISTRESS'], default='SEM SINAL DE DISTRESS')
     resultado['observacao'] = np.where(componentes_validos, 'contraste diagnóstico; não altera o FinScore', 'conta ausente ou denominador materialmente nulo')
+    from .assessment import springate_applicability
+    applicable, reason = springate_applicability(company_context)
+    resultado['aplicavel'] = applicable
+    if not applicable:
+        resultado[componentes + ['springate_S']] = np.nan
+        resultado['classificacao'] = 'NÃO APLICÁVEL'
+        resultado['observacao'] = reason
     return resultado.reset_index(drop=True)
 
 def _sinal_fleuriet(valor) -> str:
@@ -1495,6 +1522,10 @@ def calcular_fleuriet_simplificado(contas: pd.DataFrame) -> pd.DataFrame:
     resultado['ANC'] = contas['d_Ativo_Nao_Circulante']
     resultado['CDG'] = contas['p_Passivo_Nao_Circulante'] + contas['p_Patrimonio_Liquido'] - resultado['ANC']
     resultado['ST_s'] = resultado['CDG'] - resultado['NCG_s']
+    resultado['T_estrito'] = contas['p_Caixa_Equivalentes'] - contas['p_Emprestimos_Financiamentos_CP']
+    resultado['residuo_fleuriet'] = resultado['ST_s'] - resultado['T_estrito']
+    resultado['residuo_pct_ativo'] = safe_div(resultado['residuo_fleuriet'].abs(), contas['p_Ativo_Total'].abs())
+    resultado['residuo_material'] = resultado['residuo_pct_ativo'].ge(LIMIAR_MATERIALIDADE)
     resultado['perfil_sinais'] = [f'CDG {_sinal_fleuriet(cdg)}; NCG {_sinal_fleuriet(ncg)}; ST {_sinal_fleuriet(st)}' for cdg, ncg, st in zip(resultado['CDG'], resultado['NCG_s'], resultado['ST_s'])]
     resultado['diagnostico'] = [_diagnostico_fleuriet(cdg, ncg, st) for cdg, ncg, st in zip(resultado['CDG'], resultado['NCG_s'], resultado['ST_s'])]
     return resultado.reset_index(drop=True)

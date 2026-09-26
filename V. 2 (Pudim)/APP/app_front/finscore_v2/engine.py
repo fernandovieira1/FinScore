@@ -160,12 +160,16 @@ def executar_finscore(
     executar_simulacoes: bool = True,
     numero_simulacoes: int = 1000,
     semente: int = 20260723,
+    company_context: dict | None = None,
 ) -> FinScoreOutput:
     """Executa o FinScore 2.0.19 e os diagnósticos complementares da 2.0.20."""
     if executar_simulacoes and numero_simulacoes < 100:
         raise ValueError("Use ao menos 100 simulações.")
 
     processed_at = datetime.now()
+    if serasa_data:
+        from .assessment import validate_serasa_date
+        validate_serasa_date(serasa_data, processed_at)
     core.DATA_HORA_PROCESSAMENTO = processed_at
     reported, import_report = preparar_dados_contabeis(dados)
     if correcoes_manuais is None:
@@ -277,7 +281,7 @@ def executar_finscore(
             observed["faixa_incerteza_inferior"] = observed["finscore_prudencial"]
             observed["faixa_incerteza_superior"] = observed["finscore_prudencial"]
         pca_diagnostics, pca_weights, pca_loadings = _diagnosticos_pca(profiles)
-        springate = core.calcular_springate(derived)
+        springate = core.calcular_springate(derived, company_context)
         fleuriet = core.calcular_fleuriet_simplificado(derived)
         if not np.allclose(
             fleuriet["CDG"].to_numpy(dtype=float),

@@ -565,6 +565,10 @@ class FleurietEvidence(ContractModel):
     saldo_tesouraria: FiniteFloat | None = None
     perfil_sinais: str | None = None
     diagnostico: str
+    tesouraria_estrita: FiniteFloat | None = None
+    residuo_fleuriet: FiniteFloat | None = None
+    residuo_pct_ativo: FiniteFloat | None = None
+    residuo_material: bool = False
 
 
 class SupplementaryEvidence(ContractModel):
@@ -612,6 +616,7 @@ class FinScoreRecommendation(ContractModel):
     bloqueios: list[BlockingReason] = Field(default_factory=list)
     providencias: list[str] = Field(default_factory=list)
     garantia: GuaranteeRecommendation
+    texto_politica_contratante: str | None = None
 
     @model_validator(mode="after")
     def validate_label_and_eligibility(self) -> "FinScoreRecommendation":
@@ -815,6 +820,8 @@ class ParecerData(ContractModel):
     cenarios: Scenarios
     evidencias_suplementares: SupplementaryEvidence
     achados: list[Finding] = Field(default_factory=list)
+    notas_preenchimento: list[dict[str, Any]] = Field(default_factory=list)
+    contexto_empresa: dict[str, Any] = Field(default_factory=dict)
     metadados_funcionais: FunctionalMetadata
     metadados_tecnicos_restritos: RestrictedTechnicalMetadata
 

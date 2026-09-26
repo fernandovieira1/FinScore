@@ -245,7 +245,7 @@ class ParecerPudimV2Test(unittest.TestCase):
         self.assertNotIn("| Manifestação do analista |", document)
         self.assertNotIn("| Decisão da alçada |", document)
         self.assertNotIn("governança", document.lower())
-        self.assertEqual(document.count("decisão de alçada superior"), 1)
+        self.assertIn("sujeita à política de crédito e à decisão da alçada competente", document)
 
     def test_nested_pandas_diagnostics_are_serialized_without_boolean_evaluation(self) -> None:
         output = copy.deepcopy(self.output)

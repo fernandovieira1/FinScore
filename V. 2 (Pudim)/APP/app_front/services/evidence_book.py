@@ -303,7 +303,8 @@ def _quality_findings(contract: ParecerData) -> list[Finding]:
                     alert.impacto_provavel
                     or "O alerta requer leitura conjunta, mas não bloqueia isoladamente a recomendação."
                 ),
-                providencia=alert.acao_recomendada,
+                providencia=('Alguns indicadores atingiram os limites das curvas de pontuação, reduzindo a capacidade de diferenciação entre desempenhos extremos.'
+                             if alert.categoria == 'SATURACAO_CURVA' else alert.acao_recomendada),
             )
         )
 

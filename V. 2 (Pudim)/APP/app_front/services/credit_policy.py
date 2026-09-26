@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict
 
 import pandas as pd
@@ -14,6 +14,9 @@ class PolicyConfig:
     limite_nao_aprovar: float = 250.0
     limite_referencia_garantia: float = 500.0
     confiabilidade_minima_modelo: float = 0.75
+    rotulos_faixas: dict[str, str] = field(default_factory=dict)
+    texto_recomendacao: str | None = None
+    texto_politica_garantia: str | None = None
 
 
 DECISION_LABELS = {
@@ -300,10 +303,6 @@ def decide_pudim(
             + f"{cfg.confiabilidade_minima_modelo:.0%}".replace(".", ",")
             + "."
         )
-    else:
-        reasons.append(
-            "Qualidade dos dados de " + f"{reliability:.2%}".replace(".", ",") + "."
-        )
 
     blockers = int(_number(status.get("alertas_bloqueadores_decisao")) or 0)
     if blockers:
@@ -317,6 +316,11 @@ def decide_pudim(
     if isinstance(caps, pd.DataFrame) and not caps.empty:
         cap_reasons = [str(value) for value in caps["justificativa"].dropna().tolist()]
         reasons.extend("Regra prudencial acionada: " + value for value in cap_reasons)
+    active_low_cap = bool(isinstance(caps, pd.DataFrame) and not caps.empty and 'cap' in caps
+                          and pd.to_numeric(caps['cap'], errors='coerce').le(cfg.limite_referencia_garantia).any())
+    if active_low_cap and score is not None and score >= cfg.limite_referencia_garantia:
+        score_band = 'APROVAÇÃO SUJEITA A MITIGADORES'
+        reasons[0] = f'FinScore prudencial de {_fmt_score(score)} pontos, sujeito a cap prudencial e mitigadores.'
 
     severe = _severe_scenario_score(output)
     if severe is not None and score is not None:
@@ -418,10 +422,15 @@ def decide_pudim(
             "materiais para reavaliação."
         )
 
+    if cfg.texto_politica_garantia and decision == 'aprovar':
+        guarantee['justificativa'] += ' Política do contratante: ' + cfg.texto_politica_garantia
     return {
         "decisao": decision,
         "rotulo": DECISION_LABELS[decision],
-        "segmento_politica": score_band,
+        "cap_acionado_ate_500": active_low_cap,
+        "gate_informacional": {'apto_calculo': bool(status.get('apto_calculo')), 'apto_recomendacao': not blocking, 'confiabilidade': reliability},
+        "segmento_politica": cfg.rotulos_faixas.get(score_band, score_band),
+        "texto_politica_contratante": cfg.texto_recomendacao,
         "finscore_prudencial": score,
         "confiabilidade": reliability,
         "fundamentacao": list(dict.fromkeys(reasons)),

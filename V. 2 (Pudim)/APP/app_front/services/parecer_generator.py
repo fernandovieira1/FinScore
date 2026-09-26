@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, Iterable, Optional
 
 import numpy as np
 import pandas as pd
+from pydantic import ValidationError
 
 try:  # Execução Streamlit (app_front no sys.path)
     from components.llm_client import (
@@ -47,7 +48,7 @@ except ModuleNotFoundError:  # Importação como pacote app_front em testes/ferr
     from app_front.services.parecer_evaluation import evaluate_parecer_document
 
 
-PROMPT_VERSION = "parecer-evidence-book-v2"
+PROMPT_VERSION = "parecer-evidence-book-v3-audit"
 SUPPORTED_MODEL_VERSION = "2.0.20"
 METHODOLOGY_PATH = (
     Path(__file__).resolve().parent.parent / "content" / "metodologia_pudim_2_0_20.md"
@@ -387,6 +388,11 @@ Regras:
 - examine o cenário adverso e o severo quando disponíveis e a trajetória anual dos diagnósticos;
 - FinScore não é PD nem rating regulatório; frequência de simulação não é inadimplência;
 - Serasa permanece separado; Springate e Fleuriet são diagnósticos suplementares derivados;
+- qualidade e confiabilidade são condições de uso da análise, nunca mérito econômico favorável;
+- não atribua aprovação à qualidade dos dados; separe o gate informacional dos fundamentos financeiros;
+- Springate não aplicável não significa distress nem saúde financeira;
+- não inclua instruções de desenvolvimento, revisão de âncoras ou preparação para produção;
+- concentre Serasa, Springate e Fleuriet nas evidências suplementares; na conclusão use somente síntese;
 - cenários são hipóteses de estresse, não previsões;
 - preserve a recomendação FinScore e nunca use as expressões "decisão final" ou
   "recomendação final";
@@ -818,15 +824,17 @@ def generate_parecer_document(
         else ParecerData.model_validate(parecer_data)
     )
     narrative_context = build_narrative_context(contract)
+    if contract.evidencias_suplementares.serasa.cronologia_valida is False:
+        raise ValueError('A data da consulta ao Serasa é posterior à data da análise. Corrija antes de gerar o parecer.')
     revision_notes: list[str] = []
     for attempt in range(3):
-        narrative = generate_variable_narrative(
-            narrative_context,
-            invoke=invoke,
-            revision_notes=revision_notes,
-        )
-        narrative = reconcile_narrative_numbers(narrative, contract)
         try:
+            narrative = generate_variable_narrative(
+                narrative_context,
+                invoke=invoke,
+                revision_notes=revision_notes,
+            )
+            narrative = reconcile_narrative_numbers(narrative, contract)
             validation = validate_parecer_narrative(
                 narrative,
                 contract,
@@ -838,6 +846,13 @@ def generate_parecer_document(
                 raise
             revision_notes = [
                 f"{issue.local}: {issue.mensagem}" for issue in exc.report.problemas
+            ]
+        except ValidationError as exc:
+            if attempt == 2:
+                raise
+            revision_notes = [
+                f"{'.'.join(map(str, issue['loc']))}: {issue['msg']}"
+                for issue in exc.errors(include_input=False, include_context=False)
             ]
     context = build_parecer_context(output, meta, policy, governance=governance)
     context["parecer_data"] = contract.model_dump(mode="json")
