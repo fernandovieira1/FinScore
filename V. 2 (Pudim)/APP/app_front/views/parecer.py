@@ -186,6 +186,7 @@ def _render_policy_summary(
 
     col_score, col_quality, col_serasa, col_decision = st.columns(4)
     col_score.metric("FinScore", _fmt_score(observed.get("finscore_prudencial")))
+    col_score.caption(policy["segmento_politica"])
     col_quality.metric("Qualidade dos dados", _fmt_percent(status.get("indice_confiabilidade")))
     col_serasa.metric("Serasa", _fmt_score(serasa.get("serasa_score")))
     decision_icon = DECISION_ICONS.get(policy["decisao"], "").split(" ", 1)[0]
@@ -213,12 +214,12 @@ def _render_policy_summary(
     if decision == "aprovar":
         if guarantee.get("recomendada"):
             st.success(
-                "Recomendação: aprovar com garantia. Os sinais que fundamentam a mitigação e as "
+                f"Recomendação: {policy['rotulo']}, com garantia recomendada. Os sinais que fundamentam a mitigação e as "
                 "providências recomendadas estão detalhados abaixo."
             )
         else:
             st.success(
-                "Recomendação: aprovar. A conveniência de incluir garantias será avaliada pelo "
+                f"Recomendação: {policy['rotulo']}. A conveniência de incluir garantias será avaliada pelo "
                 "gestor e pela alçada competente conforme a estrutura da operação."
             )
     elif decision == "nao_aprovar":
@@ -370,6 +371,10 @@ def _record_generation_failure(meta: Dict[str, Any], error: Exception) -> None:
             payload["validation_issue_codes"] = [
                 issue.codigo for issue in error.report.problemas
             ]
+            payload["validation_issues"] = [
+                {"codigo": issue.codigo, "local": issue.local, "mensagem": issue.mensagem}
+                for issue in error.report.problemas
+            ]
         DOSSIER_STORE.record_technical_telemetry(
             analysis_id,
             "parecer_nao_concluido",
@@ -395,9 +400,12 @@ def _pdf_metadata(
         "data_analise": datetime.now().strftime("%d/%m/%Y"),
         "finscore_ajustado": observed.get("finscore_prudencial"),
         "classificacao_finscore": policy["segmento_politica"],
+        "parametros_politica": policy.get("parametros_politica"),
+        "cap_acionado_ate_500": policy.get("cap_acionado_ate_500", False),
         "serasa_score": serasa.get("serasa_score"),
         "classificacao_serasa": serasa.get("status") or "Evidência separada",
         "decisao": policy["decisao"],
+        "recomendacao_finscore": policy["rotulo"],
         "serasa_data": contract.evidencias_suplementares.serasa.data_consulta,
         "ano_inicial": period.inicio,
         "ano_final": period.fim,
@@ -413,8 +421,12 @@ def _render_export(
     center = st.columns([1, 1, 1])[1]
     with center:
         from services.parecer_document import select_report_content
-        export_mode = st.selectbox('Conteúdo do PDF',
-            ['Parecer principal', 'Parecer com anexo técnico', 'Anexo técnico'])
+        export_mode = st.selectbox(
+            'Conteúdo do PDF',
+            ['Parecer principal', 'Parecer com anexo técnico', 'Anexo técnico'],
+            index=1,
+            format_func=lambda mode: 'Parecer + Anexo' if mode == 'Parecer com anexo técnico' else mode,
+        )
         if st.session_state.get('_parecer_pdf_mode') != export_mode:
             st.session_state.pop('parecer_pdf', None)
             st.session_state.pop('parecer_pdf_pages', None)

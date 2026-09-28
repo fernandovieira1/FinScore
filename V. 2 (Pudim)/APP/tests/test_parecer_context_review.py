@@ -113,7 +113,7 @@ class ContextReviewTest(unittest.TestCase):
         config = PolicyConfig(limite_nao_aprovar=300, limite_referencia_garantia=600)
         policy = decide_pudim(self.output, self.meta, config=config)
         contract = build_parecer_data(self.output, self.meta, policy)
-        self.assertEqual(_score_band(550, config), 'DE 300 A MENOS DE 600')
+        self.assertEqual(_score_band(550, config), 'Risco relevante')
         self.assertIn('300,00', _policy_reading(contract))
         self.assertIn('600,00', _policy_reading(contract))
         document = render_structured_parecer(self.fixture._narrative(), contract)

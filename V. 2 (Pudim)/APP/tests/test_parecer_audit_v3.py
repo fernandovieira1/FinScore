@@ -51,15 +51,16 @@ class ParecerAuditV3Test(unittest.TestCase):
         return decide_pudim(output,self.meta)
 
     def test_natural_500(self):
-        self.assertEqual(self.policy(500)['segmento_politica'],'500 OU MAIS')
+        self.assertEqual(self.policy(500)['segmento_politica'],'Risco aceitável')
     def test_natural_above_500(self):
-        self.assertEqual(self.policy(800)['segmento_politica'],'500 OU MAIS')
+        self.assertEqual(self.policy(800)['segmento_politica'],'Risco reduzido')
     def test_binding_500_cap(self):
-        p=self.policy(500,[500]);self.assertEqual(p['segmento_politica'],'APROVAÇÃO SUJEITA A MITIGADORES');self.assertTrue(p['garantia']['recomendada'])
+        p=self.policy(500,[500]);self.assertEqual(p['segmento_politica'],'Risco aceitável');self.assertTrue(p['garantia']['recomendada'])
+        self.assertEqual(p['rotulo'], 'Aprovar')
     def test_multiple_caps(self):
         self.assertTrue(self.policy(500,[650,500])['cap_acionado_ate_500'])
     def test_below_500_other_rule(self):
-        self.assertEqual(self.policy(350)['segmento_politica'],'250 A 499,99')
+        self.assertEqual(self.policy(350)['segmento_politica'],'Risco relevante')
     def test_low_cap_does_not_override_decline(self):
         self.assertEqual(self.policy(200,[500])['decisao'],'nao_aprovar')
 

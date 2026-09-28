@@ -296,7 +296,9 @@ class ParecerPudimV2Test(unittest.TestCase):
             "Suspender até validação",
         ):
             self.assertNotIn(obsolete, methodology)
-        self.assertIn("confiabilidade inferior a 75%", methodology)
+        self.assertIn("confiabilidade ausente ou inferior a 75%", methodology)
+        self.assertIn("A aprovação qualificada é uma qualificação de Aprovar", methodology)
+        self.assertIn("**igual ou superior a 90%**", methodology)
         self.assertIn("Springate", methodology)
         self.assertIn("Fleuriet", methodology)
         self.assertIn("não presume percentual de cobertura", methodology)

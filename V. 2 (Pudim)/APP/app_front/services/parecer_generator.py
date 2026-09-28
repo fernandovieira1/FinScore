@@ -360,11 +360,27 @@ def build_narrative_context(contract: ParecerData) -> Dict[str, Any]:
         if not references:
             routes[section] = ["ACH-RES-FINSCORE"]
 
+    finding_rows = [item.model_dump(mode="json") for item in findings]
+    for finding in finding_rows:
+        for evidence in finding["evidencias"]:
+            value = evidence["valor"]
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            if not math.isfinite(value):
+                continue
+            if evidence["unidade"] == "proporcao":
+                formatted = f"{value * 100:,.2f}" + "%"
+            elif isinstance(value, int) and evidence["unidade"] is None:
+                formatted = str(value)
+            else:
+                formatted = f"{value:,.2f}"
+            evidence["valor_formatado"] = formatted.replace(",", "X").replace(".", ",").replace("X", ".")
+
     return {
         "analise_id": contract.analise_id,
         "identificacao": contract.identificacao.model_dump(mode="json"),
         "qualidade": contract.qualidade.resumo.model_dump(mode="json"),
-        "achados": [item.model_dump(mode="json") for item in findings],
+        "achados": finding_rows,
         "roteiro_achados": routes,
         "achado_ids_permitidos": ids,
     }
@@ -382,6 +398,9 @@ Regras:
 - não invente fatos, causas, setor, porte, parâmetros, datas, valores, limites ou documentos;
 - ao citar grandezas calculadas, arredonde para duas casas decimais e use o padrão brasileiro:
   ponto para milhares e vírgula para decimais; preserve anos e contagens inteiros;
+- copie valor_formatado da evidência correspondente ao campo, unidade e exercício citados;
+  mantenha o achado_id dessa evidência na mesma seção ou item; não abrevie montantes em
+  milhares ou milhões, nem calcule diferenças, percentuais ou limites ausentes das evidências;
 - percentuais somente podem citar evidências com unidade proporcao, multiplicadas por 100;
 - examine o cenário adverso e o severo quando disponíveis e a trajetória anual dos diagnósticos;
 - FinScore não é PD nem rating regulatório; frequência de simulação não é inadimplência;
@@ -476,6 +495,7 @@ def generate_variable_narrative(
     *,
     invoke: Callable[..., str] = invoke_structured_model,
     revision_notes: Iterable[str] | None = None,
+    previous_narrative: ParecerNarrativo | None = None,
 ) -> ParecerNarrativo:
     messages = [
         {"role": "developer", "content": _developer_prompt()},
@@ -489,12 +509,19 @@ def generate_variable_narrative(
     ]
     notes = [str(item).strip() for item in (revision_notes or []) if str(item).strip()]
     if notes:
+        if previous_narrative is not None:
+            messages.append({
+                "role": "assistant",
+                "content": previous_narrative.model_dump_json(),
+            })
         messages.append(
             {
                 "role": "developer",
                 "content": (
                     "A redação anterior não passou nos controles abaixo. Gere novamente todo "
-                    "o objeto, corrigindo cada ocorrência sem criar fatos ou referências. Para "
+                    "o objeto, corrigindo cada ocorrência sem criar fatos ou referências e "
+                    "preservando os trechos já sustentados pelas evidências. A resposta anterior "
+                    "é apenas um rascunho reprovado, nunca uma fonte factual. Para "
                     "número sem lastro, remova a afirmação numérica se o valor exato não constar "
                     "nas evidências referenciadas; não calcule variações novas. Cenários devem ser "
                     "descritos apenas como hipóteses condicionais. Não atribua percentual de "
@@ -825,12 +852,14 @@ def generate_parecer_document(
     if contract.evidencias_suplementares.serasa.cronologia_valida is False:
         raise ValueError('A data da consulta ao Serasa é posterior à data da análise. Corrija antes de gerar o parecer.')
     revision_notes: list[str] = []
+    previous_narrative: ParecerNarrativo | None = None
     for attempt in range(3):
         try:
             narrative = generate_variable_narrative(
                 narrative_context,
                 invoke=invoke,
                 revision_notes=revision_notes,
+                previous_narrative=previous_narrative,
             )
             validation = validate_parecer_narrative(
                 narrative,
@@ -844,6 +873,7 @@ def generate_parecer_document(
             revision_notes = [
                 f"{issue.local}: {issue.mensagem}" for issue in exc.report.problemas
             ]
+            previous_narrative = narrative
         except ValidationError as exc:
             if attempt == 2:
                 raise

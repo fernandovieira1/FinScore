@@ -146,6 +146,8 @@ def _result_findings(contract: ParecerData) -> list[Finding]:
                 _evidence("finscore.adaptativo", "nucleo_fp", contract.finscore.adaptativo.nucleo_fp, unit="pontos"),
                 _evidence("finscore.adaptativo", "pos_gargalo", contract.finscore.adaptativo.pos_gargalo, unit="pontos"),
                 _evidence("governanca.recomendacao_finscore", "codigo", recommendation.codigo.value),
+                _evidence("governanca.recomendacao_finscore", "faixa", recommendation.faixa),
+                _evidence("governanca.recomendacao_finscore", "rotulo", recommendation.rotulo),
                 _evidence("governanca.recomendacao_finscore", "garantia_recomendada", recommendation.garantia.recomendada),
             ],
             efeito_metodologico="Mantém núcleos, métodos, gargalo, caps e recomendação como grandezas distintas.",

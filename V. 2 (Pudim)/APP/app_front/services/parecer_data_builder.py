@@ -116,7 +116,7 @@ except ModuleNotFoundError:  # Importação como pacote nos testes.
     from app_front.services.credit_policy import decide_pudim
 
 
-PARECER_POLICY_VERSION = "three-decisions-finscore-only-v3-traceability"
+PARECER_POLICY_VERSION = "three-decisions-finscore-only-v4-qualified-approval"
 
 PERCENT_INDICATORS = {
     "crescimento_receita",

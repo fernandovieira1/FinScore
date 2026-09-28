@@ -278,7 +278,10 @@ def _validate_numbers(
     finding_map = _finding_map(contract)
     verified = 0
     for local, text, finding_ids in _iter_text_blocks(narrative):
-        for token in _number_tokens(text):
+        numeric_text = DATE_PATTERN.sub(" ", text)
+        period_spans = _period_year_spans(numeric_text, contract)
+        for match in NUMBER_PATTERN.finditer(numeric_text):
+            token = match.group()
             value, percent = _parse_number(token)
             if value is None:
                 continue
@@ -287,6 +290,8 @@ def _validate_numbers(
                 percent=percent,
             )
             verified += 1
+            if match.span() in period_spans:
+                continue
             if not _matches_authorized(value, percent, authorized):
                 issues.append(
                     ValidationIssue(
@@ -296,6 +301,35 @@ def _validate_numbers(
                     )
                 )
     return issues, verified
+
+
+def _period_year_spans(text: str, contract: ParecerData) -> set[tuple[int, int]]:
+    """Anos citados como período têm lastro na identificação da análise.
+
+    A exceção exige contexto temporal e o exercício efetivamente processado;
+    não autoriza montantes, percentuais ou pontos que coincidam com um ano.
+    """
+    year = r"\b\d{4}\b"
+    separator = r"(?:\s+(?:a|e|até)\s+|\s*[-–—]\s*|,\s+)"
+    sequence = year + "(?:" + separator + year + ")*"
+    pattern = (
+        r"\b(?:em|desde|entre|até|anos?|exercícios?|exercicios?|período|periodo)"
+        r"(?:\s+analisado)?(?:\s+(?:de|entre))?\s+" + sequence
+        + "|" + year + "(?:" + separator + year + ")+"
+    )
+    allowed = set(contract.identificacao.periodos.analisado.exercicios)
+    spans: set[tuple[int, int]] = set()
+    for reference in re.finditer(pattern, text, flags=re.IGNORECASE):
+        for token in NUMBER_PATTERN.finditer(text, reference.start(), reference.end()):
+            if not re.fullmatch(r"\d{4}", token.group()) or int(token.group()) not in allowed:
+                continue
+            before, after = text[:token.start()], text[token.end():]
+            if re.search(r"(?:R\$|US\$|BRL|USD)\s*$", before, re.IGNORECASE):
+                continue
+            if re.match(r"\s*(?:%|reais\b|pontos\b|mil\b|milh[oõ]es\b|bilh[oõ]es\b|[.,]\d)", after, re.IGNORECASE):
+                continue
+            spans.add(token.span())
+    return spans
 
 
 def _validate_dates(narrative: ParecerNarrativo, contract: ParecerData) -> list[ValidationIssue]:
@@ -360,10 +394,20 @@ def _validate_semantics(
                 "a narrativa incluiu conteúdo de governança reservado à ressalva institucional fixa",
             )
         )
-    if re.search(
-        r"finscore.{0,45}(?:pd|probabilidade de (?:default|inadimpl[eê]ncia))|"
-        r"(?:pd|probabilidade de (?:default|inadimpl[eê]ncia)).{0,45}finscore",
+    # A ressalva metodológica explícita não equipara score a probabilidade.
+    # Remova somente a expressão negada; afirmações restantes seguem validadas.
+    pd_term = r"(?:\bpd\b|probabilidade de (?:default|inadimpl[eê]ncia))"
+    pd_text = re.sub(
+        r"\bfinscore\s+n[aã]o\s+"
+        r"(?:[ée]|representa|equivale a|corresponde a|deve ser (?:interpretado|tratado) como)\s+"
+        r"(?:(?:uma|a)\s+)?" + pd_term,
+        " ",
         combined,
+        flags=re.IGNORECASE,
+    )
+    if re.search(
+        rf"\bfinscore\b.{{0,45}}{pd_term}|{pd_term}.{{0,45}}\bfinscore\b",
+        pd_text,
         re.IGNORECASE | re.DOTALL,
     ):
         issues.append(
@@ -424,9 +468,11 @@ def _validate_semantics(
         RecommendationCode.DO_NOT_APPROVE: r"n[aã]o aprovar",
         RecommendationCode.INCONSISTENT_DATA: r"dados inconsistentes",
     }
+    if contract.governanca.recomendacao_finscore.rotulo == "Aprovação qualificada":
+        labels[RecommendationCode.APPROVE] = r"aprovar|aprova[cç][aã]o qualificada"
     explicit = re.findall(
         r"recomenda[cç][aã]o\s+(?:finscore\s+)?(?:é|permanece|foi|:)\s*"
-        r"(aprovar|n[aã]o aprovar|dados inconsistentes)",
+        r"(aprovar|aprova[cç][aã]o qualificada|n[aã]o aprovar|dados inconsistentes)",
         combined,
         re.IGNORECASE,
     )

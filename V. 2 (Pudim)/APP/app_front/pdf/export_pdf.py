@@ -14,6 +14,7 @@ import platform
 import asyncio
 import base64
 import html as html_lib
+import math
 import re
 from datetime import datetime
 from pathlib import Path
@@ -227,6 +228,75 @@ def _get_font_families_for_engine(engine: str) -> Dict[str, str]:
         }
 
 
+def _render_finscore_band_chart(meta: Dict) -> str:
+    """Representa o resultado existente, sem modificar o score ou a política."""
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
+    from matplotlib.patches import Rectangle
+
+    try:
+        from services.credit_policy import PolicyConfig, _score_band, finscore_bands
+    except ModuleNotFoundError:
+        from app_front.services.credit_policy import PolicyConfig, _score_band, finscore_bands
+
+    config = PolicyConfig(**(meta.get("parametros_politica") or {}))
+    value = meta.get("finscore_ajustado")
+    if value is None:
+        value = meta.get("finscore")
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        score = None
+    if score is not None and (not math.isfinite(score) or not 0 <= score <= 1000):
+        score = None
+
+    ranges = finscore_bands(config)
+    bands = (ranges[0][0], *(band[1] for band in ranges))
+    classification = _score_band(score, config)
+
+    figure = Figure(figsize=(7.2, 1.35), dpi=200, facecolor="white")
+    FigureCanvasAgg(figure)
+    axes = figure.add_axes((0.025, 0.05, 0.95, 0.9))
+    axes.set(xlim=(0, 1000), ylim=(0, 1))
+    axes.axis("off")
+    axes.text(0, 0.94, "FinScore · Faixas de classificação", fontsize=9,
+              weight="bold", color=ACCENT_PRIMARY, va="top")
+    for index, (start, end, label, color) in enumerate(ranges):
+        axes.add_patch(Rectangle((start, 0.29), end - start, 0.19,
+                                 facecolor=color, edgecolor="white", linewidth=1))
+        # Legenda com colunas iguais para manter legíveis as faixas menores.
+        legend_x = index * 250
+        axes.add_patch(Rectangle((legend_x, 0.015), 12, 0.065, facecolor=color))
+        axes.text(legend_x + 20, 0.048, label, fontsize=7.2,
+                  color=NEUTRAL_DARK, va="center", wrap=True)
+    for point in dict.fromkeys(bands):
+        axes.text(point, 0.23, f"{point:g}".replace(".", ","), fontsize=7,
+                  color="#526174", va="top",
+                  ha="left" if point == 0 else "right" if point == 1000 else "center")
+    if score is not None:
+        color = next((color for _start, end, _label, color in ranges if score < end), ranges[-1][3])
+        display = f"{score:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        axes.text(0, 0.69, f"Empresa: {display} pontos · {classification.capitalize()}",
+                  fontsize=8, weight="bold", color=color, va="center")
+        axes.plot([score, score], [0.27, 0.49], color="#172b40", linewidth=1.5)
+        axes.plot(score, 0.54, marker="v", markersize=7, color=color,
+                  markeredgecolor="#172b40", markeredgewidth=0.6, clip_on=False)
+    else:
+        axes.text(0, 0.69, "FinScore não disponível", fontsize=8,
+                  color=NEUTRAL_DARK, va="center")
+    buffer = BytesIO()
+    figure.savefig(buffer, format="png", dpi=200)
+    chart_b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
+    description = html_lib.escape(
+        f"Faixas FinScore. Resultado da empresa: {value}. Classificação: {classification}."
+    )
+    return (
+        '<div class="finscore-band-chart" style="page-break-inside:avoid;margin:6pt 0;">'
+        f'<img src="data:image/png;base64,{chart_b64}" alt="{description}" '
+        'style="width:18.3cm;height:3.43125cm;" /></div>'
+    )
+
+
 def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, engine: str = 'xhtml2pdf') -> str:
     """
     Renderiza o conteúdo do parecer em HTML completo com estilos de impressão.
@@ -339,7 +409,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         "dados_inconsistentes": "DADOS INCONSISTENTES",
     }
     decisao_texto = html_lib.escape(
-        str(decisao_map.get(decisao, str(decisao).upper()))
+        str(meta.get("recomendacao_finscore") or decisao_map.get(decisao, str(decisao).upper()))
     )
     
     # Data por extenso
@@ -355,7 +425,9 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         str(meta.get("cidade_relatorio", "São Paulo (SP)"))
     )
     periodo_texto, ano_inicial_texto, ano_final_texto = _format_periodo(meta)
-    finscore_display = _format_score(meta.get("finscore_ajustado") or meta.get("finscore"))
+    finscore_display = _format_score(
+        meta.get("finscore_ajustado") if meta.get("finscore_ajustado") is not None else meta.get("finscore")
+    )
     serasa_display = _format_score(meta.get("serasa_score") or meta.get("serasa"))
     
     # Obter configurações específicas do engine
@@ -962,6 +1034,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         <tr><td bgcolor="#2d4c6a" style="background:#2d4c6a;color:#fff;font-size:9.5pt;padding:2pt 18pt 14pt;"><strong style="color:#fff;">Identificador da análise:</strong> $analise_id</td></tr>
     </table>
     
+    $finscore_band_chart
     <section class="summary-grid">
         <div class="summary-card">
             <p class="summary-label">FinScore</p>
@@ -1028,6 +1101,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
         decisao_texto=decisao_texto,
         cidade_relatorio=cidade_relatorio,
         finscore_display=finscore_display,
+        finscore_band_chart=_render_finscore_band_chart(meta),
         classificacao_fs=classificacao_fs,
         serasa_display=serasa_display,
         classificacao_ser=classificacao_ser,

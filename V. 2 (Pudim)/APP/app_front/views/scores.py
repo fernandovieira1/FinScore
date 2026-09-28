@@ -8,6 +8,11 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+try:
+    from services.credit_policy import PolicyConfig, _score_band
+except ModuleNotFoundError:
+    from app_front.services.credit_policy import PolicyConfig, _score_band
+
 
 def _number(value: Any) -> float | None:
     try:
@@ -113,6 +118,7 @@ def _status_banner(summary: dict[str, Any]) -> None:
 
 def _render_score_principal(summary: dict[str, Any]) -> None:
     st.markdown("### II. FinScore")
+    st.caption("Classificação quantitativa: " + _score_band(summary["finscore_prudencial"], PolicyConfig()))
     columns = st.columns(4)
     columns[0].metric(
         "FinScore prudencial",

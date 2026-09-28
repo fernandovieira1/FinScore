@@ -183,16 +183,16 @@ Os caps são tetos, não descontos fixos. Quando mais de uma regra é acionada, 
 | Endividamento exigível de 95% a menos de 100% do ativo | 650 |
 | Cobertura de juros inferior a 1 vez | 500 |
 
-Os cortes de 125, 250 e 500 pontos integram a análise de sensibilidade. Na camada decisória, 250 pontos funciona como piso de aprovação e 500 pontos como referência para avaliar a necessidade de garantia:
+Os cortes de 125, 250 e 500 pontos continuam integrando a análise de sensibilidade. Na política de referência, 250 pontos é o piso de aprovação, 500 é a referência para avaliar a necessidade de garantia e 750 inicia a faixa quantitativa de risco reduzido:
 
 | FinScore | Faixa |
 |---:|---|
-| abaixo de 125 | Abaixo do primeiro corte de sensibilidade |
-| de 125 a 249,99 | Abaixo do piso decisório |
-| de 250 a 499,99 | Aprovação sujeita à avaliação de mitigadores |
-| 500 ou mais | Avaliação de garantias atribuída ao gestor e à alçada competente |
+| 0 ≤ score < 250 | Risco elevado / vermelho |
+| 250 ≤ score < 500 | Risco relevante / amarelo |
+| 500 ≤ score < 750 | Risco aceitável / azul |
+| 750 ≤ score ≤ 1.000 | Risco reduzido / verde |
 
-Essas faixas não são probabilidades de inadimplência nem ratings regulatórios. O resultado **Dados inconsistentes** prevalece sempre que o próprio cálculo estiver marcado como não utilizável para decisão.
+Essas faixas não são probabilidades de inadimplência nem ratings regulatórios. O resultado **Dados inconsistentes** prevalece sempre que o próprio cálculo estiver marcado como não utilizável para decisão. A seção 15 explica a leitura intuitiva das faixas e os requisitos adicionais de aprovação qualificada; a cor verde, isoladamente, não concede essa qualificação.
 
 ### 11. Confiabilidade da informação
 
@@ -209,7 +209,7 @@ A confiabilidade é um índice normativo de completude, reconciliação, evidên
 | Plausibilidade (P) | 15% | `máx(0,40; 1 − 0,03 × alertas de viés alto ou crítico)` |
 | Consistência temporal (T) | 5% | `máx(0,50; 1 − 0,10 × variações abruptas)` |
 
-A classificação é Alta a partir de 90%, Razoável de 75% a 89,99%, Provisória de 60% a 74,99% e Insuficiente para decisão abaixo de 60%. O limiar de aptidão decisória é 75%, em conjunto com os demais controles de qualidade e alertas bloqueadores. Não há piso adicional de confiabilidade na camada de decisão.
+A classificação é Alta a partir de 90%, Razoável de 75% a 89,99%, Provisória de 60% a 74,99% e Insuficiente para decisão abaixo de 60%. O limiar geral de aptidão decisória continua em 75%, em conjunto com os demais controles de qualidade e alertas bloqueadores. Exclusivamente para aprovação qualificada, a política exige IQD de pelo menos 90%, sem alterar o cálculo do índice nem o limiar geral de 75%.
 
 ### 12. Cenários determinísticos
 
@@ -262,15 +262,49 @@ CDG positivo com saldo de tesouraria não negativo indica cobertura da NCG por f
 
 ### 15. Critérios de decisão de crédito
 
-A decisão utiliza o FinScore prudencial e o status de aptidão produzido pelos controles de qualidade. Serasa, Springate e Fleuriet são evidências suplementares: não são somados à pontuação e não criam um quarto resultado.
+A decisão utiliza o FinScore prudencial e o status de aptidão produzido pelos controles de qualidade. A leitura segue quatro etapas: **score calculado → classificação quantitativa → controles prudenciais → recomendação**. A classificação mostra a posição relativa da empresa na escala; a recomendação considera também se o resultado pode ser utilizado e quais ressalvas precisam ser atendidas.
+
+#### Faixas de classificação: como interpretar
+
+Quanto maior o FinScore prudencial, mais favorável é a capacidade econômico-financeira relativa sintetizada pelo modelo. A tabela apresenta os limites da política de referência. Os limites são aplicados ao valor calculado, antes do arredondamento para exibição.
+
+| FinScore prudencial | Classificação / cor | Leitura intuitiva e decisão-base |
+|---|---|---|
+| **0 ≤ score < 250** | **Risco elevado / vermelho** | A capacidade econômico-financeira está abaixo do piso decisório. Com dados aptos, a recomendação é **Não aprovar**. |
+| **250 ≤ score < 500** | **Risco relevante / amarelo** | Atinge o piso de aprovação, mas requer avaliação de mitigadores. A recomendação é **Aprovar**, com garantia recomendada e análise de sua suficiência. |
+| **500 ≤ score < 750** | **Risco aceitável / azul** | Faixa normal de aprovação. A recomendação-base é **Aprovar**; caps, estresse e evidências complementares podem exigir ressalvas e mitigadores. |
+| **750 ≤ score ≤ 1.000** | **Risco reduzido / verde** | Posição quantitativa mais favorável dentro do FinScore. Pode receber **Aprovação qualificada** somente após atender aos requisitos adicionais abaixo. |
+
+Por exemplo, 682 pontos correspondem a risco aceitável, em azul; 810 pontos correspondem a risco reduzido, em verde. “Risco reduzido” é uma classificação relativa dentro do FinScore: não significa ausência de risco nem uma probabilidade de inadimplência calibrada.
+
+**A cor representa somente a faixa quantitativa.** Uma empresa com 824 pontos pode continuar verde e receber **Aprovar**, com mitigadores recomendados. Um bloqueio de qualidade pode produzir **Dados inconsistentes** com o mesmo score calculado. As ressalvas são apresentadas separadamente; o score não é reduzido artificialmente para coincidir com a recomendação. Resultado não calculável permanece sem marcador no gráfico.
+
+#### Requisitos para aprovação qualificada
+
+A qualificação exige simultaneamente:
+
+- FinScore prudencial **igual ou superior a 750**;
+- índice de qualidade dos dados (IQD) **igual ou superior a 90%**;
+- aptidão para cálculo e decisão, sem bloqueios existentes;
+- **nenhum cap prudencial acionado**, mesmo que o score continue na faixa verde;
+- ausência do sinal de atenção já utilizado pela política: **FinScore no cenário severo inferior a 250**, quando esse resultado estiver disponível.
+
+IQD **inferior a 75% ou ausente** continua produzindo **Dados inconsistentes**. Entre **75% e menos de 90%**, o IQD não invalida o score por esse motivo: apenas impede a aprovação qualificada. O limite de 90% é uma condição adicional de uso da categoria máxima; não muda o cálculo do IQD nem representa mérito econômico da empresa.
+
+Quando a faixa verde não atende aos requisitos adicionais, a recomendação segue as regras já existentes de **Aprovar**, avaliação de mitigadores ou **Dados inconsistentes**, com os motivos registrados. O controle de estresse reutiliza o corte já existente, sem criar choques, cenários ou novos limites. A ausência de resultado de estresse não é convertida em zero nem cria um novo bloqueio automático.
+
+Serasa, Springate e Fleuriet permanecem evidências complementares: não são somados ao score, não mudam sua faixa ou cor e não funcionam como votação para rebaixamento. Continuam podendo fundamentar ressalvas, garantias e acompanhamento, inclusive em uma aprovação qualificada.
+
+#### Precedência da recomendação
 
 | Resultado | Critérios | Efeito e encaminhamento |
 |---|---|---|
-| **Dados inconsistentes** | FinScore indisponível; base não apta para cálculo; resultado provisório ou não utilizável; confiabilidade inferior a 75%; correção pendente; ou alerta bloqueador. | Não há base suficiente para aprovar ou recusar a operação. O parecer discrimina cada pendência, seu impacto e a correção necessária. A análise deve ser refeita após o saneamento. |
+| **Dados inconsistentes** | FinScore indisponível; base não apta para cálculo; resultado provisório ou não utilizável; confiabilidade ausente ou inferior a 75%; correção pendente; ou alerta bloqueador. | Prevalece sobre todas as faixas. Não há base suficiente para aprovar ou recusar a operação. O parecer discrimina cada pendência, seu impacto e a correção necessária. A análise deve ser refeita após o saneamento. |
 | **Não aprovar** | Resultado apto para decisão e FinScore prudencial inferior a 250 pontos. | A capacidade econômico-financeira ficou abaixo do piso decisório. Nova análise depende de mudança material nas demonstrações e nos indicadores que formam a pontuação. |
 | **Aprovar** | Resultado apto para decisão e FinScore prudencial igual ou superior a 250 pontos. | Recomendação favorável; a conveniência, modalidade e suficiência de eventual garantia serão avaliadas pelo gestor e pela alçada competente, além dos controles cadastrais e jurídicos da instituição. |
+| **Aprovação qualificada** | Aprovação que atende a todos os requisitos adicionais descritos acima. | Qualifica a recomendação favorável, preservando ressalvas complementares, análise de garantias e decisão institucional. |
 
-A camada decisória converte a pontuação e a aptidão nas três categorias acima. O piso de 250 pontos coincide com um dos cortes empregados na análise de sensibilidade. Os diagnósticos complementares qualificam a recomendação de garantia, os covenants e a análise de risco, sem substituir o FinScore como eixo principal.
+A aprovação qualificada é uma qualificação de Aprovar. O piso de 250 pontos coincide com um dos cortes empregados na análise de sensibilidade. Os diagnósticos complementares qualificam a recomendação de garantia, os covenants e a análise de risco, sem substituir o FinScore como eixo principal.
 
 ### 16. Evidências suplementares, garantias e covenants
 
@@ -295,7 +329,7 @@ Atualização de interpretação e apresentação (26/09/2026): a metodologia qu
 
 #### Regras complementares de transparência
 
-- **Cap e faixa:** qualquer cap acionado de 500 pontos ou menos impede o enquadramento automático na faixa superior, mesmo quando o resultado final é exatamente 500. O valor calculado não é substituído por 499,99. Bloqueios informacionais e recusa por score inferior a 250 continuam prevalecendo.
+- **Cap e faixa:** a faixa quantitativa acompanha o FinScore prudencial após os caps existentes. Um resultado de exatamente 500 fica em risco aceitável, azul, mesmo com ressalva de cap e mitigadores. Qualquer cap acionado impede aprovação qualificada, sem mudar artificialmente o score nem a cor. Bloqueios informacionais e recusa por score inferior a 250 continuam prevalecendo.
 - **Springate:** somente é interpretado para indústria, comércio e serviços não financeiros declarados. Seguradoras, bancos, instituições financeiras, cooperativas de crédito, estruturas patrimoniais incompatíveis e CNAEs financeiros (divisões 64–66) recebem “NÃO APLICÁVEL”. Tipo não informado também impede diagnóstico até confirmação. Não se infere o setor pelo nome. A fórmula, quando aplicável, permanece inalterada.
 - **Dívida:** empréstimos e financiamentos CP + LP − caixa e equivalentes. Arrendamentos, mútuos e outras obrigações só integram a medida se estiverem nas rubricas de dívida da entrada. A extensão para contas adicionais permanece desativada.
 - **Fleuriet simplificado:** NCG, CDG e T originais são preservados. Tesouraria estrita = caixa − empréstimos CP; resíduo = T simplificado − tesouraria estrita. A materialidade usa o limiar já existente de 1% do ativo total, com denominador em valor absoluto. O alerta complementar não altera score nem confiabilidade. A abertura parcial das contas operacionais impede equiparar T simplificado a caixa disponível.

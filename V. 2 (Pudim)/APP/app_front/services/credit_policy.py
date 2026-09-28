@@ -17,12 +17,18 @@ class PolicyConfig:
     rotulos_faixas: dict[str, str] = field(default_factory=dict)
     texto_recomendacao: str | None = None
     texto_politica_garantia: str | None = None
+    limite_aprovacao_qualificada: float = 750.0
+    confiabilidade_minima_qualificada: float = 0.90
 
     def __post_init__(self):
         if not (0 <= self.limite_nao_aprovar < self.limite_referencia_garantia <= 1000):
             raise ValueError("Os limites de política devem ser crescentes entre 0 e 1000.")
         if not 0 <= self.confiabilidade_minima_modelo <= 1:
             raise ValueError("A confiabilidade mínima deve estar entre 0 e 1.")
+        if not self.limite_referencia_garantia < self.limite_aprovacao_qualificada <= 1000:
+            raise ValueError("O limite de aprovação qualificada deve superar a referência de garantia e ser no máximo 1000.")
+        if not self.confiabilidade_minima_modelo <= self.confiabilidade_minima_qualificada <= 1:
+            raise ValueError("A qualidade para aprovação qualificada deve ser ao menos a mínima do modelo e no máximo 1.")
 
 
 DECISION_LABELS = {
@@ -30,6 +36,7 @@ DECISION_LABELS = {
     "nao_aprovar": "Não aprovar",
     "dados_inconsistentes": "Dados inconsistentes",
 }
+QUALIFIED_APPROVAL_LABEL = "Aprovação qualificada"
 
 
 def _number(value: Any) -> float | None:
@@ -63,16 +70,31 @@ def _last_record(frame: Any) -> Dict[str, Any]:
     return frame.iloc[-1].to_dict()
 
 
+def finscore_bands(config: PolicyConfig | None = None) -> tuple:
+    """Fonte única das faixas quantitativas e cores; independe da recomendação."""
+    cfg = config or PolicyConfig()
+    lower, upper = cfg.limite_nao_aprovar, cfg.limite_referencia_garantia
+    limits = (0, lower, upper, cfg.limite_aprovacao_qualificada, 1000)
+    names = ("Risco elevado", "Risco relevante", "Risco aceitável", "Risco reduzido")
+    colors = ("#c64747", "#c58a16", "#3276b5", "#26836b")
+    # Preservar configurações de rótulos institucionais das faixas anteriores.
+    legacy = (f"ABAIXO DE {lower:g}",
+              "250 A 499,99" if lower == 250 and upper == 500 else f"DE {lower:g} A MENOS DE {upper:g}",
+              f"{upper:g} OU MAIS", f"{upper:g} OU MAIS")
+    return tuple(
+        (limits[i], limits[i + 1], cfg.rotulos_faixas.get(name, cfg.rotulos_faixas.get(legacy[i], name)), colors[i])
+        for i, name in enumerate(names)
+    )
+
+
 def _score_band(score: float | None, config: PolicyConfig) -> str:
+    score = _number(score)
     if score is None:
         return "NÃO CALCULÁVEL"
-    if score < config.limite_nao_aprovar:
-        return f"ABAIXO DE {config.limite_nao_aprovar:g}"
-    if score < config.limite_referencia_garantia:
-        if config.limite_nao_aprovar == 250 and config.limite_referencia_garantia == 500:
-            return "250 A 499,99"
-        return f"DE {config.limite_nao_aprovar:g} A MENOS DE {config.limite_referencia_garantia:g}"
-    return f"{config.limite_referencia_garantia:g} OU MAIS"
+    for _start, end, label, _color in finscore_bands(config):
+        if score < end:
+            return label
+    return finscore_bands(config)[-1][2]
 
 
 def _fmt_alert_value(value: Any, metric: str) -> str:
@@ -327,7 +349,6 @@ def decide_pudim(
     active_low_cap = bool(isinstance(caps, pd.DataFrame) and not caps.empty and 'cap' in caps
                           and pd.to_numeric(caps['cap'], errors='coerce').le(cfg.limite_referencia_garantia).any())
     if active_low_cap and score is not None and score >= cfg.limite_referencia_garantia:
-        score_band = 'APROVAÇÃO SUJEITA A MITIGADORES'
         reasons[0] = f'FinScore prudencial de {_fmt_score(score)} pontos, sujeito a cap prudencial e mitigadores.'
 
     severe = _severe_scenario_score(output)
@@ -432,12 +453,33 @@ def decide_pudim(
 
     if cfg.texto_politica_garantia and decision == 'aprovar':
         guarantee['justificativa'] += ' Política do contratante: ' + cfg.texto_politica_garantia
+    # Qualificação da aprovação, sem novo código decisório ou alteração no score.
+    # Reutiliza o sinal de estresse já empregado na recomendação de garantia.
+    qualified = False
+    if score is not None and score >= cfg.limite_aprovacao_qualificada:
+        restrictions = []
+        if blocking:
+            restrictions.append("controles existentes impedem o uso decisório")
+        if reliability is None or reliability < cfg.confiabilidade_minima_qualificada:
+            restrictions.append(f"qualidade dos dados inferior a {cfg.confiabilidade_minima_qualificada:.0%} ou indisponível")
+        if isinstance(caps, pd.DataFrame) and not caps.empty:
+            restrictions.append("cap prudencial acionado")
+        if severe is not None and severe < cfg.limite_nao_aprovar:
+            restrictions.append(f"FinScore no cenário severo abaixo de {cfg.limite_nao_aprovar:g} pontos")
+        qualified = decision == "aprovar" and not restrictions
+        reasons.append(
+            "Aprovação qualificada não elegível: " + "; ".join(restrictions) + "."
+            if restrictions else
+            f"Aprovação qualificada: FinScore de pelo menos {cfg.limite_aprovacao_qualificada:g} pontos, "
+            f"qualidade dos dados de pelo menos {cfg.confiabilidade_minima_qualificada:.0%}, "
+            "sem bloqueios ou caps acionados e sem o sinal de estresse restritivo existente."
+        )
     return {
         "decisao": decision,
-        "rotulo": DECISION_LABELS[decision],
+        "rotulo": QUALIFIED_APPROVAL_LABEL if qualified else DECISION_LABELS[decision],
         "cap_acionado_ate_500": active_low_cap,
         "gate_informacional": {'apto_calculo': bool(status.get('apto_calculo')), 'apto_recomendacao': not blocking, 'confiabilidade': reliability},
-        "segmento_politica": cfg.rotulos_faixas.get(score_band, score_band),
+        "segmento_politica": score_band,
         "texto_politica_contratante": cfg.texto_recomendacao,
         "finscore_prudencial": score,
         "confiabilidade": reliability,

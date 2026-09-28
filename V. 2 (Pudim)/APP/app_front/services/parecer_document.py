@@ -395,8 +395,17 @@ def _policy_reading(contract: ParecerData) -> str:
         text += (f"Piso decisório: {_fmt_number(lower)} pontos; referência para avaliação de mitigadores: "
                  f"{_fmt_number(upper)} pontos. Resultado inferior a {lower:g} pontos integra a faixa restritiva; "
                  f"de {lower:g} a menos de {upper:g} pontos, a aprovação requer avaliação de mitigadores e garantias. "
-                 f"A faixa superior, a partir de {upper:g} pontos, exige ausência de cap prudencial acionado de {upper:g} ou menos. "
-                 "Quando esse cap é acionado, o enquadramento permanece sujeito a mitigadores, inclusive na fronteira da faixa. ")
+                 f"A aprovação sem ressalva por esse controle exige ausência de cap prudencial acionado de {upper:g} ou menos. "
+                 "Quando esse cap é acionado, a recomendação permanece sujeita a mitigadores, inclusive na fronteira da faixa. "
+                 "A classificação quantitativa e sua cor acompanham o score, independentemente dessas ressalvas. ")
+        qualified_min = params.get("limite_aprovacao_qualificada")
+        quality_min = params.get("confiabilidade_minima_qualificada")
+        if qualified_min is not None and quality_min is not None:
+            text += (f"Aprovação qualificada exige pelo menos {qualified_min:g} pontos, IQD de pelo menos "
+                     f"{_fmt_value(quality_min, 'proporcao')}, ausência de bloqueios e de qualquer cap acionado. "
+                     f"O sinal já existente de FinScore abaixo de {lower:g} no cenário severo também impede essa qualificação. ")
+            text += " ".join(_md(reason) for reason in recommendation.fundamentos
+                             if reason.startswith("Aprovação qualificada")) + " "
     else:
         text += "Os limiares da política não foram disponibilizados nesta execução. "
     return text + "Qualidade dos dados controla aptidão de uso e não é evidência de solvência."

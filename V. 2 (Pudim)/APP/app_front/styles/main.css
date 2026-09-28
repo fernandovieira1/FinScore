@@ -63,7 +63,7 @@ table {
     --muted: #6b7280;
     --accent: #0d47a1;
     --accent2: #1976d2;
-    --sidebar: #87CEFA;
+    --sidebar: #E8F9F9;
     --menu-text: #001733;
     --primary-btn: #5ea68d;
     --side-logo-top-fix: -38px;
@@ -204,13 +204,32 @@ section[data-testid="stSidebar"]>div:first-child {
 
 section[data-testid="stSidebar"] .block-container {
     padding-top: 0 !important;
-    padding-bottom: .8rem;
+    padding-bottom: 40px;
     width: 100% !important;
     max-width: var(--fs-sidebar-width) !important;
     margin: 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
+}
+
+section[data-testid="stSidebar"] .fs-sidebar-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: var(--fs-sidebar-width);
+    box-sizing: border-box;
+    padding: 8px clamp(18px, 3vw, 28px);
+    background: var(--sidebar);
+    color: #808080 !important;
+    font-size: 10px;
+    line-height: 1.4;
+    text-align: right;
+    z-index: 10;
+}
+
+section[data-testid="stSidebar"][aria-expanded="false"] .fs-sidebar-footer {
+    display: none;
 }
 
 section[data-testid="stSidebar"] .side-logo {

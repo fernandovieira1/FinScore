@@ -628,8 +628,16 @@ class FinScoreRecommendation(ContractModel):
 
     @model_validator(mode="after")
     def validate_label_and_eligibility(self) -> "FinScoreRecommendation":
-        if self.rotulo != RECOMMENDATION_LABELS[self.codigo]:
+        qualified = self.codigo is RecommendationCode.APPROVE and self.rotulo == "Aprovação qualificada"
+        if self.rotulo != RECOMMENDATION_LABELS[self.codigo] and not qualified:
             raise ValueError("rótulo da recomendação não corresponde ao código")
+        if qualified:
+            score_min = self.parametros_politica.get("limite_aprovacao_qualificada")
+            quality_min = self.parametros_politica.get("confiabilidade_minima_qualificada")
+            if (score_min is None or quality_min is None
+                    or self.finscore_prudencial is None or self.finscore_prudencial < score_min
+                    or self.confiabilidade is None or self.confiabilidade < quality_min):
+                raise ValueError("aprovação qualificada exige score e qualidade elegíveis na política registrada")
         if not self.apto_decisao and self.codigo is not RecommendationCode.INCONSISTENT_DATA:
             raise ValueError("resultado não apto deve produzir Dados inconsistentes")
         if self.codigo is RecommendationCode.INCONSISTENT_DATA and not self.bloqueios:
@@ -859,6 +867,14 @@ class ParecerData(ContractModel):
             raise ValueError("aplicabilidade da garantia diverge da recomendação")
         if self.finscore.utilizavel_decisao != quality.apto_decisao:
             raise ValueError("uso decisório diverge entre FinScore e qualidade")
+        if recommendation.rotulo == "Aprovação qualificada":
+            if self.finscore.caps:
+                raise ValueError("cap prudencial acionado impede aprovação qualificada")
+            lower = recommendation.parametros_politica.get("limite_nao_aprovar")
+            severe = [item for item in self.cenarios.deterministicos if item.nome.upper() == "SEVERO"]
+            if (lower is not None and severe and severe[-1].finscore_prudencial is not None
+                    and severe[-1].finscore_prudencial < lower):
+                raise ValueError("cenário severo restritivo impede aprovação qualificada")
 
         analyzed_years = set(self.identificacao.periodos.analisado.exercicios)
         for collection in (

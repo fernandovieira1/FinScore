@@ -64,7 +64,7 @@ def inject_global_css():
 
         /* ====== Sidebar ====== */
         [data-testid="stSidebar"] {{
-            background: #87CEFA;
+            background: #E8F9F9;
             color: {c["white"]} !important;
             border-right: 1px solid {c["blue_darker"]};
         }}

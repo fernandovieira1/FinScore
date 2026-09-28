@@ -17,6 +17,11 @@ GLOSSARY = {
         "é igual ou superior a 250 pontos. Pode incluir recomendação de garantia e permanece sujeita "
         "à alçada e aos controles cadastrais, jurídicos e de concentração da instituição."
     ),
+    "Aprovação qualificada": (
+        "Qualificação de Aprovar para FinScore de pelo menos 750 e IQD de pelo menos 90%, "
+        "sem bloqueios, caps acionados ou o sinal já existente de cenário severo abaixo de 250. "
+        "Preserva as ressalvas complementares e a decisão da alçada."
+    ),
     "Cap prudencial": (
         "Teto aplicado ao FinScore quando capitalização, endividamento exigível ou cobertura de "
         "juros alcançam condições de fragilidade definidas na metodologia."
@@ -41,9 +46,10 @@ GLOSSARY = {
         "cobertura de juros e composição do endividamento."
     ),
     "Faixa FinScore": (
-        "Leitura dos cortes usados na sensibilidade e na decisão: abaixo de 125; de 125 a 249,99; "
-        "de 250 a 499,99; e 500 ou mais. O piso decisório é 250 pontos; a faixa de 250 a 499,99 "
-        "aciona avaliação de garantia."
+        "Classificação quantitativa: abaixo de 250, risco elevado (vermelho); de 250 a menos de 500, "
+        "risco relevante (amarelo); de 500 a menos de 750, risco aceitável (azul); "
+        "de 750 a 1.000, risco reduzido (verde). A cor acompanha o score; a recomendação "
+        "considera separadamente qualidade, caps e demais controles prudenciais."
     ),
     "FinScore prudencial": (
         "Menor resultado pós-gargalo entre as abordagens estrutural e adaptativa, após a aplicação "
@@ -93,8 +99,17 @@ GLOSSARY = {
 FAQ = [
     (
         "Quais são os resultados possíveis da decisão?",
-        "Aprovar, Não aprovar e Dados inconsistentes. Aprovar pode incluir ou não recomendação de "
-        "garantia. Garantias, covenants e providências não constituem categorias adicionais.",
+        "Aprovar, Não aprovar e Dados inconsistentes. Aprovar pode receber a qualificação "
+        "Aprovação qualificada se atender aos requisitos adicionais. Toda aprovação pode incluir "
+        "recomendação de garantia. Garantias, covenants e providências permanecem separados.",
+    ),
+    (
+        "Um FinScore verde sempre recebe aprovação qualificada?",
+        "Não. A faixa verde começa em 750 pontos, mas a aprovação qualificada também exige "
+        "IQD de pelo menos 90%, ausência de bloqueios e de qualquer cap acionado e ausência "
+        "do sinal existente de FinScore inferior a 250 no cenário severo, quando disponível. "
+        "Com IQD entre 75% e menos de 90%, o score mantém sua faixa; apenas a qualificação "
+        "máxima fica impedida. Risco reduzido é relativo ao FinScore e não significa ausência de risco.",
     ),
     (
         "Qual é a diferença entre Não aprovar e Dados inconsistentes?",

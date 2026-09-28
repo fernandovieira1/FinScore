@@ -1,5 +1,12 @@
 {
     "qwen-code.provider": "api-key",
     "qwen-code.codingPlanRegion": "global",
-    "remote.autoForwardPortsFallback": 0
+    "remote.autoForwardPortsFallback": 0,
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
 }
