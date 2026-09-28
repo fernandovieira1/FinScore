@@ -244,7 +244,7 @@ Uma frequência simulada abaixo de determinado corte é condicionada às amplitu
 
 O Serasa permanece separado do cálculo. A pontuação externa é comparada ao FinScore para identificar convergência ou divergência, mas não há soma, média ou conversão automática. A marcação de restrição grave é feita pelo analista com base na consulta documental e permanece destacada para análise complementar; isoladamente, não altera o FinScore nem a categoria de decisão.
 
-O índice Springate é calculado por exercício como contraste de insolvência:
+Quando o tipo de empresa declarado confirma a aplicabilidade a atividade não financeira, o índice Springate é calculado por exercício como contraste de insolvência:
 
 `S = 1,03 × (CCL/AT) + 3,07 × (EBIT/AT) + 0,66 × (Resultado antes de IR/CSLL/PC) + 0,40 × (Receita/AT)`
 
@@ -291,7 +291,21 @@ Os covenants decorrem dos indicadores que originaram a ressalva. Sinal de distre
 
 ### 17. Conteúdo e leitura do parecer
 
-O parecer apresenta identificação, fontes, qualidade dos dados, indicadores, formação do FinScore, caps, cenários, sensibilidade, Serasa, Springate, Fleuriet, decisão, garantias, riscos, diligências e monitoramento. A metodologia acompanha o documento em anexo. O conjunto é dimensionado para 7 a 14 páginas, conforme a quantidade de evidências e ocorrências materiais.
+Atualização de interpretação e apresentação (26/09/2026): a metodologia quantitativa principal permanece congelada. O parecer principal e o anexo técnico podem ser baixados separadamente, ou juntos. A qualidade informacional autoriza, restringe ou bloqueia o uso do resultado; não constitui mérito econômico favorável à aprovação.
+
+#### Regras complementares de transparência
+
+- **Cap e faixa:** qualquer cap acionado de 500 pontos ou menos impede o enquadramento automático na faixa superior, mesmo quando o resultado final é exatamente 500. O valor calculado não é substituído por 499,99. Bloqueios informacionais e recusa por score inferior a 250 continuam prevalecendo.
+- **Springate:** somente é interpretado para indústria, comércio e serviços não financeiros declarados. Seguradoras, bancos, instituições financeiras, cooperativas de crédito, estruturas patrimoniais incompatíveis e CNAEs financeiros (divisões 64–66) recebem “NÃO APLICÁVEL”. Tipo não informado também impede diagnóstico até confirmação. Não se infere o setor pelo nome. A fórmula, quando aplicável, permanece inalterada.
+- **Dívida:** empréstimos e financiamentos CP + LP − caixa e equivalentes. Arrendamentos, mútuos e outras obrigações só integram a medida se estiverem nas rubricas de dívida da entrada. A extensão para contas adicionais permanece desativada.
+- **Fleuriet simplificado:** NCG, CDG e T originais são preservados. Tesouraria estrita = caixa − empréstimos CP; resíduo = T simplificado − tesouraria estrita. A materialidade usa o limiar já existente de 1% do ativo total, com denominador em valor absoluto. O alerta complementar não altera score nem confiabilidade. A abertura parcial das contas operacionais impede equiparar T simplificado a caixa disponível.
+- **Variações anuais:** a função central monitora ativo total, patrimônio líquido, contas a receber, caixa, empréstimos CP e despesas financeiras. Nenhum índice integra essa regra de penalização. A contagem congelada usa `abs(atual/anterior − 1) >= 0,50`, apenas com valores finitos e `abs(anterior) > 1e-12`. Zero → positivo/negativo gera diagnóstico sem nova penalização; positivo/negativo → zero corresponde a queda de 100%; mudanças de sinal recebem descrição própria. Bases de até 1% do ativo total e mudanças de sinal não são apresentadas como percentuais. Bases negativas sem mudança de sinal mantêm a variação relativa matemática, que exige leitura do sinal econômico. A materialidade absoluta é `abs(atual − anterior)/abs(ativo total)` e é informativa, sem novo filtro sobre a penalização existente. Ausências não são convertidas em zero.
+- **Simulações:** frequências de FinScore prudencial abaixo de 500, 250 e 125 são apresentadas apenas quando o diagnóstico permite interpretação. São frequências empíricas condicionais dos cenários simulados, não probabilidades de inadimplência.
+- **Fontes:** as linhas integrais da aba opcional `notas_preenchimento` são preservadas no dossiê; o parecer exibe uma seleção compacta das fontes e convenções relevantes. Essas declarações não equivalem a validação documental.
+- **Serasa:** consultas posteriores à data da análise são rejeitadas antes do cálculo ou da geração de novo parecer. Documentos históricos mantêm seus registros de rastreabilidade.
+- **Política institucional:** os rótulos, o texto da recomendação e a orientação de garantias admitem configuração, sem modificar a pontuação. A recomendação padrão FinScore permanece sujeita à política de crédito e à decisão da alçada competente.
+
+O parecer apresenta identificação, fontes, qualidade dos dados, indicadores, formação do FinScore, caps, cenários, sensibilidade, Serasa, Springate, Fleuriet, decisão, garantias, riscos, diligências e monitoramento. A metodologia pode ser baixada em anexo separado ou integrada ao parecer. A extensão depende das evidências e ocorrências materiais, preservando as informações de rastreabilidade em todos os formatos.
 
 Fatos observados, valores calculados, premissas e conclusões permanecem distinguíveis. Todo motivo impeditivo deve ser associado ao efeito analítico e à ação de saneamento. Alertas informativos permanecem visíveis sem serem apresentados como impedimentos. A redação não altera valores, regras, bloqueios ou decisão.
 

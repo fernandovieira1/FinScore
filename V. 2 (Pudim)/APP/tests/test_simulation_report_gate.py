@@ -37,9 +37,8 @@ class SimulationReportGateTest(unittest.TestCase):
                               ThresholdFrequency(corte=250, frequencia=None),
                               ThresholdFrequency(corte=500, frequencia=.32)]
         text = _simulation_table(contract)
-        self.assertIn("125 pontos: 0,00%", text)
-        self.assertIn("250 pontos: Não calculado", text)
-        self.assertIn("500 pontos: 32,00%", text)
+        self.assertIn("FinScore < 500 | FinScore < 250 | FinScore < 125", text)
+        self.assertIn("32,00% | Não calculado | 0,00%", text)
         self.assertIn("não são probabilidades de inadimplência", text)
         contract.cenarios.diagnosticos[0].valida_para_interpretacao = False
         self.assertNotIn("32,00%", _simulation_table(contract))

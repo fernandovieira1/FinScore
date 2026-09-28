@@ -296,8 +296,26 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
     if engine == "xhtml2pdf":
         # As fontes básicas do fallback não cobrem estes símbolos matemáticos.
         # Normalizar só a apresentação preserva o anexo metodológico de origem.
-        conteudo_html = (conteudo_html.replace("−", "-").replace("→", "-&gt;")
-                         .replace("≈", "aproximadamente "))
+        conteudo_html = conteudo_html.replace("−", "-").replace("→", "-&gt;").replace("≈", "aproximadamente ")
+        # ReportLab não herda o fundo de thead e pode comprimir colunas sem
+        # largura explícita. Definir as células mantém os títulos legíveis.
+        def format_table(match):
+            table = match.group(0)
+            header = re.search(r"<thead>.*?</thead>", table, re.DOTALL)
+            if not header:
+                return table
+            count = len(re.findall(r"<th(?:\s|>)", header.group(0)))
+            if not count:
+                return table
+            width = 100 / count
+            table = re.sub(
+                r"<th(?=[\s>])",
+                f'<th width="{width:.4f}%" bgcolor="{ACCENT_PRIMARY}"',
+                table,
+            )
+            table = re.sub(r"<td(?=[\s>])", f'<td width="{width:.4f}%"', table)
+            return table.replace("<table>", '<table width="100%" repeat="1">', 1)
+        conteudo_html = re.sub(r"<table>.*?</table>", format_table, conteudo_html, flags=re.DOTALL)
     
     # Extrair dados do meta
     empresa = html_lib.escape(str(meta.get("empresa", "N/A")))
@@ -745,7 +763,7 @@ def render_parecer_html(conteudo: str, meta: Dict, is_markdown: bool = True, eng
             border-collapse: collapse;
             margin: 4pt 0;
             page-break-inside: auto;
-            font-size: 7.5pt;
+            font-size: 6.7pt;
         }
         
         thead {

@@ -51,6 +51,9 @@ class ContextReviewTest(unittest.TestCase):
         contract = build_parecer_data(out, self.meta)
         self.assertEqual(len(contract.dados.notas_preenchimento), 5)
         self.assertEqual(contract.dados.notas_preenchimento[-1].linha, 3)
+        self.assertEqual(contract.dados.notas_preenchimento[-1].coluna, 2)
+        self.assertEqual(contract.notas_preenchimento[0]['celulas'],
+                         ['Fonte', 'Demonstrações informadas pelo cliente'])
         text = _source_notes(contract)
         self.assertIn('CMV reportado', text)
         self.assertNotIn('<script>', text)
@@ -113,6 +116,9 @@ class ContextReviewTest(unittest.TestCase):
         self.assertEqual(_score_band(550, config), 'DE 300 A MENOS DE 600')
         self.assertIn('300,00', _policy_reading(contract))
         self.assertIn('600,00', _policy_reading(contract))
+        document = render_structured_parecer(self.fixture._narrative(), contract)
+        self.assertIn('cap prudencial acionado de 600 ou menos', document)
+        self.assertNotIn('resultado inferior a 250 pontos', document)
         for lower, upper in [(600, 300), (float('nan'), 500), (0, float('inf'))]:
             with self.assertRaises(ValueError):
                 PolicyConfig(limite_nao_aprovar=lower, limite_referencia_garantia=upper)

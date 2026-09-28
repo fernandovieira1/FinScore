@@ -76,6 +76,19 @@ class AnalysisDossierStoreTest(unittest.TestCase):
         self.Session = sessionmaker(bind=engine, expire_on_commit=False)
         self.store = AnalysisDossierStore(self.Session, initialize_schema=False)
 
+    def test_pdf_export_accepts_short_main_and_separate_annex(self):
+        meta, _state, _contract = self._create()
+        for pages, mode in ((1, "Parecer principal"), (5, "Anexo técnico"), (18, "Parecer com anexo técnico")):
+            with self.subTest(pages=pages, mode=mode):
+                self.store.record_pdf_export(meta["analise_id"], b"%PDF-test", pages, mode)
+                payload = json.loads(self.store.export_functional_json(meta["analise_id"]))
+                self.assertEqual(payload["documento"]["pdf"]["paginas"], pages)
+                self.assertEqual(payload["documento"]["pdf"]["conteudo"], mode)
+
+    def test_pdf_export_rejects_empty_document(self):
+        with self.assertRaisesRegex(ValueError, "pelo menos uma página"):
+            self.store.record_pdf_export("unused", b"", 0)
+
     def _create(self):
         meta = dict(self.base_meta)
         raw_processed = self.output["modelo"]["processado_em"]

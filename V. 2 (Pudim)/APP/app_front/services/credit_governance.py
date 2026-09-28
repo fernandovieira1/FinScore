@@ -119,6 +119,7 @@ def governance_fingerprint(
         "processado_em": model.get("processado_em"),
         "recomendacao": recommendation.model_dump(mode="json"),
         "notas_preenchimento": output.get("notas_preenchimento", []),
+        "source_notes": output.get("source_notes", []),
     }
     serialized = json.dumps(
         basis,

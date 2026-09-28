@@ -364,9 +364,10 @@ class AnalysisDossierStore:
                 )
             )
 
-    def record_pdf_export(self, analysis_id: str, pdf_bytes: bytes, pages: int) -> None:
-        if not 7 <= int(pages) <= 14:
-            raise ValueError("PDF fora da faixa de 7 a 14 páginas")
+    def record_pdf_export(self, analysis_id: str, pdf_bytes: bytes, pages: int,
+                          content_mode: str = "Parecer com anexo técnico") -> None:
+        if int(pages) < 1:
+            raise ValueError("O PDF deve conter pelo menos uma página")
         with self._session() as session:
             record = self._record(session, analysis_id)
             dossier = json.loads(record.functional_dossier_json)
@@ -374,6 +375,7 @@ class AnalysisDossierStore:
             document["pdf"] = {
                 "sha256": hashlib.sha256(pdf_bytes).hexdigest(),
                 "paginas": int(pages),
+                "conteudo": content_mode,
             }
             _validate_functional_payload(dossier)
             record.functional_dossier_json = _json(dossier)

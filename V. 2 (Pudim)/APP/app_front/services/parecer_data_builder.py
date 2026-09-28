@@ -504,7 +504,13 @@ def _missing_calculations(output: dict[str, Any]) -> list[MissingCalculation]:
 def _accounting_data(output: dict[str, Any], years: list[int]) -> AccountingData:
     corrections = _corrections(output)
     return AccountingData(
-        notas_preenchimento=output.get("notas_preenchimento", []),
+        notas_preenchimento=output.get("source_notes") or [
+            cell for note in output.get("notas_preenchimento", [])
+            for cell in ([note] if "texto" in note else [
+                {"linha": max(1, note.get("linha", 1)), "coluna": index + 1, "texto": text}
+                for index, text in enumerate(note.get("celulas", []))
+            ])
+        ],
         reportados=_wide_points(
             output.get("df_contas_reportadas"),
             point_prefix="REP",
@@ -941,6 +947,10 @@ def _supplementary_evidence(output: dict[str, Any], processed_at: datetime) -> S
             saldo_tesouraria=_number(record.get("ST_s")),
             perfil_sinais=_scalar(record.get("perfil_sinais")),
             diagnostico=_text(record.get("diagnostico"), "NÃO CALCULÁVEL"),
+            tesouraria_estrita=_number(record.get('T_estrito')),
+            residuo_fleuriet=_number(record.get('residuo_fleuriet')),
+            residuo_pct_ativo=_number(record.get('residuo_pct_ativo')),
+            residuo_material=_boolean(record.get('residuo_material')),
         )
         for record in _records(output.get("df_fleuriet_complementar"))
         if _integer(record.get("ano")) is not None
@@ -1013,6 +1023,7 @@ def build_finscore_recommendation(
         regra_id="POL-REC-001",
         versao_politica=PARECER_POLICY_VERSION,
         parametros_politica=policy.get("parametros_politica", {}),
+        texto_politica_contratante=_scalar(policy.get('texto_politica_contratante')),
         apto_decisao=_boolean(quality.get("apto_decisao")),
         finscore_prudencial=_number(policy.get("finscore_prudencial")),
         faixa=_text(policy.get("segmento_politica"), "NÃO CALCULÁVEL"),
@@ -1115,6 +1126,8 @@ def build_parecer_data(
         cenarios=_scenarios(output),
         evidencias_suplementares=_supplementary_evidence(output, processed_at),
         achados=[],
+        notas_preenchimento=output.get('notas_preenchimento', []),
+        contexto_empresa=output.get('contexto_empresa', {}),
         metadados_funcionais=FunctionalMetadata(
             processado_em=processed_at,
             numero_simulacoes=_integer(model.get("numero_simulacoes")) or 0,

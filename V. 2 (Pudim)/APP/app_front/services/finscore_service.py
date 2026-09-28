@@ -6,8 +6,10 @@ import pandas as pd
 
 try:
     from finscore_v2 import FinScoreOutput, executar_finscore, validar_contrato
+    from finscore_v2.assessment import DEBT_SCOPE, DEBT_EXTENSION
 except ModuleNotFoundError:  # Importação pelo pacote ``app_front`` nos testes.
     from app_front.finscore_v2 import FinScoreOutput, executar_finscore, validar_contrato
+    from app_front.finscore_v2.assessment import DEBT_SCOPE, DEBT_EXTENSION
 
 
 DEFAULT_SIMULATIONS = 1000
@@ -273,8 +275,13 @@ def run_finscore(
         executar_simulacoes=run_simulations,
         numero_simulacoes=simulations,
         semente=seed,
+        company_context=meta,
     )
     validar_contrato(resultado)
+    resultado['contexto_empresa'] = {key: meta.get(key) for key in ('tipo_empresa', 'setor', 'segmento', 'cnae') if meta.get(key)}
+    resultado['notas_preenchimento'] = df.attrs.get('finscore_notas_preenchimento', [])
+    resultado['perimetro_divida'] = DEBT_SCOPE
+    resultado['extensao_divida'] = dict(DEBT_EXTENSION)
 
     anos_para_usar: Optional[List[int]] = anos_rotulos
     if not anos_para_usar:
@@ -289,5 +296,5 @@ def run_finscore(
         meta["anos_rotulos"] = anos_para_usar
 
     # Proveniência textual fica fora dos cálculos e acompanha o contrato do parecer.
-    resultado["notas_preenchimento"] = list(df.attrs.get("finscore_source_notes", []))
+    resultado["source_notes"] = list(df.attrs.get("finscore_source_notes", []))
     return _add_transitional_aliases(resultado, meta)
