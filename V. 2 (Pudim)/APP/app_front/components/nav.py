@@ -331,6 +331,6 @@ def render_sidebar(current_slug: str) -> None:
 
         st.markdown(build_menu_html(), unsafe_allow_html=True)
         st.markdown(
-            '<footer class="fs-sidebar-footer">V.2.7.20 (Out/26)</footer>',
+            '<footer class="fs-sidebar-footer">V.2.8.20 (Out/26)</footer>',
             unsafe_allow_html=True,
         )
