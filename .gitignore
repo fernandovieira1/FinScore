@@ -73,6 +73,7 @@ Thumbs.db
 Desktop.ini
 
 # Backups locais e resíduos de merge
+/.codex-review/
 _BACKUPS/
 *.bak
 *.old
