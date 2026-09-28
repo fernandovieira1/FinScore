@@ -1,0 +1,2 @@
+# Preserve the byte hashes recorded in manifest.json on Windows and Unix.
+*.json text eol=lf

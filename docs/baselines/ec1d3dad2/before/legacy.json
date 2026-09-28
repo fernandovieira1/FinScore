@@ -1,0 +1,10 @@
+{
+  "source_commit": "ec1d3dad222186649dc7dafd5d3bb855f24d4e4c",
+  "suite": "legacy",
+  "run": 205,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": 134.919,
+  "scope": "Before adding golden tests; existing unittest discovery test_*.py"
+}

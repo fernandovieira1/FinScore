@@ -1,0 +1,14 @@
+test_comparator_detects_score_policy_weight_and_blocker_mutations (test_model_controls_golden.ModelControlsGoldenTest.test_comparator_detects_score_policy_weight_and_blocker_mutations) ... ok
+test_comparator_preserves_missing_zero_types_and_subcent_changes (test_model_controls_golden.ModelControlsGoldenTest.test_comparator_preserves_missing_zero_types_and_subcent_changes) ... ok
+test_input_and_fixture_integrity (test_model_controls_golden.ModelControlsGoldenTest.test_input_and_fixture_integrity) ... ok
+test_jns_full_golden (test_model_controls_golden.ModelControlsGoldenTest.test_jns_full_golden) ... ok
+test_jns_preserves_provisional_calculation_and_decision_block (test_model_controls_golden.ModelControlsGoldenTest.test_jns_preserves_provisional_calculation_and_decision_block) ... ok
+test_mobicloud_full_golden (test_model_controls_golden.ModelControlsGoldenTest.test_mobicloud_full_golden) ... ok
+test_mobicloud_preserves_approval_without_blockers_and_visible_saturation (test_model_controls_golden.ModelControlsGoldenTest.test_mobicloud_preserves_approval_without_blockers_and_visible_saturation) ... ok
+test_ssa_cap_preserves_math_and_current_mitigator_policy (test_model_controls_golden.ModelControlsGoldenTest.test_ssa_cap_preserves_math_and_current_mitigator_policy) ... ok
+test_ssa_mro_full_golden (test_model_controls_golden.ModelControlsGoldenTest.test_ssa_mro_full_golden) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 52.472s
+
+OK

@@ -1,0 +1,179 @@
+{
+  "baseline_version": "1.0",
+  "captured_at_utc": "2026-09-28T14:13:47.881363+00:00",
+  "cases": {
+    "jns": {
+      "execution": {
+        "seed": 20260723,
+        "simulations_per_approach": 100,
+        "timestamp_fixture": {
+          "__kind__": "datetime",
+          "value": "2026-09-28T12:00:00"
+        }
+      },
+      "input": {
+        "file": "V. 2 (Pudim)/MODELO/dados_teste/12Grupo JNP - JNS Seguradora.xlsx",
+        "metadata": {
+          "ano_final": 2025,
+          "ano_inicial": 2023,
+          "cnpj": "30.862.594/0001-00",
+          "empresa": "TESTE GOLDEN - JNS SEGURADORA",
+          "serasa": 500,
+          "serasa_data": "22/09/2026",
+          "tipo_empresa": "Seguradora"
+        },
+        "serasa_is_synthetic": true,
+        "sha256": "c6a6b38ec38ba377f2b1f6d5510c7ee48dac71cfd3cd5980b27af0a7b9349ce0",
+        "sheet": "lancamentos"
+      },
+      "sha256": "9c88767d396cbd5b3e7826945b4c758a24b8d9242f7a9a6c0db3e4fe2fd0c317",
+      "snapshot": "jns.json"
+    },
+    "mobicloud": {
+      "execution": {
+        "seed": 20260723,
+        "simulations_per_approach": 100,
+        "timestamp_fixture": {
+          "__kind__": "datetime",
+          "value": "2026-09-28T12:00:00"
+        }
+      },
+      "input": {
+        "file": "V. 2 (Pudim)/MODELO/dados_teste/5umarket - Mobicloud Tecnologia.xlsx",
+        "metadata": {
+          "ano_final": 2025,
+          "ano_inicial": 2023,
+          "cnpj": "26.590.119/0001-55",
+          "empresa": "TESTE GOLDEN - MOBICLOUD TECNOLOGIA",
+          "serasa": 500,
+          "serasa_data": "22/09/2026",
+          "tipo_empresa": "Serviços não financeiros"
+        },
+        "serasa_is_synthetic": true,
+        "sha256": "145d8ef133a6c90fdf15d4819ac5b6c9c150e48ad18b91cced54ae9c282d56b1",
+        "sheet": "lancamentos"
+      },
+      "sha256": "d041fd8ff32106b3c683cbbb7989fa01b53f24e68d1c3fde6b693d797a59fac5",
+      "snapshot": "mobicloud.json"
+    },
+    "ssa_mro": {
+      "execution": {
+        "seed": 20260723,
+        "simulations_per_approach": 100,
+        "timestamp_fixture": {
+          "__kind__": "datetime",
+          "value": "2026-09-28T12:00:00"
+        }
+      },
+      "input": {
+        "file": "V. 2 (Pudim)/MODELO/dados_teste/6strumarket - SSA-Miro Solucoes.xlsx",
+        "metadata": {
+          "ano_final": 2025,
+          "ano_inicial": 2023,
+          "cnpj": "26.409.092/0001-51",
+          "empresa": "TESTE GOLDEN - SSA-MRO SOLUCOES",
+          "serasa": 500,
+          "serasa_data": "22/09/2026",
+          "tipo_empresa": "Serviços não financeiros"
+        },
+        "serasa_is_synthetic": true,
+        "sha256": "b37b49fb98399fadd7e26c16a6edda32ecab50b04035f394bd100bc2408ceee4",
+        "sheet": "lancamentos"
+      },
+      "sha256": "7c2f2f90df37925048bdf301c20a482db509e03380706a7936c7d02c98c40ed3",
+      "snapshot": "ssa_mro.json"
+    }
+  },
+  "float_comparison": {
+    "absolute": 1e-10,
+    "relative": 1e-10
+  },
+  "libraries": {
+    "SQLAlchemy": "2.0.51",
+    "numpy": "1.26.4",
+    "openpyxl": "3.1.5",
+    "pandas": "2.2.2",
+    "pydantic": "2.13.4",
+    "pypdf": "6.15.0",
+    "reportlab": "4.4.10",
+    "scikit-learn": "1.4.2",
+    "scipy": "1.11.4",
+    "streamlit": "1.61.1",
+    "xhtml2pdf": "0.2.16"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "scope": "Test-only baseline; not a production reproduction_manifest implementation.",
+  "source_commit": "ec1d3dad222186649dc7dafd5d3bb855f24d4e4c",
+  "source_sha256_normalized_lf": {
+    "V. 2 (Pudim)/APP/app_front/app.py": "b55781ace913dcd19af5cc196bb66ee7bc4cf19510dfc527e9de4b3cec5891e9",
+    "V. 2 (Pudim)/APP/app_front/components/__init__.py": "d9b1140ecddc12b6585539d2ab243186e511d786e2ddcc5987abffe7c73dca9a",
+    "V. 2 (Pudim)/APP/app_front/components/auth.py": "61482a2b271384b61f6b6e17c5a5c68b83381c861cada963afb486665cfd5da8",
+    "V. 2 (Pudim)/APP/app_front/components/config.py": "7f2131af3c7ac01401da5fb443092244adcc016602b46f19d3121807f44b6663",
+    "V. 2 (Pudim)/APP/app_front/components/guards.py": "0839d042668667cdd2911570f9b52f3a0d54f60ed19875f30aad6d2888bc27e4",
+    "V. 2 (Pudim)/APP/app_front/components/header.py": "9e263967fd885c2ac2082476e01f761013538c0485ba53a902273c5ebfc6a1a6",
+    "V. 2 (Pudim)/APP/app_front/components/llm_client.py": "42e39d1afe9456f802d4716a34b70e969a185a7e1428535eb457fb99a62b0f52",
+    "V. 2 (Pudim)/APP/app_front/components/nav.py": "2ed46bcf5a7cdc8bf6e3ec9d6748fd4c4b9f879c5e4c73a6b3ab5d97111863da",
+    "V. 2 (Pudim)/APP/app_front/components/navigation_flow.py": "1c6c00d6d4e3ef07082b06e5d996eeb2b140521f8e1ef185df31638b144bd358",
+    "V. 2 (Pudim)/APP/app_front/components/parecer_data_schema.py": "bd36a36caf12faf9dd7e360737cfcc5d02a74a1f3b6ef49dc59782f39142ddab",
+    "V. 2 (Pudim)/APP/app_front/components/parecer_schema.py": "5949c28c44821797a68e1225e7745a63b48231e4cfca17d733e9b5575eeeed10",
+    "V. 2 (Pudim)/APP/app_front/components/policy_engine.py": "b8911dd8a234f393b9c3fe1f373a5de3546233f20b20d991a630fca21a97257e",
+    "V. 2 (Pudim)/APP/app_front/components/schemas.py": "61aed52c631844f99f3cc3856a553d6c09348a9fa6bac71a76d34f8b7b047252",
+    "V. 2 (Pudim)/APP/app_front/components/session_state.py": "cf530ab210ccbddb828d76790ad7b8ad3abc97247199a6710f9b9eaf22f65d74",
+    "V. 2 (Pudim)/APP/app_front/components/theme.py": "d0c90fb23d4803ae1b4e66d4d09316442fa340392d6e36644b83126100f1ec20",
+    "V. 2 (Pudim)/APP/app_front/components/token_utils.py": "c6bc3281bd8494c46760c49bdee358c800c8d34b3442e0f51aeaaea245250d6d",
+    "V. 2 (Pudim)/APP/app_front/components/topbar.py": "94f1ae5f5115e2d79861fe9320e2bce3e57a5cb30a2bc0137ea74cb3ed3dc2b3",
+    "V. 2 (Pudim)/APP/app_front/content/metodologia_pudim_2_0_20.md": "a724413bca8cca3686a6ea2c0c8064dbfc5ec36edd93db624c83f9ffea16be40",
+    "V. 2 (Pudim)/APP/app_front/dashboard_finscore.py": "cdde140c7705fec6569ed97e58f44269fc0dbda466e3d71816a06dbc003fe144",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/README.md": "079f5b4f19e55ca20b90c414e12a90463cb035fdb3ea896af4caf13d3bf90bfb",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/__init__.py": "34d33a867f0aca012a6bc3d0d8a275de373740af27dc47ac10db2c115c861fec",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/assessment.py": "b891fdde394bc8b4c7a60f8e02e9a8313fe62c2c71154b639b95b5d01465fefc",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/contracts.py": "352f7976826028b2d876e060037d06fd0a394c0022f0a02e3a45ea5e0d0d7060",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/core.py": "c06a7b3582016dec0ac5e2e81b4d009b4fe51ec7b199ba01c1c5660f835781cf",
+    "V. 2 (Pudim)/APP/app_front/finscore_v2/engine.py": "3ecc9226ece7b1bc6fd6da2e726ef6b7a7aab3b39dfd3c497d72a7ec01eec236",
+    "V. 2 (Pudim)/APP/app_front/pdf/README.md": "7cd9700b91fc9dd26c842ed76738f666278a449f8b6c54f748ade902b3f9d951",
+    "V. 2 (Pudim)/APP/app_front/pdf/__init__.py": "49439c5120da2beb622aefae2fc86bf046df64f947cc5fb85ea8cd83019c76a9",
+    "V. 2 (Pudim)/APP/app_front/pdf/export_pdf.py": "fca54249cb650e2741291e1460fd1a53a425023aa3cc3a25136e3174252ef2de",
+    "V. 2 (Pudim)/APP/app_front/pdf/test_pdf.py": "9c21a958c9a0229d024dbd81eac7d615b6dfff136844020413dc333178c41ff0",
+    "V. 2 (Pudim)/APP/app_front/services/CHART_INTEGRATION.md": "062e317adf0fb6518f587cd6cd5d16682517c19addfc8f571dcf91fc41a82702",
+    "V. 2 (Pudim)/APP/app_front/services/analysis_dossier.py": "132f77a9d8d5ea68a89505dde67ff0b94c9f6b64e092c0ee04b9d0dd6d986ccb",
+    "V. 2 (Pudim)/APP/app_front/services/analysis_export.py": "7a560eff468f0f1764649137f246cf3f6e36d12496a69500e4156398a6b8755d",
+    "V. 2 (Pudim)/APP/app_front/services/chart_renderer.py": "733bd8d64ea5cb145e5597795c1c0b823c37b128a62ca41ba715b68e387d26c9",
+    "V. 2 (Pudim)/APP/app_front/services/credit_governance.py": "bdb5254dc2845e21f8285ab6908acbd8c7f60e9d3543a69a11dbbe997517f878",
+    "V. 2 (Pudim)/APP/app_front/services/credit_policy.py": "f7aa4fc63e5012d96f51a8643e1a15f8ed03855c5fde30dacf443447d7bc7070",
+    "V. 2 (Pudim)/APP/app_front/services/db.py": "99b20b8a5e1c220f0f267010f9767d77e352faa03676d6ccd8e222dcca695b0d",
+    "V. 2 (Pudim)/APP/app_front/services/evidence_book.py": "98999141888060545e427062d01df4219626cfa735ad3b1a2d0bfa4b83cd5767",
+    "V. 2 (Pudim)/APP/app_front/services/financial_context.py": "cb5c7a9d913734ac7ba0380353082b7a720e2056d71bdd686ea62d2c0d906005",
+    "V. 2 (Pudim)/APP/app_front/services/finscore_service.py": "ce2db5145a604451f2b9189439a8c952f41bae9006620fb74c1c4cb5a2fee371",
+    "V. 2 (Pudim)/APP/app_front/services/io_validation.py": "28c0af5d8b8fa76db3d7fec7ba32f78fd20b73cf522585d0262f92ca52dcd03c",
+    "V. 2 (Pudim)/APP/app_front/services/models.py": "87ad3fe7a17fc8844ccba78486d0e5179fd8c6b4fb2b2098bcf26a4bb260d7df",
+    "V. 2 (Pudim)/APP/app_front/services/parecer_data_builder.py": "8f7038dc666d6f422e28a2513b543bb4fa50279b099c328dd0464b513363a616",
+    "V. 2 (Pudim)/APP/app_front/services/parecer_document.py": "550b5d84151409d2e5fb5666412e72f5ead322c02fed997fd394a5a20a8e90d8",
+    "V. 2 (Pudim)/APP/app_front/services/parecer_evaluation.py": "db81927c42a4d6c1d11ee8efda8d9d4d0f79da994281222b0590327c94c5c830",
+    "V. 2 (Pudim)/APP/app_front/services/parecer_generator.py": "df77fcb38f516883230a1f0a10004bf349cf3f7b797eb3b657225afc5909b53b",
+    "V. 2 (Pudim)/APP/app_front/services/parecer_validation.py": "e86cd1251ffa36617ce6123423a7fed21ab853c790a7eacc4f76b2113827e16c",
+    "V. 2 (Pudim)/APP/app_front/services/test_chart_renderer.py": "3703a648e03a85a2ec9b621f57465db8da2a0fdbbf5348fe82cb363fda3af4fd",
+    "V. 2 (Pudim)/APP/app_front/utils_finscore.py": "3ede9c3da7c727f44ab9811effc1f32c417cf2b615136473eab5b8055117e927",
+    "V. 2 (Pudim)/APP/app_front/views/__init__.py": "9625a94fa8d77144dcd37e0a062b63e0459cf71037486f21d36bc30d75d1dd3d",
+    "V. 2 (Pudim)/APP/app_front/views/analise.py": "069e5668e593ba70211a785d9d52a21768bd749b7e5865fe4edfe0cd6ab0a492",
+    "V. 2 (Pudim)/APP/app_front/views/analise_contas.py": "a2b6426963fb7f8ae0b3e9911a55ee547535abe48a0d5b5deb2c21384ce907fa",
+    "V. 2 (Pudim)/APP/app_front/views/auth.py": "189d81ee198d80b99dc0e4be9b82186ccf6e25a6643f2549d84b0288751d1112",
+    "V. 2 (Pudim)/APP/app_front/views/cadastros.py": "d26fcd5109d1032739079ef5a00bd3db1e0b60a5ca20ad1f2cd0de3d2cf08fb1",
+    "V. 2 (Pudim)/APP/app_front/views/contato.py": "053fc3216cd02d6662dac4e4db703ee4607ec08558e3ac12853d25165adffafc",
+    "V. 2 (Pudim)/APP/app_front/views/estoque.py": "6e2e59fec4357e8fb1c97295adf6cd3a6d9ae0a3dada9f7b91d4ac0c2e3eac16",
+    "V. 2 (Pudim)/APP/app_front/views/faq.py": "cf552a954495daf0c727827cff3b0cae33f59f3f00a8c4083b475b1374cb9c86",
+    "V. 2 (Pudim)/APP/app_front/views/glossario.py": "5622fab2bc498846ace16d2fbfd9446d87fd1a5ca3334503800840ac6b208a04",
+    "V. 2 (Pudim)/APP/app_front/views/graficos.py": "fee42198e46f468c560a2bfedc83eeb3ea2b6f832b37f72e4b2f1ba672e73a0d",
+    "V. 2 (Pudim)/APP/app_front/views/graficos_pudim.py": "deac483ebb847ba3d966a6b1429735eb80affd9faa0b3d989d6b50f25b2715e9",
+    "V. 2 (Pudim)/APP/app_front/views/guia_rapido.py": "dc40ca7bcdeee81205152744038ec4a41e3796c99b3f9117db2789ba30c7053a",
+    "V. 2 (Pudim)/APP/app_front/views/home.py": "d7918bccee8c4c931104c503e837fe7107db749001e180a7439b89643de09c69",
+    "V. 2 (Pudim)/APP/app_front/views/lancamentos.py": "341e1b678c8f7c5ef87f180f3e3729efb250e76f07081e71c84ba8cd52b507ac",
+    "V. 2 (Pudim)/APP/app_front/views/novo.py": "634704391e040cc936de4253e75499e0341baa43ad9ab6589efde71ddfb21445",
+    "V. 2 (Pudim)/APP/app_front/views/parecer.py": "8e26184210dbc603a9b9830db8225864815d0f4113118ce2068c60ecc10b61ac",
+    "V. 2 (Pudim)/APP/app_front/views/processo.py": "0e488dd780da706143531dff024bf3781dba071fb7d669dbe97e2ce58b69398f",
+    "V. 2 (Pudim)/APP/app_front/views/scores.py": "4ff867510b83aaee9650ec049078ac3b0488460211cbb1c210761a701ca72eb0",
+    "V. 2 (Pudim)/APP/app_front/views/sobre.py": "8b4fb3d51b9ee9e159bbb34cae76ede576faaeb5cc32233c25afadd2557e82bb",
+    "V. 2 (Pudim)/APP/app_front/views/tabelas.py": "782f049efb93403c35a39ed70a42fa877204e64e37c91e7c499f649f1593ccc3",
+    "requirements.txt": "0ef875c492daf9a9b4400dd093ca685c4f607f510facbf1a844d107017af835e"
+  }
+}
