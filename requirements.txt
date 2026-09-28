@@ -28,7 +28,7 @@ pydantic==2.13.4
 markdown-it-py==3.0.0
 reportlab==4.4.10
 xhtml2pdf==0.2.16
-pypdf==6.15.0
+pypdf[crypto]==6.15.0
 playwright==1.48.0
 
 # Configuração e integração com o serviço de pareceres

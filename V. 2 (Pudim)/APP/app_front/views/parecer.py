@@ -427,10 +427,10 @@ def _render_export(
             index=1,
             format_func=lambda mode: 'Parecer + Anexo' if mode == 'Parecer com anexo técnico' else mode,
         )
-        if st.session_state.get('_parecer_pdf_mode') != export_mode:
+        if st.session_state.get('_parecer_pdf_mode_v2_protected') != export_mode:
             st.session_state.pop('parecer_pdf', None)
             st.session_state.pop('parecer_pdf_pages', None)
-            st.session_state['_parecer_pdf_mode'] = export_mode
+            st.session_state['_parecer_pdf_mode_v2_protected'] = export_mode
         if st.button("Preparar PDF", use_container_width=True):
             try:
                 with st.spinner("Gerando e conferindo a paginação..."):

@@ -1331,6 +1331,30 @@ def html_to_pdf_bytes(html: str, engine: Optional[str] = None, header_html: Opti
         raise ValueError(f"Engine desconhecido: {engine}")
 
 
+def _proteger_pdf_contra_edicao(pdf_bytes: bytes) -> bytes:
+    """Permite leitura e impressão; restringe alterações em leitores compatíveis."""
+    import secrets
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.constants import UserAccessPermissions
+
+    writer = PdfWriter(clone_from=PdfReader(BytesIO(pdf_bytes)))
+    permissions = (
+        UserAccessPermissions.PRINT
+        | UserAccessPermissions.PRINT_TO_REPRESENTATION
+        | UserAccessPermissions.EXTRACT
+        | UserAccessPermissions.EXTRACT_TEXT_AND_GRAPHICS
+    )
+    writer.encrypt(
+        user_password="",
+        owner_password=secrets.token_urlsafe(32),
+        permissions_flag=permissions,
+        algorithm="AES-256",
+    )
+    output = BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
 def gerar_pdf_parecer(
     conteudo: str, 
     meta: Dict, 
@@ -1386,7 +1410,7 @@ def gerar_pdf_parecer(
                 "Sintetize a análise variável antes de exportar."
             )
     
-    return pdf_bytes
+    return _proteger_pdf_contra_edicao(pdf_bytes)
 
 
 def contar_paginas_pdf(pdf_bytes: bytes) -> int:
