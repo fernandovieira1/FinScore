@@ -1,0 +1,46 @@
+# Ambiente de execução: Python 3.12
+# Dependências do deploy Streamlit (entrada em V. 2 (Pudim)/APP/app_front/app.py)
+
+# Interface
+streamlit==1.61.1
+
+# Processamento de dados e Excel
+pandas==2.2.2
+numpy==1.26.4
+openpyxl==3.1.5
+xlrd==2.0.1
+
+# Visualização
+matplotlib==3.8.4
+plotly==6.9.0
+seaborn==0.13.2
+Pillow==10.3.0
+
+# Modelagem estatística
+scikit-learn==1.4.2
+scipy==1.11.4
+
+# Persistência e validação de dados
+SQLAlchemy==2.0.51
+pydantic==2.13.4
+
+# Exportação de pareceres em PDF
+markdown-it-py==3.0.0
+reportlab==4.4.10
+xhtml2pdf==0.2.16
+pypdf[crypto]==6.15.0
+playwright==1.48.0
+
+# Configuração e integração com o serviço de pareceres
+# A aplicação usa a API por HTTP; os SDKs OpenAI/LangChain não são necessários.
+python-dotenv==1.0.1
+requests==2.32.3
+# Evita incompatibilidade entre a detecção opcional do requests e o chardet 7.x.
+chardet==5.2.0
+tiktoken==0.13.0
+
+# Autenticação e sessão
+itsdangerous==2.2.0
+passlib==1.7.4
+bcrypt==4.0.1
+streamlit-cookies-manager==0.2.0

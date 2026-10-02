@@ -1,0 +1,538 @@
+# app_front/views/lancamentos.py
+from __future__ import annotations
+from concurrent.futures import ThreadPoolExecutor
+import math
+import time
+import traceback
+from datetime import datetime
+
+import pandas as pd
+import streamlit as st
+
+if __package__ == "app_front.views":
+    from app_front.components import nav
+    from app_front.components.session_state import invalidate_imported_data
+    from app_front.services.io_validation import (
+        ler_planilha,
+        obter_colunas_extras,
+        obter_relatorio_importacao,
+        preparar_relatorio_importacao_para_exibicao,
+        validar_cliente,
+    )
+    from app_front.services.finscore_service import run_finscore, ajustar_coluna_ano
+else:
+    from components import nav
+    from components.session_state import invalidate_imported_data
+    from services.io_validation import (
+        ler_planilha,
+        obter_colunas_extras,
+        obter_relatorio_importacao,
+        preparar_relatorio_importacao_para_exibicao,
+        validar_cliente,
+    )
+    from services.finscore_service import run_finscore, ajustar_coluna_ano
+
+# Rótulos com ícones (ordem fixa na UI)
+TAB_LABELS = {"Cliente": "🏢 Cliente", "Dados": "📥 Dados"}
+TAB_ORDER = ["Cliente", "Dados"]  # Ordem visual fixa
+
+
+def _elapsed_label(elapsed_seconds: float) -> str:
+    total_seconds = max(0, int(elapsed_seconds))
+    minutes, seconds = divmod(total_seconds, 60)
+    return f"Processando há {minutes} min {seconds:02d} s"
+
+
+def _run_finscore_with_timer(df: pd.DataFrame, meta: dict):
+    """Executa o motor fora da thread da interface e mantém o tempo visível."""
+    started_at = time.monotonic()
+    progress = st.status(_elapsed_label(0), expanded=False)
+    try:
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="finscore") as executor:
+            future = executor.submit(run_finscore, df, meta)
+            while not future.done():
+                progress.update(label=_elapsed_label(time.monotonic() - started_at))
+                time.sleep(1)
+            result = future.result()
+        progress.update(
+            label=f"Processamento concluído em {_elapsed_label(time.monotonic() - started_at).removeprefix('Processando há ')}",
+            state="complete",
+        )
+        return result
+    except Exception:
+        progress.update(label="Não foi possível concluir o processamento.", state="error")
+        raise
+
+def _sync_lancamentos_tab() -> None:
+    selected = st.session_state.get("_lancamentos_tab_control", "Cliente")
+    st.session_state["novo_tab"] = selected if selected in TAB_ORDER else "Cliente"
+
+def _auto_save_cliente():
+    ss = st.session_state
+    meta = ss.meta.copy()
+
+    # --- FORMULÁRIO CLIENTE ---
+
+    import re
+    def mascara_cnpj(valor):
+        # Remove tudo que não for dígito
+        v = re.sub(r'\D', '', valor)
+        # Garante 14 dígitos
+        if len(v) < 14:
+            return ''
+        v = v[:14]
+        # Aplica máscara xx.xxx.xxx/xxxx-xx
+        return f"{v[:2]}.{v[2:5]}.{v[5:8]}/{v[8:12]}-{v[12:14]}"
+
+    empresa = st.text_input("Nome da Empresa", value=meta.get("empresa", ""), placeholder="Ex.: ACME S.A.")
+    from finscore_v2.assessment import COMPANY_TYPES
+    company_type = st.selectbox('Tipo de empresa', COMPANY_TYPES,
+        index=COMPANY_TYPES.index(meta.get('tipo_empresa')) if meta.get('tipo_empresa') in COMPANY_TYPES else 0,
+        help='Usado apenas para verificar a aplicabilidade do Springate; não altera o FinScore.')
+    cnpj_raw = meta.get("cnpj", "")
+    # Aplica máscara ANTES de exibir o campo
+    cnpj_default = mascara_cnpj(cnpj_raw)
+    cnpj_input = st.text_input(
+        "CNPJ",
+        value=cnpj_default,
+        placeholder="00.000.000/0000-00",
+        max_chars=18,
+        key="lanc_cnpj_input",
+    )
+    cnpj = mascara_cnpj(cnpj_input)
+    # Aceita apenas 4 dígitos para campo ano
+    ai_val = meta.get("ano_inicial", "")
+    ai_str = st.text_input(
+        "Ano Inicial",
+        value=str(ai_val) if ai_val not in (None, "None") and str(ai_val).isdigit() else "",
+        placeholder="YYYY",
+        max_chars=4
+    )
+    ai = int(ai_str) if ai_str.isdigit() and len(ai_str) == 4 else None
+    # Ano Final é calculado automaticamente
+    af = ai + 2 if ai else None
+    af_str = str(af) if af else ""
+    st.markdown("""
+    <style>
+    /* Força fundo branco e texto escuro no campo desabilitado, igual aos outros campos */
+    input[disabled], input:disabled, .stTextInput input:disabled {
+        color: #222 !important;
+        background: #fff !important;
+        opacity: 1 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    st.text_input("Ano Final", value=af_str, placeholder="YYYY", max_chars=4, disabled=True)
+    # Serasa Score como float
+    serasa_val = meta.get("serasa", "")
+    serasa_str = st.text_input(
+        "Serasa Score (0–1000)",
+        value=str(int(float(serasa_val))) if str(serasa_val).replace(",", ".").replace(" ", "").replace(".0", "").isdigit() else "",
+        placeholder="Ex.: 550",
+        key="lanc_serasa_score"
+    )
+    # Só aceita número inteiro entre 0 e 1000
+    try:
+        serasa_int = int(serasa_str.strip())
+        if 0 <= serasa_int <= 1000:
+            serasa = serasa_int
+        else:
+            serasa = None
+    except Exception:
+        serasa = None
+    # Data de Consulta como DD/MM/YYYY
+    serasa_data_raw = str(meta.get("serasa_data", ""))
+    import re
+    def mascara_data_br(valor):
+        # Remove tudo que não for dígito
+        v = re.sub(r'\D', '', valor)
+        if len(v) < 8:
+            return ''
+        v = v[:8]
+        # Aplica máscara DD/MM/YYYY
+        return f"{v[:2]}/{v[2:4]}/{v[4:8]}"
+    serasa_data_default = mascara_data_br(serasa_data_raw)
+    serasa_data_input = st.text_input(
+        "Data de Consulta ao Serasa",
+        value=serasa_data_default,
+        placeholder="DD/MM/YYYY",
+        max_chars=10,
+        key="lanc_serasa_data",
+    )
+    def valida_data_br(data):
+        if not data:
+            return ""
+        try:
+            datetime.strptime(data, "%d/%m/%Y")
+            return data
+        except ValueError:
+            return ""
+    serasa_data = valida_data_br(mascara_data_br(serasa_data_input))
+
+    serasa_restricao_grave = st.checkbox(
+        "Há restrição grave identificada na consulta ao Serasa",
+        value=bool(meta.get("serasa_restricao_grave", False)),
+        help="O Serasa é tratado como evidência externa e não é somado ao FinScore.",
+    )
+
+    # Normalização
+    empresa = empresa.strip() if empresa else ""
+    cnpj = mascara_cnpj(cnpj.strip()) if cnpj else ""
+
+    new_meta = {
+        "empresa": empresa,
+        "tipo_empresa": company_type,
+        "cnpj": cnpj,
+        "ano_inicial": ai,
+        "ano_final": af,
+        "serasa": serasa,
+        "serasa_data": serasa_data,
+        "serasa_restricao_grave": serasa_restricao_grave,
+    }
+    ss.meta.update(new_meta)
+    for obsolete_key in (
+        "operacao_informada",
+        "valor_solicitado",
+        "prazo_meses",
+        "taxa_juros_anual",
+        "custo_captacao_anual",
+        "custo_operacional_anual",
+        "pd_institucional_anual",
+        "taxa_recuperacao",
+        "retorno_liquido_minimo_anual",
+        "cobertura_garantia",
+    ):
+        ss.meta.pop(obsolete_key, None)
+
+    if ss.get("df") is not None:
+        df_atualizado, anos_rotulos = ajustar_coluna_ano(ss.df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
+        ss.df = df_atualizado.copy()  # type: ignore[attr-defined]
+        if anos_rotulos:
+            ss.meta["anos_rotulos"] = anos_rotulos
+        else:
+            ss.meta.pop("anos_rotulos", None)
+
+    pend = validar_cliente(ss.meta)
+    if pend:
+        st.warning(pend)
+    else:
+        st.success("Cliente salvo automaticamente.")
+
+
+def _normalize_preview(df, anos_rotulos=None):
+    if df is None or getattr(df, "empty", False):
+        return None
+    preview = df.copy()
+    if "ano" not in preview.columns:
+        return preview
+
+    preview = preview.sort_values("ano", ascending=True).reset_index(drop=True)
+
+    if anos_rotulos is not None:
+        source_values = list(anos_rotulos)
+    else:
+        try:
+            source_values = list(preview["ano"].tolist())
+        except Exception:
+            source_values = []
+
+    def _fmt(valor, fallback):
+        if valor is None:
+            return fallback
+        try:
+            return str(int(float(valor)))
+        except (TypeError, ValueError):
+            text = str(valor).strip()
+            return text if text else fallback
+
+    formatted = []
+    total = len(preview)
+    for idx in range(total):
+        valor = source_values[idx] if idx < len(source_values) else None
+        formatted.append(_fmt(valor, str(idx + 1)))
+    preview["ano"] = formatted
+    return preview
+
+
+def _render_data_preview(df, caption="Prévia:", anos_rotulos=None):
+    preview = _normalize_preview(df, anos_rotulos)
+    if preview is None:
+        return False
+    st.caption(caption)
+    preview_for_display = preview.head().copy()
+
+    def _format_number_ptbr(value):
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return ""
+            try:
+                normalized = text.replace(".", "").replace(",", ".")
+                num = float(normalized)
+            except (ValueError, TypeError):
+                return value
+        else:
+            try:
+                num = float(value)
+            except (ValueError, TypeError):
+                return value
+
+        if math.isnan(num):
+            return ""
+
+        if float(num).is_integer():
+            formatted = f"{int(round(num)):,}"
+        else:
+            formatted = f"{num:,.2f}"
+        return formatted.replace(",", "¤").replace(".", ",").replace("¤", ".")
+
+    for col in preview_for_display.columns:
+        if col.lower() == "ano":
+            continue
+        try:
+            numeric_series = pd.to_numeric(preview_for_display[col], errors="coerce")
+        except Exception:
+            continue
+        if numeric_series.notna().any():
+            preview_for_display[col] = [
+                _format_number_ptbr(val) if not pd.isna(num_val) else ("" if val is None else val)
+                for val, num_val in zip(preview_for_display[col].tolist(), numeric_series.tolist())
+            ]
+
+    st.dataframe(preview_for_display, use_container_width=True, hide_index=True)
+    return True
+
+
+def _render_cached_data_preview():
+    ss = st.session_state
+    cached_df = ss.get("df")
+    if cached_df is None or getattr(cached_df, "empty", False):
+        return False
+    st.info("Dados contábeis carregados nesta sessão.")
+    _render_data_preview(cached_df, caption="Prévia dos dados armazenados", anos_rotulos=ss.meta.get("anos_rotulos"))
+    if ss.get("out"):
+        st.success("FinScore já calculado. Acesse a aba Análise para visualizar os resultados.")
+    return True
+
+
+
+def _sec_cliente():
+    st.markdown("<h3 style='text-align: center;'>⌨️ Dados do Cliente</h3>", unsafe_allow_html=True)
+    _auto_save_cliente()
+    st.write("")
+    st.markdown("""
+    <style>
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background: var(--primary-btn, #5ea68d) !important;
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 1.05rem;
+        border-radius: 6px !important;
+        padding: 0.7rem 2.2rem !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+        transition: background 0.2s;
+    }
+    .stButton>button[data-testid="baseButton-secondary"]:hover {
+        background: #468c6f !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Centralizar o botão
+    col = st.columns([3, 2, 3])[1]
+    with col:
+        if st.button("Enviar Dados"):
+            st.session_state["novo_tab"] = "Dados"
+            st.session_state["_internal_nav"] = True
+            st.rerun()
+
+def _sec_dados():
+    ss = st.session_state
+    # DEBUG: Verificar se há referências a _navigate_to
+    if "_navigate_to" in st.session_state:
+        st.warning("⚠️ _navigate_to encontrado no session_state. Removendo...")
+        del st.session_state["_navigate_to"]
+    
+    # ... resto do código existente ...
+    st.markdown("<h3 style='text-align: center;'>📏 Dados Contábeis</h3>", unsafe_allow_html=True)
+
+    df, aba, erro = None, None, None
+    up = st.file_uploader("Envie o arquivo (.xlsx)", type=["xlsx"])
+    if up:
+        df, aba, erro = ler_planilha(up)
+
+    if erro:
+        invalidate_imported_data()
+        st.error(f"Erro ao ler a planilha: {erro}")
+
+    if df is not None:
+        df_exibicao, anos_rotulos = ajustar_coluna_ano(df, ss.meta.get("ano_inicial"), ss.meta.get("ano_final"))
+        st.success(f"✅ Dados carregados (aba: {aba}).")
+        _render_data_preview(df_exibicao, anos_rotulos=anos_rotulos)
+        extras = obter_colunas_extras(df)
+        if extras:
+            st.info(
+                "Colunas adicionais ignoradas pelo modelo: "
+                + ", ".join(str(column) for column in extras)
+            )
+        report = obter_relatorio_importacao(df)
+        if not report.empty:
+            critical = report[report["severidade"].eq("CRITICA")]
+            warnings = report[report["severidade"].eq("AVISO")]
+            if not critical.empty:
+                st.error(
+                    "Há valores inválidos que bloquearão o cálculo até serem corrigidos."
+                )
+                st.dataframe(
+                    preparar_relatorio_importacao_para_exibicao(critical),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            if not warnings.empty:
+                st.warning(
+                    "Há informações ausentes. Elas foram preservadas como ausentes, não como zero."
+                )
+                st.dataframe(
+                    preparar_relatorio_importacao_para_exibicao(warnings),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+        ss.df = df_exibicao.copy()  # type: ignore[attr-defined]
+        if anos_rotulos:
+            ss.meta["anos_rotulos"] = anos_rotulos
+        else:
+            ss.meta.pop("anos_rotulos", None)
+        st.success("Dados contábeis preservados e salvos na sessão.")
+        ss.out = None  # Limpa resultados se dados mudaram
+    elif up is None:
+        _render_cached_data_preview()
+
+    st.write("---")
+
+    st.markdown("""
+    <style>
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background: var(--primary-btn, #5ea68d) !important;
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 1.05rem;
+        border-radius: 6px !important;
+        padding: 0.7rem 2.2rem !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(16,24,40,0.08);
+        transition: background 0.2s;
+    }
+    .stButton>button[data-testid="baseButton-secondary"]:hover {
+        background: #468c6f !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Centralizar o botão
+    col = st.columns([3, 2, 3])[1]
+    with col:
+        if st.button("Calcular FinScore", disabled=bool(erro) or ss.get("df") is None):
+            ss = st.session_state
+            pend = validar_cliente(ss.meta)
+            if pend:
+                st.error(pend)
+            elif erro or ss.df is None:
+                st.error("Envie os dados contábeis acima antes de calcular.")
+            else:
+                processing_stage = "preparação do cálculo"
+                try:
+                    processing_stage = "execução do motor Pudim"
+                    res = _run_finscore_with_timer(ss.df, ss.meta)
+                    # Aceita dict ou tupla/lista
+                    processing_stage = "validação do retorno"
+                    out = res[0] if isinstance(res, (list, tuple)) else res
+                    if not isinstance(out, dict):
+                        raise ValueError("Formato de retorno inesperado do run_finscore.")
+                    processing_stage = "gravação do resultado na sessão"
+                    ss.out = out
+                    ss["analise_tab"] = "Resumo"  # Abre na aba Resumo
+                    ss["liberar_analise"] = True
+                    ss["liberar_parecer"] = False
+                    ss["_flow_started"] = True
+                    for key in ("_lock_parecer", "_force_parecer", "_DIRECT_TO_PARECER"):
+                        ss.pop(key, None)
+                    st.success("Processamento concluido.")
+                    processing_stage = "navegação para Análise"
+                    if not nav.go("analise"):
+                        nav.force("analise")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro no processamento ({processing_stage}): {e}")
+                    with st.expander("Detalhes técnicos do erro"):
+                        st.code(traceback.format_exc(), language="text")
+
+def render():
+    ss = st.session_state
+    if not ss.get("_flow_started"):
+        nav.restart()
+        st.info("Clique em Iniciar na etapa Novo para preencher os lancamentos.")
+        st.rerun()
+        return
+
+    ss.setdefault("meta", {})
+    ss.setdefault("df", None)
+    ss.setdefault("out", None)
+    ss.setdefault("novo_tab", "Cliente")
+
+
+    # ===== CSS específico desta view =====
+    st.markdown(
+        """
+        <style>
+        /* Controle de abas dirigido pelo estado da aplicação. */
+        div[data-testid="stRadio"] > div { justify-content: center; }
+
+        /* Garante títulos alinhados à esquerda */
+        h1, h2, h3 { text-align: left !important; }
+
+        /* ---- Botões menores e centralizados ---- */
+        div.stButton { text-align: center; }
+        .stButton > button {
+            display: inline-block; margin: .5rem auto; padding: .6rem 1.2rem;
+            background: #0074d9; color: #fff; font-weight: 600;
+            border: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,.15);
+            transition: filter .15s ease, transform .02s ease;
+        }
+        .stButton > button:hover { filter: brightness(.96); }
+        .stButton > button:active { transform: translateY(1px); }
+
+        /* ---- Campos do formulário com fundo branco ---- */
+        .stTextInput > div > div > input,
+        [data-baseweb="select"] > div,
+        .stFileUploader > div > div,
+        .stTextArea > div > textarea {
+            background: #ffffff !important;
+            border-radius: 10px;
+            border: 1px solid rgba(2,6,23,.12);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    desired_tab = ss["novo_tab"] if ss["novo_tab"] in TAB_ORDER else "Cliente"
+    if ss.get("_lancamentos_tab_control") != desired_tab:
+        ss["_lancamentos_tab_control"] = desired_tab
+
+    selected_tab = st.radio(
+        "Etapa dos lançamentos",
+        TAB_ORDER,
+        key="_lancamentos_tab_control",
+        horizontal=True,
+        format_func=lambda name: TAB_LABELS[name],
+        label_visibility="collapsed",
+        on_change=_sync_lancamentos_tab,
+    )
+
+    if selected_tab == "Cliente":
+        _sec_cliente()
+    else:
+        _sec_dados()

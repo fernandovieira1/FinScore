@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.py[cod]
+app_front/.env
+app_front/finscore_auth.db
+app_front/.last_token_usage.json
